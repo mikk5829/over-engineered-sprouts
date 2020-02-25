@@ -21,6 +21,8 @@ jobs:
         name: id_rsa_github
         known_hosts: ${{ secrets.KNOWN_HOSTS }}
     - name: Add ssh key
-      run: ssh-add ~/.ssh/id_rsa_github
-    - name: Run a multi-line script
+      run: |
+        eval `ssh-agent -s`
+        ssh-add ~/.ssh/id_rsa_github
+    - name: Push to production server
       run: git push production develop
