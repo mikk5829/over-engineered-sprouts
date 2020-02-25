@@ -22,6 +22,7 @@ jobs:
         known_hosts: ${{ secrets.KNOWN_HOSTS }}
     - name: Add ssh key
       run: |
+        echo ${{ secrets.PUBLIC_SSH_KEY }} >> ~/.ssh/id_rsa_github.pub
         eval `ssh-agent -s`
         ssh-add ~/.ssh/id_rsa_github
         git remote -v
