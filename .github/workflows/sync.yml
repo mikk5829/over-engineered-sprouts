@@ -20,7 +20,8 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         name: id_rsa_github
         known_hosts: |
-          starostka.tplinkdns.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCxb5mT/pAf6kY+sgIGQjT0EN7bFTO7ace0JZ8r5lQTt3OWl7YEXQC1q8SBtPxHln5QldkBo61sEkPHirS8V4kD64t+uYKSSKPnc6wFFleoRcjwKbjtYA7G4qU4DvvMcDQTOjxSjWpWQc/lhfU3rguDEe7vbo27uHAA7WurBn7r1JaziHk9BrGaFUmDe2V/bXCW9PTrd2pMcPFxozFH0fn0BDr3juGOFtgfMRveejv4WWTRNctp7EIKxrk30EQ9ctzi6IEZD7B+SxCNQhHKLrCQ/3mkpPO7ihNkpza2YnP711Qed67d3HUdXNzlCYNMlOx6bA908mVL/Juc801K/e/b
+          |1|k5L0bHDXz6ejOk+6b/f72gDVOxg=|6hwJ1B8FP4tce35Mw1bvckASzR8= ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==
+          |1|hhz025XKfyL3C6ApE2xXB9+1M1Q=|ic4dEZf9IFo0tF2k+tdiNmYLUcs= ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==
     - name: Add ssh key
       run: |
         eval `ssh-agent -s`
