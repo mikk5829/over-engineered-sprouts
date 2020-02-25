@@ -12,7 +12,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Run a one-line script
+    - name: Add production remote to push changes
       run: git remote add production ssh://pi@starostka.tplinkdns.com:10300/~/deploy-folder/project
+    - name: keygen for ssh-access
+      run: ssh-keygen -R hostname
     - name: Run a multi-line script
       run: git push production develop
