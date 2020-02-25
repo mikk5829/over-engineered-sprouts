@@ -19,7 +19,8 @@ jobs:
       with:
         key: ${{ secrets.SSH_KEY }}
         name: id_rsa_github
-        known_hosts: ${{ secrets.KNOWN_HOSTS }}
+        known_hosts: |
+          starostka.tplinkdns.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCxb5mT/pAf6kY+sgIGQjT0EN7bFTO7ace0JZ8r5lQTt3OWl7YEXQC1q8SBtPxHln5QldkBo61sEkPHirS8V4kD64t+uYKSSKPnc6wFFleoRcjwKbjtYA7G4qU4DvvMcDQTOjxSjWpWQc/lhfU3rguDEe7vbo27uHAA7WurBn7r1JaziHk9BrGaFUmDe2V/bXCW9PTrd2pMcPFxozFH0fn0BDr3juGOFtgfMRveejv4WWTRNctp7EIKxrk30EQ9ctzi6IEZD7B+SxCNQhHKLrCQ/3mkpPO7ihNkpza2YnP711Qed67d3HUdXNzlCYNMlOx6bA908mVL/Juc801K/e/b
     - name: Add ssh key
       run: |
         eval `ssh-agent -s`
