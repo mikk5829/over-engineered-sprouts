@@ -17,11 +17,10 @@ jobs:
     - name: Install SSH Key
       uses: shimataro/ssh-key-action@v2.0.0
       with:
-        # SSH private key
         key: ${{ secrets.SSH_KEY }}
-        name: id_rsa_github # optional:
+        name: id_rsa_github
         known_hosts: ${{ secrets.KNOWN_HOSTS }}
+    - name: Add ssh key
+      run: ssh-add ~/.ssh/id_rsa_github
     - name: Run a multi-line script
-      run: |
-        ssh-add ~/.ssh/id_rsa_github
-        git push production develop
+      run: git push production develop
