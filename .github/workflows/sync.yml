@@ -23,6 +23,6 @@ jobs:
     - name: Add ssh key
       run: |
         eval `ssh-agent -s`
-        ssh-keyscan -t rsa starostka.tplinkdns.com >> ~/.ssh/known_hosts
         ssh-add ~/.ssh/id_rsa_github
+        git remote -v
         git push production develop
