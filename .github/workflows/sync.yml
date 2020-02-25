@@ -25,5 +25,4 @@ jobs:
         eval `ssh-agent -s`
         ssh-keyscan -t rsa starostka.tplinkdns.com >> ~/.ssh/known_hosts
         ssh-add ~/.ssh/id_rsa_github
-    - name: Push to production server
-      run: git push production develop
+        git push production develop
