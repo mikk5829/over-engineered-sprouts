@@ -12,6 +12,7 @@ function onMouseDrag (event) {
 
 function onMouseUp (event) {
     path.simplify();
+    paths.push(path);
     var intersects = [];
 
     // TODO: Check for intersections with self (path)
@@ -29,7 +30,6 @@ function onMouseUp (event) {
             fillColor: '#009dec'
         });
     });
-    paths.push(path);
 }
 
 /*
