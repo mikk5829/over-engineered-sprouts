@@ -1,4 +1,7 @@
-const POINT_RADIUS = 5;
+
+var world = new SproutWorld();
+
+/*const POINT_RADIUS = 5;
 
 var path = new Path();
 var paths = [];
@@ -33,6 +36,7 @@ function onMouseUp (event) {
     });
     paths.push(path);
 }
+*/
 
 /*
 function onMouseUp (event) {

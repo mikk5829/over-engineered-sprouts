@@ -1,4 +1,4 @@
-export default class SproutWorld {
+class SproutWorld {
   static POINT_SIZE = 3;
   static POINT_COLOR = "black";
 
@@ -22,11 +22,11 @@ export default class SproutWorld {
             let point_path = generated_point.point_path;
             valid = false;
           }
-          if (this.points.some(point)) {
+          if (this.points.includes(generated_point.point)) {
             generated_point = this.generatePoint();
             valid = false;
           }
-          if (this.conflicts(point_path, this.circles)) {
+          if (this.conflicts(generated_point.point_path, this.circles)) {
             generated_point = this.generatedPoint();
             valid = false;
           }
@@ -39,8 +39,8 @@ export default class SproutWorld {
   }
 
   generatePoint() {
-    let point = new Point(view.size.width, view.size.height) * Point.random();
-    let rounded = point.rounded();
+    let point = new Point(paper.view.size.width, paper.view.size.height) * Point.random();
+    let rounded = point.round();
     let point_path = new Path.Circle(rounded, POINT_SIZE);
     point_path.fillColor = POINT_COLOR;
     return { point: rounded, path: point_path };
@@ -48,11 +48,11 @@ export default class SproutWorld {
 
   // Test if there is conflicts between a path and a list of paths
   conflicts(path, pathList) {
-    pathList.foreach(elem => {
+    for (const elem of pathList) {
       if (!path.getIntersections(elem).empty()) {
         return true;
       }
-    });
-    return false;
+      return false;
+    }
   }
 }
