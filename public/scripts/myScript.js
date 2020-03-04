@@ -1,3 +1,8 @@
+
+var world = new SproutWorld();
+
+/*const POINT_RADIUS = 5;
+
 var path = new Path();
 var paths = [];
 
@@ -26,11 +31,12 @@ function onMouseUp (event) {
     intersects.forEach(function(item, index){
         new Path.Circle({
             center: item.point,
-            radius: 5,
+            radius: POINT_RADIUS,
             fillColor: '#009dec'
         });
     });
 }
+*/
 
 /*
 function onMouseUp (event) {
