@@ -19,6 +19,11 @@ function onMouseUp (event) {
     path.simplify();
     paths.push(path);
     var intersects = [];
+    new Path.Circle({
+        center: path.getPointAt(path.length/2),
+        radius: 10,
+        fillColor: '#ff0000'
+    })
 
     // TODO: Check for intersections with self (path)
     // TODO: Don't push line to paths if there are any intersections
