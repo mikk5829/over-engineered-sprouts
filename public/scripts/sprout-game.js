@@ -93,7 +93,7 @@ class SproutWorld {
   }
 
   exportWorld() {
-    alert("Exporting feature not done");
+    //alert("Exporting feature not done");
     for (const group of this.groups) {
       console.log(group.exportJSON());
     }

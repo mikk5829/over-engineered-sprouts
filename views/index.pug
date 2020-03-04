@@ -1,6 +1,10 @@
 extends layout
 
 block content
-  h1= title
-  p Welcome to #{title}
-  canvas(resize="true")#sproutGameCanvas
+  div(style="display:inline-grid;")
+    a(class='button', href='game')
+      h3 Play Game
+    a(class='button', href='customize')
+      h3 Customize
+    a(class='button', href='scoreboard')
+      h3 Scoreboard
