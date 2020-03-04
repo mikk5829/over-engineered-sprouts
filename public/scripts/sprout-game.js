@@ -42,8 +42,7 @@ class SproutWorld {
     let curves_group = new paper.Group();
     this.groups.push(circle_group, curves_group);
 
-    if (amount > 0) {
-
+    if (amount > 0 && map_configuration == null) {
       // Generate Points
       for (let i = 0; i < amount; i++) {
         let point = this.generatePoint();
@@ -118,12 +117,14 @@ class SproutWorld {
     }
   }
 
-  importWorld() {
-    alert("Importing feature not done");
-    for (const group of this.groups) {
-      alert("NOT DONE");
-    }
+  importWorld(sprout_config) {
+     this.scope.clear(); // Clear the scope
+     for (const group of this.groups) {
+       group.remove();
+     }
+     this.generateWorld(sprout_config);
   }
+
 }
 
 window.onload = function() {
@@ -132,7 +133,7 @@ window.onload = function() {
 
     const sprout_scope = new paper.PaperScope();
     const world = new SproutWorld(sprout_scope, canvas);
-    world.generateWorld(null, 20);
+    world.generateWorld(null, 15);
     world.exportWorld();
 
 }
