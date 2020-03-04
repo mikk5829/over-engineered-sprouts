@@ -1,3 +1,8 @@
+
+var world = new SproutWorld();
+
+/*const POINT_RADIUS = 5;
+
 var path = new Path();
 var paths = [];
 
@@ -31,8 +36,27 @@ function onMouseUp (event) {
     intersects.forEach(function(item, index){
         new Path.Circle({
             center: item.point,
-            radius: 5,
+            radius: POINT_RADIUS,
             fillColor: '#009dec'
         });
     });
 }
+*/
+
+/*
+function onMouseUp (event) {
+    path.simplify();
+    var intersects = [];
+    paths.forEach(function(item, index){
+        path.getIntersections(item).forEach(item => intersects.push(item))
+    });
+    intersects.forEach(function(item, index){
+        new Path.Circle({
+            center: item.point,
+            radius: 5,
+            fillColor: '#009dec'
+        });
+    });
+    paths.push(path);
+}
+*/
