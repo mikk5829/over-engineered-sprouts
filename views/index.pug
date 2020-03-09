@@ -1,6 +1,18 @@
 extends layout
 
 block content
-  h1= title
-  p Welcome to #{title}
-  canvas(resize="true")#myCanvas
+  div(style="display:inline-grid;")
+    a(class='button', id='button', onclick='toggleHiding()')
+      h3 Play Game
+    div(style="display:none; width:70%;", id='test')
+      a(class='button', href='game')
+        h3 Import
+      a(class='button', href='game')
+        h3 Generate
+      a(class='button', href='game')
+        h3 Map Editor
+    a(class='button', href='customize')
+      h3 Customize
+    a(class='button', href='scoreboard')
+      h3 Scoreboard
+  script(type='text/javascript' src='scripts/animations.js')
