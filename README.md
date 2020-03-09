@@ -38,10 +38,10 @@ Documentation is placed in
 out/index.html
 ```
 
-To generate documentation, run this command:
+To generate documentation for public folder, run this command:
 
 ```
-./node_modules/.bin/jsdoc path/to/js-file
+./node_modules/.bin/jsdoc public -r -c ./documentation/configuration.json
 ```
 
 For help see:

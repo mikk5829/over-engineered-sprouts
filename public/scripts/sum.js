@@ -1,4 +1,5 @@
-/** sum.js used for example testing */
+/** sum.js used for example testing
+ * @namespace ExampleTesting */
 
 module.exports = function() {
 
