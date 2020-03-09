@@ -1,4 +1,4 @@
-/* sumTest.js is used for example testing */
+/** sumTest.js is used for example testing */
 
 var sum = require('../public/scripts/sum');
 var expect = require('chai').expect;

@@ -1,4 +1,4 @@
-/* sum.js used for example testing */
+/** sum.js used for example testing */
 
 module.exports = function() {
 
