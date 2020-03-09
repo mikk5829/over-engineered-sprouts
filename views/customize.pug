@@ -1,0 +1,15 @@
+extends layout
+
+block content
+    form
+        div(class="container")
+            h1(class='center-text') Customization
+            //- Space between header and content
+            div(style="height:90px;")
+            //- This is one row of items to customize
+            div(class='row')
+                div(class="one-half column")
+                    h5 Dot color
+                div(class="one-half column")
+                    input(class='right-align' type="color" id="body" name="body" value="#000000")
+            //- This is the end of first row
