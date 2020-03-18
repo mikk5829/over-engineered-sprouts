@@ -1,7 +1,9 @@
 extends layout
+//- IMPORTANT
+//- Remember to update functions in webelements.js, to store new value as cookie!
 
 block content
-    form
+    form(name="customization" id="customization" onsubmit="return storeValuesFromForm(customization)")
         div(class="container")
             h1(class='center-text') Customization
             //- Space between header and content
@@ -11,5 +13,14 @@ block content
                 div(class="one-half column")
                     h5 Dot color
                 div(class="one-half column")
-                    input(class='right-align' type="color" id="body" name="body" value="#000000")
+                    input(class='right-align' type="color" id="body" name="dotColor" value="#000000")
             //- This is the end of first row
+            div(class='row')
+                div(class="one-half column")
+                    h5 Player name
+                div(class="one-half column")
+                    input(class='right-align' type="text" id="name" name="playerName" style="text-transform: capitalize;" placeholder='Enter your name here')
+            div(class='row center-text')
+                a(class='button', id='saveForm', onclick='storeValuesFromForm(customization)')
+                    h4 save
+    script(type='text/javascript' src='scripts/webelements.js')
