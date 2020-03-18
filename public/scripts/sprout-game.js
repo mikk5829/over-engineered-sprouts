@@ -129,6 +129,25 @@ class SproutWorld {
 
 window.onload = function() {
 
+    document.getElementById('map-fileinput').addEventListener('change', function selectedFile() {
+      if (this.files.length === 0) {
+        console.log("Please select a file");
+        return;
+      }
+
+      let fileReader = new FileReader();
+      fileReader.onload = function(e) {
+        let split = e.target.result.split("\n");
+        let init_points = split[0];
+        let action_list = []
+        for (let i = 1; i < split.length; i++) {
+          action_list.push(split[i]);
+        }
+      }
+
+      
+    });
+
     var canvas = document.getElementById('sproutGameCanvas');
 
     const sprout_scope = new paper.PaperScope();
