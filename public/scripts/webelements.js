@@ -5,7 +5,7 @@
  * @author Mikkel Anderson
  * */
 let today = new Date();
-let expiry = new Date(today.getTime() + 30 * 24 * 3600 * 1000); // plus 30 days
+let expiry = new Date(today.getTime() + 100 * 24 * 3600 * 1000); // Cookie expires after 100 days
 
 /**
  * Toggles hiding of different game-methods
@@ -63,7 +63,7 @@ document.customization.onkeydown = function(event) {
     if (event.keyCode == 13) {
         storeValuesFromForm(document.customization)
     }
-}
+};
 
 /**
  * Loads entire cookies when window is loaded
@@ -72,4 +72,4 @@ document.customization.onkeydown = function(event) {
 window.onload = function loadValuesToForm() {
     if(field1 = getCookie("dotColor")) document.customization.dotColor.value = field1;
     if(field2 = getCookie("playerName")) document.customization.playerName.value = field2;
-}
+};
