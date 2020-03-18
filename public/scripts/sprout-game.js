@@ -129,30 +129,19 @@ class SproutWorld {
 
 window.onload = function() {
 
-    document.getElementById('map-fileinput').addEventListener('change', function selectedFile() {
-      if (this.files.length === 0) {
-        console.log("Please select a file");
-        return;
-      }
-
-      let fileReader = new FileReader();
-      fileReader.onload = function(e) {
-        let split = e.target.result.split("\n");
-        let init_points = split[0];
-        let action_list = []
-        for (let i = 1; i < split.length; i++) {
-          action_list.push(split[i]);
-        }
-      }
-
-      
-    });
-
-    var canvas = document.getElementById('sproutGameCanvas');
+    let canvas = document.getElementById('sproutGameCanvas');
 
     const sprout_scope = new paper.PaperScope();
     const world = new SproutWorld(sprout_scope, canvas);
-    world.generateWorld(null, 15);
-    world.exportWorld();
 
-}
+    // Check if user has loaded a map from file
+    let loaded_game = localStorage.getItem("loaded-game");
+    if (loaded_game != null) {
+      let parsed = JSON.parse(loaded_game);
+      world.generateWorld(null,parsed.init_points);
+      localStorage.removeItem("loaded-game"); // Cleaning up local storage
+    } else {
+      world.generateWorld(null,15);
+    }
+
+};
