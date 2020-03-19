@@ -52,3 +52,11 @@ For help see:
 
 We are using **Mocha** as our testing framework, see the files `sum.js` and `sumTest.js` for inspiration or check out [this guide](https://blog.logrocket.com/a-quick-and-complete-guide-to-mocha-testing-d0e0ea09f09d/) or [this official guide](https://mochajs.org/#assertions) 
 
+## Installing MongoDB on local machine
+
+[MacOS Download](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-os-x/)
+
+[Windows Download](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-windows/)
+
+1. Start Server
+2. 
