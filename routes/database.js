@@ -6,9 +6,6 @@ router.get('/', function(req, res, next) {
   res.send('You are about to go to db views');
 });
 
-router.get('/all-users', function(req, res, next) {
-  res.send(db.getAllUsers());
-});
 
 router.post('/create-collection', function(req, res, next) {
   res.send(db.createCollection());

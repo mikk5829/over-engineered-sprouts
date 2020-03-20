@@ -1,31 +1,8 @@
 require('dotenv').config();
-console.log(process.env.MONGO_DB);
 var url = process.env.MONGO_DB;
 var MongoClient = require('mongodb').MongoClient;
-var dbName = "sprouts";
-var collection = "users";
-
-exports.getAllUsers = () => {
-    MongoClient.connect(url, {
-        useUnifiedTopology: true,
-        useNewUrlParser: true,
-    })
-        .then(() => console.log('DB Connected!'))
-        .catch(err => {
-            console.log("DB Connection Error: " + err);
-        });
-/*    let users;
-    MongoClient.connect(url, function(err, db) {
-        if (err) throw err;
-        var dbo = db.db(dbName);
-        dbo.collection(collection).find({}).toArray(function(err, result) {
-            if (err) throw err;
-            users = result;
-            db.close();
-        });
-        return users;
-    });*/
-};
+var dbName = process.env.MONGO_DBO;
+var collection = process.env.MONGO_COLLECTION_USERS;
 
 exports.createCollection = () => {
     MongoClient.connect(url, function(err, db) {

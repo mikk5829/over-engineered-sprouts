@@ -1,5 +1,10 @@
 var express = require('express');
 var router = express.Router();
+require('dotenv').config();
+var url = process.env.MONGO_DB;
+var MongoClient = require('mongodb').MongoClient;
+var dbName = process.env.MONGO_DBO;
+var collection = process.env.MONGO_COLLECTION_USERS;
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -19,7 +24,32 @@ router.get('/customize', function(req, res, next) {
 });
 
 router.get('/scoreboard', function(req, res, next) {
-  res.render('scoreboard', { title: 'High Scores' });
+  let results_from_mongo = [];
+
+  MongoClient.connect(url)
+      .then(function (client) {
+        const db = client.db(dbName);
+        var cursor = db.collection(collection).find({});
+
+        function iterateFunc(doc) {
+          results_from_mongo.push(doc);
+        }
+
+        function errorFunc(error) {
+          console.log(error);
+        }
+
+        cursor.forEach(iterateFunc, errorFunc);
+
+        client.close().then(r => {
+          console.log(results_from_mongo);
+          res.render('scoreboard', {"results": results_from_mongo });
+        });
+      })
+      .catch(function (err) {
+        console.log(err);
+      })
+
 });
 
 module.exports = router;

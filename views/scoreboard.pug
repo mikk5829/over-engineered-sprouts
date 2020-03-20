@@ -12,19 +12,8 @@ block content
                     th Wins
                     th Losses
             tbody
-                tr
-                    td Mikkel
-                    td 1337
-                    td 0
-                tr
-                    td Benji
-                    td 420
-                    td 999
-                tr
-                    td Wictor
-                    td 69
-                    td 1234542
-                tr
-                    td Laura
-                    td 42
-                    td 0
+                each result in results
+                    tr
+                        td=result.name
+                        td=result.wins
+                        td=result.losses
