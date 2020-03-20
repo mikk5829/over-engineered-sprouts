@@ -5,15 +5,15 @@ block content
         h1(class='center-text') Score Board
         //- Space between header and content
         div(style="height:90px;")
-        table(class="u-full-width")
+        table(class="u-full-width" id="myTable")
             thead
                 tr
-                    th Name
-                    th Wins
-                    th Losses
+                    th(style="cursor: pointer;" onclick="w3.sortHTML('#myTable','.item', 'td:nth-child(1)')") Name
+                    th(style="cursor: pointer;" onclick="w3.sortHTML('#myTable','.item', 'td:nth-child(2)')") Wins
+                    th(style="cursor: pointer;" onclick="w3.sortHTML('#myTable','.item', 'td:nth-child(3)')") Losses
             tbody
                 each result in results
-                    tr
+                    tr(class="item")
                         td=result.name
                         td=result.wins
                         td=result.losses
