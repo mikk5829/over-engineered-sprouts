@@ -17,10 +17,12 @@ router.post('/create-test-user', function(req, res, next) {
 
 router.post('/create-user', function(req, res) {
   var user_name = req.body.name;
+  var user_wins = req.body.wins;
+  var user_losses = req.body.losses;
 
-  db.createUser(user_name,0,0);
+  db.createUser(user_name,user_wins,user_losses);
 
-  res.send("User with name " + user_name + " created");
+  res.send("User with name: " + user_name + " Wins: " + user_wins + " Losses: " + user_losses + " created");
 });
 
 module.exports = router;

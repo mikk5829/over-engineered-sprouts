@@ -58,5 +58,9 @@ We are using **Mocha** as our testing framework, see the files `sum.js` and `sum
 
 [Windows Download](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-windows/)
 
-1. Start Server
-2. 
+1. Start MongoDB Server
+2. Make file `.env` and fill information from your system, default values can be found in `.env.default`
+3. To populate db:
+   1. Run POST request "Create Collection"
+   2. Run POST request "Create Test user" or "Create user", you can change name and score in body of POST
+4. Go to `/scoreboard`to see if it works!
