@@ -41,3 +41,25 @@ exports.createUser = (userName, userWins, userLosses) => {
         });
     });
 };
+
+exports.addWin = (userName) => {
+    MongoClient.connect(url, function(err, db) {
+        if (err) throw err;
+        var dbo = db.db(dbName);
+        dbo.collection(collection).update(
+            { name: userName },
+            { $inc: { wins: +1 } }
+        );
+    });
+};
+
+exports.addLoss = (userName) => {
+    MongoClient.connect(url, function(err, db) {
+        if (err) throw err;
+        var dbo = db.db(dbName);
+        dbo.collection(collection).update(
+            { name: userName },
+            { $inc: { losses: +1 } }
+        );
+    });
+};

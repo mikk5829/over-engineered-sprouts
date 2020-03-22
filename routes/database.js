@@ -6,7 +6,6 @@ router.get('/', function(req, res, next) {
   res.send('You are about to go to db views');
 });
 
-
 router.post('/create-collection', function(req, res, next) {
   res.send(db.createCollection());
 });
@@ -23,6 +22,22 @@ router.post('/create-user', function(req, res) {
   db.createUser(user_name,user_wins,user_losses);
 
   res.send("User with name: " + user_name + " Wins: " + user_wins + " Losses: " + user_losses + " created");
+});
+
+router.post('/add-win', function(req, res) {
+  var user_name = req.body.name;
+
+  db.addWin(user_name);
+
+  res.send("User with name: " + user_name + " got an extra win");
+});
+
+router.post('/add-loss', function(req, res) {
+  var user_name = req.body.name;
+
+  db.addLoss(user_name);
+
+  res.send("User with name: " + user_name + " got an extra loss");
 });
 
 module.exports = router;
