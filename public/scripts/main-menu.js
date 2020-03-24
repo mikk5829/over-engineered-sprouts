@@ -1,4 +1,3 @@
-'use strict';
 function toggleHiding() {
     let div = document.getElementById("test");
     if (div.style.display === "none") {
