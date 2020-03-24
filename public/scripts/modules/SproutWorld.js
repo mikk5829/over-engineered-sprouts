@@ -1,7 +1,18 @@
+/**
+ * Generates the world
+ * @namespace SproutWorld
+ * */
+
+const POINT_COLOR = 'Indigo';
+const SEL_POINT_COLOR = 'Yellow';
+const HOVER_POINT_COLOR = 'CornflowerBlue';
+const STROKE_COLOR = 'Indigo';
+
+const POINT_SIZE = 10;
+
+export {POINT_COLOR, SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR, POINT_SIZE}
+
 export class SproutWorld {
-  POINT_COLOR = 'black';
-  POINT_SIZE = 5;
-  STROKE_COLOR = 'red';
 
   /**
    * World constructor
@@ -11,97 +22,184 @@ export class SproutWorld {
    * @param canvas
    * @param groups
    * @param sprout_configuration
+   * @param points
    **/
-  constructor(scope, canvas, groups = [], sprout_configuration = null) {
-    this.sprout_configuration = sprout_configuration;
-    this.points = [];
-    this.circles = [];
-    this.scope = scope;
-    this.canvas = canvas;
-    this.groups = groups;
-    this.scope.setup(canvas);
-  }
 
-  /**  Scope for this class
-   * @memberof SproutWorld
-   * */
-  get paperInstance() {
-    return this.scope;
+  constructor(groups = [], sprout_configuration = null) {
+    this.sprout_configuration = sprout_configuration;
+    this.groups = groups;
+    this.curveGroup = new paper.Group();
+    this.points = [];
+
+    this.drag = false;
+    this.source = null;
+    this.target = null;
+    this.currentCurve = null;
   }
 
   /**
-   * Generates the world
+   * Generates the map
    * @memberof SproutWorld
    * */
-  generateWorld(map_configuration = null, amount = null) {
-    let circle_group = new paper.Group();
-    let curves_group = new paper.Group();
-    this.groups.push(circle_group, curves_group);
-
-    if (amount > 0 && map_configuration == null) {
-      // Generate Points
-      for (let i = 0; i < amount; i++) {
-        let point = this.generatePoint();
-        let path = new paper.Path.Circle(point, this.POINT_SIZE);
-        let intersect = false;
-        // Look for intersections
-        for (const item of circle_group.children) {
-          if (path.intersects(item)) {
-            i = i - 1;
-            console.log("Intersect! Recalculating");
-            path.remove(); // Remove path that results in intersect
-            intersect = true;
-          }
-        }
-        if (!intersect) {
-          path.fillColor = this.POINT_COLOR;
-          circle_group.addChild(path);
-        }
-
-      }
-
-      let segments = [];
-      // Generate Paths between points
-      for (const path of circle_group.children) {
-        let rnd_1 = Math.round(Math.random() * 100);
-        let rnd_2 = Math.round(Math.random() * 100);
-        let rnd_3 = Math.round(Math.random() * 100);
-        let rnd_4 = Math.round(Math.random() * 100);
-
-        let segment = new paper.Segment({
-          point: path.position,
-          handleIn: [rnd_1, rnd_2],
-          handleOut: [rnd_3, rnd_4]
-        });
-        segments.push(segment);
-      }
-
-      // Connect segments
-      for (let i = 0; i < Math.floor(segments.length/2); i++) {
-        let j = segments.length - i - 1;
-        let curve = new paper.Path({
-          segments: [segments[i], segments[j]],
-          strokeColor: this.STROKE_COLOR
-        });
-        curve.smooth();
-        curves_group.addChild(curve);
-      }
-
+  initializeMap(map_configuration = null, amount = null) {
+    // Generate initial points
+    for (let i = 0; i < amount; i++) {
+      this.addPoint(this.randomPointPosition())
     }
-
-    // Animate stuff
-    this.scope.view.onFrame = function(event) {
-      let curves = curves_group;
-      for (let curve of curves.children) {
-        curve.strokeColor.hue += 1;
-      }
-    }
-
+    console.log("Created map", this.points.toString());
   }
 
-  generatePoint() {
-    const x = Math.floor(Math.random() * this.scope.view.size.width);
-    const y = Math.floor(Math.random() * this.scope.view.size.height);
+  legalMove(startPoint, endPoint, newCurve) {
+
+    if (startPoint === endPoint && startPoint.data.connections >= 2) {
+      console.log("a")
+      return false;
+    }
+    if (startPoint.data.connections >= 3 || endPoint.data.connections >= 3) {
+      console.log("b")
+      return false;
+    }
+
+    // Check for intersections between existing curves and the new curve
+    for (var curve of this.curveGroup.getItems({type: 'path'})) {
+      if (newCurve.getIntersections(curve).length > 0) {
+        console.log("c", newCurve.getIntersections(curve).length);
+        return false;
+      }
+    }
+
+    // Check for intersections on the curve itself
+    /*console.log("d", newCurve.getIntersections(newCurve).length);
+    new paper.Path.Circle({
+        center: newCurve.getIntersections(newCurve)[0].point,
+        radius: 5,
+        strokeColor: 'white'
+    });*/
+    return newCurve.getIntersections(newCurve).length <= 0;
+  }
+
+  submitSelection() {
+    let curve = this.currentCurve;
+    let source = this.source;
+    let target = this.target;
+
+    // Trim the path underneath the points
+    let sourcePoint = curve.getCrossings(source)[0];
+    let i = source === target ? 1 : 0;
+    let targetPoint = curve.getCrossings(target)[i];
+    curve.curves[0].point1 = sourcePoint.point;
+    curve.curves[curve.curves.length - 1].point2 = targetPoint.point;
+    curve.simplify(3);
+
+    // Save the path if it is a legal path
+    if (source && target && this.legalMove(source, target, curve)) {
+      this.addPoint(curve.getPointAt(curve.length / 2), 2);
+
+      this.addCurve(source, target, curve)
+    }
+    this.resetSelection();
+  }
+
+  addCurve(source, target, curve) {
+    source.data.connections += 1;
+    target.data.connections += 1;
+    curve.copyTo(this.curveGroup);
+  }
+
+  select(point) {
+    if (!this.source) { //
+      console.log("Set first selection", point.id);
+      this.source = point;
+      this.currentCurve = new paper.Path({
+        segments: [point.position],
+        strokeColor: STROKE_COLOR,
+        strokeCap: 'round',
+        strokeJoin: 'round'
+      });
+      // e.item.fillColor = SEL_POINT_COLOR;
+      this.source = point;
+      this.currentCurve.sendToBack();
+    } else if (!this.target) {
+      this.target = point;
+    }
+  }
+
+  resetSelection() {
+    // this.currentCurve.remove();
+    this.source = null;
+    this.target = null;
+    this.drag = false;
+    this.currentCurve.remove();
+  }
+
+  addPoint(location, connections = 0) {
+    // let edges = parentEdge ? [parentEdge, parentEdge] : [];
+    // let point = new Point(location, edges);
+    let point = new paper.Path.Circle({
+      center: location,
+      radius: POINT_SIZE,
+      fillColor: POINT_COLOR
+    });
+    point.data.connections = connections;
+    this.points.push(point);
+    let _this = this;
+
+    point.onMouseDown = function () {
+      if (point.data.connections < 3) {
+        point.fillColor = SEL_POINT_COLOR;
+        _this.select(point);
+      }
+    };
+
+    point.onClick = function (e) {
+    };
+
+    point.onMouseEnter = function () {
+      if (!_this.drag && _this.source && _this.target) {
+        console.log("nop", _this.drag);
+      } else if (_this.drag && _this.source && !_this.target) {
+        // If ending on the point is illegal, reset the selection
+        if ((_this.source === point && point.data.connections >= 2) || (point.data.connections >= 3)) {
+          point.fillColor = HOVER_POINT_COLOR;
+          _this.resetSelection();
+        } else { // Else select the point
+          _this.drag = false;
+          _this.currentCurve.add(point.position);
+          _this.select(point);
+          point.fillColor = SEL_POINT_COLOR;
+        }
+      } else point.fillColor = HOVER_POINT_COLOR;
+    };
+
+    point.onMouseLeave = function (e) {
+      if (_this.source) { // A point has been selected (game is ongoing)
+        if (_this.drag) { // Stop drawing the curve once the second point has been selected
+          _this.select(point);
+          _this.drag = false;
+        } else if (!_this.target) { // Leaving the initial point
+          _this.drag = true;
+        }
+      } else {
+        point.fillColor = POINT_COLOR;
+      }
+    };
+    return point;
+  }
+
+  animate() {
+    // Animate stuff
+    paper.view.onFrame = function (event) {
+      for (let curve of this.curveGroup) {
+        curve.strokeColor.hue += 1;
+      }
+
+    }
+  }
+
+  randomPointPosition() {
+    // FIXME: Point's center needs to be at least one point's distance from the game border
+    const x = Math.floor(Math.random() * paper.view.size.width);
+    const y = Math.floor(Math.random() * paper.view.size.height);
     const point = new paper.Point(x, y);
     return point.round();
   }
@@ -113,12 +211,10 @@ export class SproutWorld {
     }
   }
 
-  importWorld(sprout_config) {
-    this.scope.clear(); // Clear the scope
+  importWorld() {
+    alert("Importing feature not done");
     for (const group of this.groups) {
-      group.remove();
+      alert("NOT DONE");
     }
-    this.generateWorld(sprout_config);
   }
-
 }
