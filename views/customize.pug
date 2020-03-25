@@ -1,6 +1,9 @@
 extends layout
 //- IMPORTANT
 //- Remember to update functions in webelements.js, to store new value as cookie!
+block scripts
+    script(type='module' src='scripts/customize-menu.js')
+    script(type='text/javascript' src='scripts/webelements.js')
 
 block content
     form(name="customization" id="customization" onsubmit="return storeValuesFromForm(customization)")
@@ -20,7 +23,13 @@ block content
                     h5 Player name
                 div(class="one-half column")
                     input(class='right-align' type="text" id="name" name="playerName" style="text-transform: capitalize;" placeholder='Enter your name here')
+
+            div(class='row')
+                div(class="one-half column")
+                    h5 Game resolution (16:9)
+                div(class="one-half column")
+                    select(class="u-full-width" id="resolution-dropdown-select", name="gameResolution") Select
+
             div(class='row center-text')
                 a(class='button', id='saveForm', onclick='storeValuesFromForm(customization)')
                     h4 save
-    script(type='text/javascript' src='scripts/webelements.js')

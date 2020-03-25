@@ -1,13 +1,13 @@
 import {SproutWorld} from "./modules/SproutWorld.js";
 import {POINT_COLOR, SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR, POINT_SIZE} from "./modules/SproutWorld.js";
 
-
 function getCanvas() {
     return document.getElementById("sproutGameCanvas");
 }
 
 paper.install(window); // Make the paper scope global
 window.onload = function () {
+
     paper.setup(getCanvas());
 
     // Draw background layer

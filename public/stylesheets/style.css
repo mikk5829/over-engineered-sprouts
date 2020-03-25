@@ -3,6 +3,13 @@ a {
 }
 
 /* Scale canvas with resize attribute to full size */
+
+.game-container {
+  /*resize: both;*/
+  overflow: hidden;
+  width: 4096px;
+  height: 1024px;
+}
 canvas[resize] {
   width: 100%;
   height: 100%;
