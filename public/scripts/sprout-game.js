@@ -7,6 +7,8 @@ function getCanvas() {
 
 paper.install(window); // Make the paper scope global
 window.onload = function () {
+    let resolution = document.cookie("gameResolution");
+    console.log(resolution);
 
     paper.setup(getCanvas());
 
