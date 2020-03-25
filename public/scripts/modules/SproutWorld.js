@@ -55,7 +55,7 @@ export class SproutWorld {
     }
 
     select(point) {
-        if (point.data.connections >= 3) return;
+        if (point.connections >= 3) return;
         if (!this.source) {
             this.source = point;
             if (!this.clickSelection) {
@@ -83,8 +83,8 @@ export class SproutWorld {
     }
 
     legalMove(startPoint, endPoint, newLine) {
-        if (startPoint === endPoint && startPoint.data.connections >= 2) return false;
-        else if (startPoint.data.connections >= 3 || endPoint.data.connections >= 3) return false;
+        if (startPoint === endPoint && startPoint.connections >= 2) return false;
+        else if (startPoint.connections >= 3 || endPoint.connections >= 3) return false;
 
         for (let line of this.lineGroup.getItems({type: 'path'})) {
             if (newLine.getIntersections(line).length > 0) {
@@ -116,13 +116,14 @@ export class SproutWorld {
 
         // Save the path if it is a legal path
         if (source && target && this.legalMove(source, target, line)) {
-            var newPoint = line.getPointAt(line.length / 2)
-            this.addPoint(newPoint, 2);
-            var line2 = line.splitAt(line.length/2)
-            line.simplify(3);
+            let newPoint = this.addPoint(line.getPointAt(line.length / 2), 0);
+            let line2 = line.splitAt(line.length/2);
+            let line1 = line.clone();
+            line1.vertices = [];
+            line2.vertices = [];
+            line1.simplify(3);
             line2.simplify(3);
-            line2.strokeColor = 'red';
-            this.addLine(source, newPoint, line);
+            this.addLine(source, newPoint, line1);
             this.addLine(newPoint, target, line2);
         } else {
             this.resetSelection();
@@ -133,9 +134,12 @@ export class SproutWorld {
     }
 
     addLine(source, target, line) {
-        source.data.connections += 1;
-        target.data.connections += 1;
-        line.copyTo(this.lineGroup);
+        source.connections += 1;
+        source.edges.push(line);
+        target.connections += 1;
+        target.edges.push(line);
+        line.vertices = [source, target];
+        line.addTo(this.lineGroup);
     }
 
     eventStatus(point) {
@@ -151,7 +155,8 @@ export class SproutWorld {
             radius: POINT_SIZE,
             fillColor: POINT_COLOR
         });
-        point.data.connections = connections;
+        point.connections = connections;
+        point.edges = [];
         this.points.push(point);
         let _this = this;
 
@@ -167,7 +172,7 @@ export class SproutWorld {
         };
 
         point.onMouseDown = function () {
-            if (point.data.connections < 3) {
+            if (point.connections < 3) {
                 _this.selectedPoints.push(point);
             }
         };
@@ -182,15 +187,16 @@ export class SproutWorld {
         };
 
         point.onClick = function () {
+
             if (!_this.source) _this.clickSelection = true;
             if (_this.clickSelection) _this.select(point);
         };
 
         point.onMouseEnter = function () {
-            if ((point.data.connections < 3) && !(_this.source && _this.target)) _this.hoveredPoint = point;
+            if ((point.connections < 3) && !(_this.source && _this.target)) _this.hoveredPoint = point;
             if (_this.dragEnabled && _this.source && !_this.target) {
                 // If ending on the point is illegal, reset the selection
-                if ((_this.source === point && point.data.connections >= 2) || (point.data.connections >= 3)) {
+                if ((_this.source === point && point.connections >= 2) || (point.connections >= 3)) {
                     _this.resetSelection();
                     _this.dragEnabled = false;
                 } else { // Select the point
