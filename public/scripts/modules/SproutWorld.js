@@ -112,12 +112,18 @@ export class SproutWorld {
         let targetPoint = line.getCrossings(target)[i];
         line.curves[0].point1 = sourcePoint.point;
         line.curves[line.curves.length - 1].point2 = targetPoint.point;
-        line.simplify(3);
+
 
         // Save the path if it is a legal path
         if (source && target && this.legalMove(source, target, line)) {
-            this.addPoint(line.getPointAt(line.length / 2), 2);
-            this.addLine(source, target, line)
+            var newPoint = line.getPointAt(line.length / 2)
+            this.addPoint(newPoint, 2);
+            var line2 = line.splitAt(line.length/2)
+            line.simplify(3);
+            line2.simplify(3);
+            line2.strokeColor = 'red';
+            this.addLine(source, newPoint, line);
+            this.addLine(newPoint, target, line2);
         } else {
             this.resetSelection();
             return false;
