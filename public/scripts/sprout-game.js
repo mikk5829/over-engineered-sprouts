@@ -10,7 +10,8 @@ paper.install(window); // Make the paper scope global
 window.onload = function () {
     paper.setup(getCanvas());
 
-    var rect = new paper.Path.Rectangle({
+    // Draw background layer
+    let rect = new paper.Path.Rectangle({
         point: [0, 0],
         size: [getCanvas().clientWidth, getCanvas().clientHeight],
         fillColor: 'lavender'
@@ -19,35 +20,51 @@ window.onload = function () {
     let backgroundLayer = new paper.Layer(rect);
     paper.project.insertLayer(0, backgroundLayer);
 
-
     let world = new SproutWorld();
     world.initializeMap(null, 10);
 
     let tool = new paper.Tool();
 
-    /*tool.onMouseDown = function onMouseDown(e) {
-        if (world.points.includes(e.item)) {
-            if (e.item.data.connections < 3) {
-                e.item.fillColor = SEL_POINT_COLOR;
-                world.select(e.item);
+    tool.onMouseUp = function onMouseUp(e) {
+        if (!world.clickSelection) {
+            // Reset point colors
+            for (let p of world.points) p.fillColor = POINT_COLOR;
+            if (world.points.includes(e.item)) e.item.fillColor = HOVER_POINT_COLOR;
+
+            // Reset the selection
+            if (world.target) world.submitSelection();
+            else if (world.source) world.resetSelection();
+            // world.resetSelection(); evt hernede?
+
+        } else if (world.clickSelection) {
+            if (world.source && world.target) {
+                console.log(`Selection: source ${world.source.id}, target ${world.target.id}`);
+                // The user has clicked on two points.
+                // TODO: Check if a path exists between these points
+                world.resetSelection();
+            } else if (!world.points.includes(e.item)) {
+                world.resetSelection();
             }
         }
-    };*/
-
-    tool.onMouseDrag = function onMouseDrag(e) {
-        if (world.drag) world.currentCurve.add(e.point);
     };
 
-    tool.onMouseUp = function onMouseUp(e) {
-        // Reset point colors
-        for (let p of world.points) p.fillColor = POINT_COLOR;
-        if (world.points.includes(e.item)) e.item.fillColor = HOVER_POINT_COLOR;
+    paper.view.onFrame = function () {
+        // Update the colors of the points
+        for (let point of world.points) {
+            point.fillColor = POINT_COLOR;
+        }
 
-        // Reset the selection
-        if (world.target) world.submitSelection();
-        else if (world.source) world.resetSelection();
-    };
+        if (world.hoveredPoint) world.hoveredPoint.fillColor = HOVER_POINT_COLOR;
+
+        for (let point of world.selectedPoints) {
+            point.fillColor = SEL_POINT_COLOR;
+        }
+
+        if (world.source) world.source.fillColor = SEL_POINT_COLOR;
+
+    }
 };
+
 
 // DON'T Remove commented code yet
 /*
