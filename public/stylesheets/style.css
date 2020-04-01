@@ -7,7 +7,7 @@ a {
 .game-container {
   /*resize: both;*/
   overflow: hidden;
-  width: 4096px;
+  width: 1024px;
   height: 1024px;
 }
 canvas[resize] {

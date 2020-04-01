@@ -1,11 +1,12 @@
 export function getCookieValue(cookieName) {
     let cookies = document.cookie.split(';');
-    for (var i = 0; i < cookies.length; i++) {
-    	let cookie = cookies[i].split('=');
-    	if (cookieName === cookie[0]) {
-    		return cookie[1];
-    	}
+    for (let i = 0; i < cookies.length; i++) {
+        let cookie = cookies[i].trim().split('=');
+        if (cookieName === cookie[0]) {
+            return cookie[1];
+        }
     }
+}
 
 export function getResolutionFromCookie(cookieName) {
     let value = getCookieValue(cookieName);
