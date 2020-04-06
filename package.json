@@ -19,7 +19,8 @@
     "mocha": "^7.1.0",
     "morgan": "~1.9.1",
     "paper": "^0.12.4",
-    "pug": "^2.0.4"
+    "pug": "^2.0.4",
+    "socket.io": "^2.3.0"
   },
   "devDependencies": {
     "chai": "^4.2.0",
