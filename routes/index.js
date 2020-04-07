@@ -13,7 +13,7 @@ var collection = process.env.MONGO_COLLECTION_USERS;
  * GET home page
  */
 router.get('/', function (req, res, next) {
-    res.render('chat', {title: 'Sprouts'});
+    res.render('index2', {title: 'Sprouts'});
 });
 
 router.get('/live', function (req, res, next) {
@@ -27,11 +27,6 @@ router.get('/game', function (req, res, next) {
 router.get('/customize', function (req, res, next) {
     res.render('customize', {title: 'Customize your game'});
 });
-
-/*app.on('connection', function (socket) {
-    console.log("connection")
-});*/
-
 
 /**
  * @memberOf routes

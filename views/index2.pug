@@ -1,0 +1,126 @@
+extends layout
+
+block scripts
+    script(src='/socket.io/socket.io.js')
+    script(src='https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js')
+    script(type="text/javascript" src="scripts/main-menu.js")
+    script(type='text/javascript' src='scripts/webelements.js')
+
+
+block content
+    style.
+
+        body {
+            background: #61daac;
+            color: #f6f7f5;
+            font-family: sans-serif;
+            font-size: 2em;
+            text-align: center;
+            padding: 5% 2% 20% 2%;
+        }
+
+        ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+        }
+
+        .button {
+            display: block;
+            background-color: #d7f3e3;
+            color: #4bac88;
+
+            padding: 8px 16px;
+
+            text-align: center;
+            vertical-align: middle;
+            border: 3px solid #4bac88;
+            border-radius: 7px;
+
+            font-size: 16px;
+            font-family: "Consolas";
+            width: 120px;
+            height:45px;
+            margin: 0 auto;
+        }
+
+        .button:hover {
+            background-color: #e5fff0;
+            border-color: #4bac88;
+            color: #4bac88;
+        }
+
+        canvas {
+            border: solid .2em #4bac88;
+            height: 90vh;
+        }
+
+        .flex-container {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2%;
+        }
+
+        div#buttons {
+
+        }
+
+        table#games {
+            width: 500px;
+            border: 3px solid #4bac88;
+            border-collapse: collapse;
+        }
+
+        #games tr {
+            color: #4bac88;
+            background-color: #fefff9;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        #games tr:hover td {
+            background-color: #d7f3e3;
+        }
+
+        #games th {
+            color: #bfe5d3;
+        }
+
+        #games th, #games td {
+            padding: 3px 5px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        #games td:hover {
+            cursor: pointer;
+        }
+
+    img(class='logo' src='../assets/sprouts.svg' style='width:350px;')
+    div(class="flex-container" style='margin: auto; width: 80% position:relative;top:-64px;background-color:#f7f7e7ff;border-radius:7px;margin:auto;')
+        div#buttons
+            button(class='button') Import
+            button(class='button') Generate
+            button(class='button') Settings
+            button(class='button') Scoreboard
+
+        div#lobby
+            table#games
+                tr
+                    th Name
+                    th Players
+                tr
+                    td
+                        a(href='lau') lau
+                    td 1
+                tr
+                    td
+                        a(href='seb') seb
+                    td 1
+
+            button(class='button') Quickplay
+
