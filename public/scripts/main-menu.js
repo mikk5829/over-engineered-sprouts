@@ -55,15 +55,6 @@ $(function () {
     });
 });
 
-function toggleHiding() {
-    let div = document.getElementById("test");
-    if (div.style.display === "none") {
-        div.style.display = "inline-grid"
-    } else {
-        div.style.display = "none"
-    }
-}
-
 //ToDo Test: file validation
 //ToDo Fix: Not able to use back() redirect correctly
 function handleFile(files) {
@@ -89,10 +80,10 @@ function handleFile(files) {
 }
 
 window.onload = function() {
-    const import_button = document.getElementById('import-button');
-    const import_hidden = document.getElementById('world-file-input');
+    const importBtn = document.getElementById('importBtn');
+    const importHidden = document.getElementById('world-file-input');
 
-    import_button.addEventListener('click', function(e) {
-        import_hidden.click();
+    importBtn.addEventListener('click', function(e) {
+        importHidden.click();
     }, false);
 };

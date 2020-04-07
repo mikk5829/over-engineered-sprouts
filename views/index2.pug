@@ -103,10 +103,11 @@ block content
     img(class='logo' src='../assets/sprouts.svg' style='width:350px;')
     div(class="flex-container" style='margin: auto; width: 80% position:relative;top:-64px;background-color:#f7f7e7ff;border-radius:7px;margin:auto;')
         div#buttons
-            button(class='button') Import
-            button(class='button') Generate
-            button(class='button') Settings
-            button(class='button') Scoreboard
+            a(class='button' id='importBtn') Import
+            input(type='file' name='world-input' id='world-file-input' style="display:none" accept="text/plain,.txt" onchange="handleFile(this.files)")
+            a(class='button') Generate
+            a(class='button') Settings
+            a(class='button') Scoreboard
 
         div#lobby
             table#games
@@ -122,5 +123,5 @@ block content
                         a(href='seb') seb
                     td 1
 
-            button(class='button') Quickplay
+            a(class='button') Quickplay
 
