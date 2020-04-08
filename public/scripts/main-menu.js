@@ -3,7 +3,8 @@ var socket = io.connect('http://localhost:3000');
 // on connection to server, ask for user's name with an anonymous callback
 socket.on('connect', function () {
     // call the server-side function 'adduser' and send one parameter (value of prompt)
-    //socket.emit('adduser', prompt("What's your name?"));
+    // socket.emit('adduser', prompt("What's your name?"));
+    socket.emit('joinserver');
 });
 
 // listener, whenever the server emits 'updatechat', this updates the chat body
@@ -86,4 +87,15 @@ window.onload = function() {
     importBtn.addEventListener('click', function(e) {
         importHidden.click();
     }, false);
+
+    $('#games > tbody:last-child').append('<tr class="w3-hover-pale-green w3-hover-text-green"> <th class="w3-left-align"> a </th><th class="w3-right-align"> 0/3 </th></tr>');
+    $('#games > tbody:last-child').append('<tr class="w3-hover-pale-green w3-hover-text-green"> <th class="w3-left-align"> b </th><th class="w3-right-align"> 0/3 </th></tr>');
+    $('#games > tbody:last-child').append('<tr class="w3-hover-pale-green w3-hover-text-green"> <th class="w3-left-align"> c </th><th class="w3-right-align"> 0/3 </th></tr>');
+    $('#games > tbody:last-child').append('<tr class="w3-hover-pale-green w3-hover-text-green"> <th class="w3-left-align"> d </th><th class="w3-right-align"> 0/3 </th></tr>');
+    $('#games > tbody:last-child').append('<tr class="w3-hover-pale-green w3-hover-text-green"> <th class="w3-left-align"> e </th><th class="w3-right-align"> 0/3 </th></tr>');
+    $('#games > tbody:last-child').append('<tr class="w3-hover-pale-green w3-hover-text-green"> <th class="w3-left-align"> f </th><th class="w3-right-align"> 0/3 </th></tr>');
+    $('#games > tbody:last-child').append('<tr class="w3-hover-pale-green w3-hover-text-green"> <th class="w3-left-align"> g </th><th class="w3-right-align"> 0/3 </th></tr>');
+    $('#games > tbody:last-child').append('<tr class="w3-hover-pale-green w3-hover-text-green"> <th class="w3-left-align"> h </th><th class="w3-right-align"> 0/3 </th></tr>');
+
+    console.log($("#games").id);
 };
