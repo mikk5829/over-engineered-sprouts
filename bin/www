@@ -42,7 +42,6 @@ const adjectives = ["aback", "abaft", "abandoned", "abashed", "aberrant", "abhor
 var usernames = [];
 var rooms = [];
 
-
 io.sockets.on('connection', function (socket) {
     socket.emit('updaterooms', rooms);
     setInterval(function () {
@@ -66,21 +65,6 @@ io.sockets.on('connection', function (socket) {
         usernames.push(name);
         console.log("Added user", name);
         fn(name);
-
-        /*console.log(username);
-        // store the username in the socket session for this client
-        socket.username = username;
-        // store the room name in the socket session for this client
-        socket.room = 'room1';
-        // add the client's username to the global list
-        usernames[username] = username;
-        // send client to room 1
-        socket.join('room1');
-        // echo to client they've connected
-        socket.emit('updatechat', 'SERVER', 'you have connected to room1');
-        // echo to room 1 that a person has connected to their room
-        socket.broadcast.to('room1').emit('updatechat', 'SERVER', username + ' has connected to this room');
-        socket.emit('updaterooms', rooms, 'room1');*/
     });
 
     socket.on('joinroom', function (room, fn) {
@@ -105,39 +89,21 @@ io.sockets.on('connection', function (socket) {
         else {
             console.log("Creating new room: " + id);
             rooms.push(id);
+            // nsp.push(io.of('/' + id));
             fn(true, id);
             io.emit('updaterooms', rooms,)
         }
     });
 
-    // when the client emits 'sendchat', this listens and executes
-    socket.on('sendchat', function (data) {
-        // we tell the client to execute 'updatechat' with 2 parameters
-        io.sockets.in(socket.room).emit('updatechat', socket.username, data);
-    });
-
-    socket.on('switchRoom', function (newroom) {
-        // leave the current room (stored in session)
-        socket.leave(socket.room);
-        // join new room, received as function parameter
-        socket.join(newroom);
-        socket.emit('updatechat', 'SERVER', 'you have connected to ' + newroom);
-        // sent message to OLD room
-        socket.broadcast.to(socket.room).emit('updatechat', 'SERVER', socket.username + ' has left this room');
-        // update socket session room title
-        socket.room = newroom;
-        socket.broadcast.to(newroom).emit('updatechat', 'SERVER', socket.username + ' has joined this room');
-        socket.emit('updaterooms', rooms, newroom);
+    socket.on('sendchat', function (msg) {
+        io.sockets.in(socket.room).emit('updatechat', socket.username, msg);
     });
 
     // when the user disconnects.. perform this
     socket.on('disconnect', function () {
-        // remove the username from global usernames list
-        delete usernames[socket.username];
-        // update list of users in chat, client-side
-        io.sockets.emit('updateusers', usernames);
-        // echo globally that this client has left
-        socket.broadcast.emit('updatechat', 'SERVER', socket.username + ' has disconnected');
+        // Remove username from list
+        const index = usernames.indexOf(socket.username);
+        if (index > -1) usernames.splice(index, 1);
         socket.leave(socket.room);
     });
 });
@@ -145,27 +111,16 @@ io.sockets.on('connection', function (socket) {
 /**
  * Normalize a port into a number, string, or false.
  */
-
 function normalizePort(val) {
-    var port = parseInt(val, 10);
-
-    if (isNaN(port)) {
-        // named pipe
-        return val;
-    }
-
-    if (port >= 0) {
-        // port number
-        return port;
-    }
-
+    let port = parseInt(val, 10);
+    if (isNaN(port)) return val;
+    if (port >= 0) return port;
     return false;
 }
 
 /**
  * Event listener for HTTP server "error" event.
  */
-
 function onError(error) {
     if (error.syscall !== 'listen') {
         throw error;
@@ -193,10 +148,9 @@ function onError(error) {
 /**
  * Event listener for HTTP server "listening" event.
  */
-
 function onListening() {
-    var addr = server.address();
-    var bind = typeof addr === 'string'
+    let addr = server.address();
+    let bind = typeof addr === 'string'
         ? 'pipe ' + addr
         : 'port ' + addr.port;
     debug('Listening on ' + bind);

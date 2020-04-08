@@ -8,6 +8,10 @@ var MongoClient = require('mongodb').MongoClient;
 var dbName = process.env.MONGO_DBO;
 var collection = process.env.MONGO_COLLECTION_USERS;
 
+
+
+
+
 /**
  * @namespace routes
  * GET home page
@@ -64,7 +68,6 @@ router.get('/scoreboard', function (req, res, next) {
             res.render('scoreboard', {"results": results_from_mongo}); // renders scoreboard with no data
             console.log(err);
         })
-
 });
 
 module.exports = router;

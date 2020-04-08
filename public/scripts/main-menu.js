@@ -1,4 +1,4 @@
-var socket = io.connect('http://localhost:3000');
+var socket = io.connect('/');
 let username;
 
 // Connect to server and receive a random guest username
@@ -31,9 +31,8 @@ socket.on('updaterooms', function (rooms) {
 function joinRoom(room) {
     // window.location = $(this).data("href");
     socket.emit('joinroom',room, function(url) {
-        window.location = url;
+        window.location.href = url;
     });
-
 }
 
 // on load of page

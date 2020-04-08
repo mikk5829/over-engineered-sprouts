@@ -1,16 +1,20 @@
 import {SproutWorld} from "./modules/SproutWorld.js";
 import {POINT_COLOR, SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR, POINT_SIZE} from "./modules/SproutWorld.js";
 
-
 function getCanvas() {
     return document.getElementById("sproutGameCanvas");
+    // return $('#sproutGameCanvas'); //fixme virker ikke?
+}
+
+function reset() {
+    paper.setup(getCanvas());
 }
 
 paper.install(window); // Make the paper scope global
-window.onload = function () {
+$(function() {
     paper.setup(getCanvas());
 
-    // Draw background layer
+    /*// Draw background layer
     let rect = new paper.Path.Rectangle({
         point: [0, 0],
         size: [getCanvas().clientWidth, getCanvas().clientHeight],
@@ -18,7 +22,7 @@ window.onload = function () {
     });
     rect.sendToBack();
     let backgroundLayer = new paper.Layer(rect);
-    paper.project.insertLayer(0, backgroundLayer);
+    paper.project.insertLayer(0, backgroundLayer);*/
 
     let world = new SproutWorld();
     world.initializeMap(null, 10);
@@ -63,28 +67,4 @@ window.onload = function () {
         if (world.source) world.source.fillColor = SEL_POINT_COLOR;
 
     }
-};
-
-
-// DON'T Remove commented code yet
-/*
-window.onload = function() {
-
-    let canvas = document.getElementById('sproutGameCanvas');
-
-    const sprout_scope = new paper.PaperScope();
-
-    const world = new SproutWorld(sprout_scope, canvas);
-
-    // Check if user has loaded a map from file
-    let loaded_game = localStorage.getItem("loaded-game");
-    if (loaded_game != null) {
-      let parsed = JSON.parse(loaded_game);
-      world.generateWorld(null,parsed.init_points);
-      localStorage.removeItem("loaded-game"); // Cleaning up local storage
-    } else {
-      world.generateWorld(null,15);
-    }
-
-};
-*/
+});

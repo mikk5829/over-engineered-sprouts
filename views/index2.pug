@@ -1,7 +1,11 @@
 extends layout
 
 block scripts
-    script(type="text/javascript" src="scripts/main-menu.js")
+    //script(type="text/javascript" src="scripts/main-menu.js")
+    script(type="text/javascript" src="scripts/client.js")
+    script(type="text/javascript" src="https://unpkg.com/acorn")
+    script(type='text/javascript' src='scripts/frameworks/paper-full.js')
+    script(type='module' src='scripts/sprout-game.js')
     //script(type='text/javascript' src='scripts/webelements.js')
 
 
@@ -13,116 +17,47 @@ block content
             text-align: center;
         }
 
-
-        .button:hover {
-            background-color: #e5fff0;
-            border-color: #4bac88;
-            color: #4bac88;
-        }
-
-        canvas {
-            border: solid .2em #4bac88;
-            height: 90vh;
-        }
-
         .container {
             width: 100%;
             position: relative;
         }
 
-        .flex-container {
-            display: inline-flex;
-        }
 
-        .main-block {
-            width: 50em;
-            height: 35em;
-            position: relative;
-            top: -5.5em;
+    ul(class="pages")
+        li(class="lobby page")#lobbyPage
+            div(class="container")
+                // Sprouts logo
+                a(href="/" style="position: relative; z-index: 0;")
+                    img(style="width:35em;" src='../assets/sprouts.svg')
 
-            background-color: #f7f7e7ff;
-            border-radius: 7px;
+                // The main content of the page
+                div(class="main-block flex-container")
 
-            justify-content: center;
-            align-items: center;
-            z-index: 3;
-        }
+                    // Buttons on left side
+                    div(style="position:relative;bottom:5%;")
+                        a(class='button')#importBtn Import
+                            input(type='file' name='world-input' id='world-file-input' style="display:none" accept="text/plain,.txt" onchange="handleFile(this.files)")
+                        a(class='button' href="game")#generateBtn Generate
+                        a(class='button' href="customize")#settingsBtn Settings
+                        a(class='button' href="scoreboard")#scoreboardBtn Scoreboard
 
-        .w3-table {
-            width: 24em;
-            cursor: pointer;
-            background-color: #fefff9;
-            border: 2px solid #4bac88;
-            border-radius: 4px;
-        }
+                    div(style="position:relative;")
+                        // Table containing a list of games
+                        table(class="w3-table w3-hoverable" style="margin: 0 1em;")#rooms
+                            thead
+                                tr
+                                    th(class="w3-left-align") name
+                                    th(class="w3-right-align") players
+                            tbody
 
-        /*[data-href] {*/
-        /*    cursor: pointer;*/
-        /*}*/
+                        a(class='button')#quickplayBtn Quickplay
+                        //a(class='button' onclick='changeDisplay()') Quickplay
 
-        thead tr {
-            color: rgba(75, 172, 136, 0.49);
-        }
 
-        /* width */
-        tbody::-webkit-scrollbar {
-            width: 0.7em;
-        }
+        li(class="game page")#gamePage
+            div(class="container")#gameContainer
+                // Sprouts logo
+                a(href="/" style="position: relative; z-index: 0;")
+                    img(style="width:25em;" src='../assets/sprouts.svg')
 
-        /* Handle */
-        tbody::-webkit-scrollbar-thumb {
-            background: #4bac88;
-            border-radius: 10px;
-        }
-
-        /* Handle on hover */
-        tbody::-webkit-scrollbar-thumb:hover {
-            background: #61daac;
-        }
-
-        tbody {
-            display: block; /* to enable vertical scrolling */
-            height: 23em;
-            overflow-y: auto; /* keeps the scrollbar even if it doesn't need it; display purpose */
-        }
-
-        tr {
-            display: table; /* display purpose; th's border */
-            width: 100%;
-            box-sizing: border-box; /* because of the border (Chrome needs this line, but not FF) */
-        }
-
-        td {
-            text-align: center;
-            border-bottom: none;
-            border-left: none;
-        }
-
-    div(class="container")
-
-        // Sprouts logo
-        a(href="/" style="position: relative; z-index: 0;")
-            img(style="width:35em;" src='../assets/sprouts.svg')
-
-        // The main content of the page
-        div(class="main-block flex-container")
-
-            // Buttons on left side
-            div(style="position:relative;bottom:5%;")
-                a(class='button')#importBtn Import
-                    input(type='file' name='world-input' id='world-file-input' style="display:none" accept="text/plain,.txt" onchange="handleFile(this.files)")
-                a(class='button' href="game")#generateBtn Generate
-                a(class='button' href="customize")#settingsBtn Settings
-                a(class='button' href="scoreboard")#scoreboardBtn Scoreboard
-
-            div(style="position:relative;")
-                // Table containing a list of games
-                table(class="w3-table w3-hoverable" style="margin: 0 1em;")#rooms
-                    thead
-                        tr
-                            th(class="w3-left-align") name
-                            th(class="w3-right-align") players
-                    tbody
-
-                a(class='button')#quickplayBtn Quickplay
-
+                canvas(resize="true")#sproutGameCanvas
