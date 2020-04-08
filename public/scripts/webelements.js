@@ -59,18 +59,19 @@ function storeValuesFromForm(form)
  * Saves entire cookies when "enter" is pressed inside form
  * @memberOf WebElements
  * */
-//FIXME Laura
-// document.customization.onkeydown = function(event) {
-//     if (event.keyCode == 13) {
-//         storeValuesFromForm(document.customization)
-//     }
-// };
+
+document.customization.onkeydown = function(event) {
+    if (event.keyCode == 13) {
+        storeValuesFromForm(document.customization)
+    }
+};
+document.customization
 
 /**
  * Loads entire cookies when window is loaded
  * @memberOf WebElements
  * */
 window.onload = function loadValuesToForm() {
-    if(field1 = getCookie("dotColor")) document.customization.dotColor.value = field1;
-    if(field2 = getCookie("playerName")) document.customization.playerName.value = field2;
+    if(field1 === getCookie("dotColor")) document.customization.dotColor.value = field1;
+    if(field2 === getCookie("playerName")) document.customization.playerName.value = field2;
 };

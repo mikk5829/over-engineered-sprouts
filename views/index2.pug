@@ -2,7 +2,7 @@ extends layout
 
 block scripts
     script(type="text/javascript" src="scripts/main-menu.js")
-    script(type='text/javascript' src='scripts/webelements.js')
+    //script(type='text/javascript' src='scripts/webelements.js')
 
 
 block content
@@ -101,7 +101,7 @@ block content
     div(class="container")
 
         // Sprouts logo
-        a(href="localhost:3000" style="position: relative; z-index: 0;")
+        a(href="/" style="position: relative; z-index: 0;")
             img(style="width:35em;" src='../assets/sprouts.svg')
 
         // The main content of the page
@@ -111,18 +111,18 @@ block content
             div(style="position:relative;bottom:5%;")
                 a(class='button')#importBtn Import
                     input(type='file' name='world-input' id='world-file-input' style="display:none" accept="text/plain,.txt" onchange="handleFile(this.files)")
-                a(class='button')#generateBtn Generate
-                a(class='button')#settingsBtn Settings
-                a(class='button')#scoreboardBtn Scoreboard
+                a(class='button' href="game")#generateBtn Generate
+                a(class='button' href="customize")#settingsBtn Settings
+                a(class='button' href="scoreboard")#scoreboardBtn Scoreboard
 
             div(style="position:relative;")
                 // Table containing a list of games
-                table(class="w3-table w3-hoverable" style="margin: 0 1em;")#games
+                table(class="w3-table w3-hoverable" style="margin: 0 1em;")#rooms
                     thead
                         tr
                             th(class="w3-left-align") name
                             th(class="w3-right-align") players
                     tbody
 
-                a(class='button' style="")#quickplayBtn Quickplay
+                a(class='button')#quickplayBtn Quickplay
 

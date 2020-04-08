@@ -1,46 +1,47 @@
 var socket = io.connect('http://localhost:3000');
+let username;
 
-// on connection to server, ask for user's name with an anonymous callback
+// Connect to server and receive a random guest username
 socket.on('connect', function () {
-    // call the server-side function 'adduser' and send one parameter (value of prompt)
-    // socket.emit('adduser', prompt("What's your name?"));
-    socket.emit('joinserver');
-});
-
-// listener, whenever the server emits 'updatechat', this updates the chat body
-socket.on('updatechat', function (username, data) {
-    //$('#conversation').append('<b>' + username + ':</b> ' + data + '<br>');
+    // TODO: get username from cookies
+    socket.emit('adduser', function (response) {
+        username = response;
+        console.log("Joined as",username);
+    });
 });
 
 // listener, whenever the server emits 'updaterooms', this updates the room the client is in
-socket.on('updaterooms', function (rooms, current_room) {
-    $('#rooms').empty();
-    $.each(rooms, function (key, value) {
+socket.on('updaterooms', function (rooms) {
+    $('#rooms>tbody').empty();
+    for (let room of rooms) {
+        let capacity = 1 + "/" + 2;
+        let name = room;
+        $('#rooms > tbody:last-child').append('<tr data-href="hej" role="button" class="w3-hover-pale-green w3-hover-text-green"> <th class="w3-left-align">' + name + '</th><th class="w3-right-align">' + capacity + ' </th></tr>');
+    }
+
+    /*$.each(rooms, function (key, value) {
         if (value === current_room) {
             $('#rooms').append('<div>' + value + '</div>');
         } else {
             $('#rooms').append('<div><a href="#" onclick="switchRoom(\'' + value + '\')">' + value + '</a></div>');
         }
-    });
+    });*/
 });
 
-function switchRoom(room) {
-    socket.emit('switchRoom', room);
+function joinRoom(room) {
+    // window.location = $(this).data("href");
+    socket.emit('joinroom',room, function(url) {
+        window.location = url;
+    });
+
 }
 
 // on load of page
 $(function () {
-    ($('#games')).on("click", "tr[role=\"button\"]", function (e) {
+    ($('#rooms')).on("click", "tr[role=\"button\"]", function (e) {
         // window.location = $(this).data("href");
         console.log($(this).data("href"));
     });
-
-    for (let i = 1; i < 15; i++) {
-        let name = "room" + i;
-        $('#games > tbody:last-child').append('<tr role="button" data-href="google.com" class="w3-hover-pale-green w3-hover-text-green">' +
-            '<th class="w3-left-align">' + name + '</th><th class="w3-right-align"> 1/2 </th></tr>');
-    }
-
 
     $('#importBtn').click(function () {
         console.log("click");
@@ -58,12 +59,25 @@ $(function () {
         console.log("click");
     });
 
-    $('#quickplayBtn').click(function () {
-        console.log("click");
+    $('#quickplayBtn').click(function (e) {
+        socket.emit('quickplay', function (success, room) {
+            if (success) {
+                console.log("Joining room " + room);
+                joinRoom(room);
+            } else {
+                socket.emit('addroom', prompt("Name of new room"), function (success, room = "") {
+                    if (success) {
+                        console.log("Added new room" + room);
+                        joinRoom(room);
+                    } else alert("Failed to add room");
+                });
+            }
+            // e.preventDefault();
+        });
     });
 
     // When you click on a row in the list of games
-    $('#games tr').click(function () {
+    $('#rooms tr').click(function () {
         var href = $(this).find("a").attr("href");
         if (href) {
             window.location = href;

@@ -28,6 +28,12 @@ router.get('/customize', function (req, res, next) {
     res.render('customize', {title: 'Customize your game'});
 });
 
+router.get(/game/, function(req,res) {
+    console.log(req);
+    console.log(res);
+    res.render('game',{title: 'Game'});
+});
+
 /**
  * @memberOf routes
  * GET scores from db
