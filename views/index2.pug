@@ -1,11 +1,8 @@
 extends layout
 
 block scripts
-    script(src='/socket.io/socket.io.js')
-    script(src='https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js')
     script(type="text/javascript" src="scripts/main-menu.js")
     script(type='text/javascript' src='scripts/webelements.js')
-    link(rel='stylesheet' href='https://www.w3schools.com/w3css/4/w3.css')
 
 
 block content
@@ -38,17 +35,17 @@ block content
         }
 
         .main-block {
-            width:50em;
+            width: 50em;
             height: 35em;
             position: relative;
-            top:-5.5em;
+            top: -5.5em;
 
             background-color: #f7f7e7ff;
             border-radius: 7px;
 
             justify-content: center;
             align-items: center;
-            z-index: 1;
+            z-index: 3;
         }
 
         .w3-table {
@@ -56,7 +53,12 @@ block content
             cursor: pointer;
             background-color: #fefff9;
             border: 2px solid #4bac88;
+            border-radius: 4px;
         }
+
+        /*[data-href] {*/
+        /*    cursor: pointer;*/
+        /*}*/
 
         thead tr {
             color: rgba(75, 172, 136, 0.49);
@@ -80,15 +82,9 @@ block content
 
         tbody {
             display: block; /* to enable vertical scrolling */
-            max-height: 200px; /* e.g. */
-            overflow-y: scroll; /* keeps the scrollbar even if it doesn't need it; display purpose */
+            height: 23em;
+            overflow-y: auto; /* keeps the scrollbar even if it doesn't need it; display purpose */
         }
-
-        /*th, td {*/
-        /*    width: 33.33%; !* to enable "word-break: break-all" *!*/
-        /*    padding: 5px;*/
-        /*    word-break: break-all; !* 4. *!*/
-        /*}*/
 
         tr {
             display: table; /* display purpose; th's border */
@@ -103,34 +99,30 @@ block content
         }
 
     div(class="container")
-        a(href="localhost:3000" style="position: relative; z-index: 1;")
+
+        // Sprouts logo
+        a(href="localhost:3000" style="position: relative; z-index: 0;")
             img(style="width:35em;" src='../assets/sprouts.svg')
 
+        // The main content of the page
         div(class="main-block flex-container")
-            div(style="position:relative;bottom:1em;")
-                a(class='button' id='importBtn') Import
-                input(type='file' name='world-input' id='world-file-input' style="display:none" accept="text/plain,.txt" onchange="handleFile(this.files)")
-                a(class='button') Generate
-                a(class='button') Settings
-                a(class='button') Scoreboard
 
-            div
-                div(class="w3-responsive")
-                    table(class="w3-table w3-hoverable" id="games")
-                        thead
-                            tr
-                                th(class="w3-left-align") name
-                                th(class="w3-right-align") players
-                        tbody
-                            tr(class="w3-hover-pale-green w3-hover-text-green")
-                                th(class="w3-left-align") Lau
-                                th(class="w3-right-align") 1/2
-                            tr(class="w3-hover-pale-green w3-hover-text-green")
-                                th(class="w3-left-align") Seb
-                                th(class="w3-right-align") 2/2
-                            tr(class="w3-hover-pale-green w3-hover-text-green")
-                                th(class="w3-left-align") Bob
-                                th(class="w3-right-align") 10/2
+            // Buttons on left side
+            div(style="position:relative;bottom:5%;")
+                a(class='button')#importBtn Import
+                    input(type='file' name='world-input' id='world-file-input' style="display:none" accept="text/plain,.txt" onchange="handleFile(this.files)")
+                a(class='button')#generateBtn Generate
+                a(class='button')#settingsBtn Settings
+                a(class='button')#scoreboardBtn Scoreboard
 
-                a(class='button') Quickplay
+            div(style="position:relative;")
+                // Table containing a list of games
+                table(class="w3-table w3-hoverable" style="margin: 0 1em;")#games
+                    thead
+                        tr
+                            th(class="w3-left-align") name
+                            th(class="w3-right-align") players
+                    tbody
+
+                a(class='button' style="")#quickplayBtn Quickplay
 

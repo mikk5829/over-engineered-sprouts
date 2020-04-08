@@ -59,11 +59,12 @@ function storeValuesFromForm(form)
  * Saves entire cookies when "enter" is pressed inside form
  * @memberOf WebElements
  * */
-document.customization.onkeydown = function(event) {
-    if (event.keyCode == 13) {
-        storeValuesFromForm(document.customization)
-    }
-};
+//FIXME Laura
+// document.customization.onkeydown = function(event) {
+//     if (event.keyCode == 13) {
+//         storeValuesFromForm(document.customization)
+//     }
+// };
 
 /**
  * Loads entire cookies when window is loaded

@@ -30,11 +30,42 @@ function switchRoom(room) {
 
 // on load of page
 $(function () {
+    ($('#games')).on("click", "tr[role=\"button\"]", function (e) {
+        // window.location = $(this).data("href");
+        console.log($(this).data("href"));
+    });
+
+    for (let i = 1; i < 15; i++) {
+        let name = "room" + i;
+        $('#games > tbody:last-child').append('<tr role="button" data-href="google.com" class="w3-hover-pale-green w3-hover-text-green">' +
+            '<th class="w3-left-align">' + name + '</th><th class="w3-right-align"> 1/2 </th></tr>');
+    }
+
+
+    $('#importBtn').click(function () {
+        console.log("click");
+    });
+
+    $('#generateBtn').click(function () {
+        console.log("click");
+    });
+
+    $('#settingsBtn').click(function () {
+        console.log("click");
+    });
+
+    $('#scoreboardBtn').click(function () {
+        console.log("click");
+    });
+
+    $('#quickplayBtn').click(function () {
+        console.log("click");
+    });
 
     // When you click on a row in the list of games
-    $('#games tr').click(function() {
+    $('#games tr').click(function () {
         var href = $(this).find("a").attr("href");
-        if(href) {
+        if (href) {
             window.location = href;
         }
     });
@@ -62,7 +93,7 @@ function handleFile(files) {
     const file = files[0];
     const fileReader = new FileReader();
     fileReader.readAsText(file);
-    fileReader.onload = function(e) {
+    fileReader.onload = function (e) {
         console.log(e);
         let split = e.target.result.split("\n");
         let init_points = split[0];
@@ -80,22 +111,20 @@ function handleFile(files) {
     };
 }
 
-window.onload = function() {
-    const importBtn = document.getElementById('importBtn');
-    const importHidden = document.getElementById('world-file-input');
-
-    importBtn.addEventListener('click', function(e) {
-        importHidden.click();
-    }, false);
-
-    $('#games > tbody:last-child').append('<tr class="w3-hover-pale-green w3-hover-text-green"> <th class="w3-left-align"> a </th><th class="w3-right-align"> 0/3 </th></tr>');
-    $('#games > tbody:last-child').append('<tr class="w3-hover-pale-green w3-hover-text-green"> <th class="w3-left-align"> b </th><th class="w3-right-align"> 0/3 </th></tr>');
-    $('#games > tbody:last-child').append('<tr class="w3-hover-pale-green w3-hover-text-green"> <th class="w3-left-align"> c </th><th class="w3-right-align"> 0/3 </th></tr>');
-    $('#games > tbody:last-child').append('<tr class="w3-hover-pale-green w3-hover-text-green"> <th class="w3-left-align"> d </th><th class="w3-right-align"> 0/3 </th></tr>');
-    $('#games > tbody:last-child').append('<tr class="w3-hover-pale-green w3-hover-text-green"> <th class="w3-left-align"> e </th><th class="w3-right-align"> 0/3 </th></tr>');
-    $('#games > tbody:last-child').append('<tr class="w3-hover-pale-green w3-hover-text-green"> <th class="w3-left-align"> f </th><th class="w3-right-align"> 0/3 </th></tr>');
-    $('#games > tbody:last-child').append('<tr class="w3-hover-pale-green w3-hover-text-green"> <th class="w3-left-align"> g </th><th class="w3-right-align"> 0/3 </th></tr>');
-    $('#games > tbody:last-child').append('<tr class="w3-hover-pale-green w3-hover-text-green"> <th class="w3-left-align"> h </th><th class="w3-right-align"> 0/3 </th></tr>');
-
-    console.log($("#games").id);
-};
+// window.onload = function () {
+//     // const importBtn = document.getElementById('importBtn');
+//     // const importHidden = document.getElementById('world-file-input');
+//
+//     /*importBtn.addEventListener('click', function (e) {
+//         importHidden.click();
+//     }, false);
+// */
+//
+//     for (let i = 1; i < 15; i++) {
+//         let name = "room" + i;
+//         $('#games > tbody:last-child').append('<tr role="button" data-href="google.com" class="w3-hover-pale-green w3-hover-text-green">' +
+//             '<th class="w3-left-align">' + name + '</th><th class="w3-right-align"> 1/2 </th></tr>');
+//     }
+//
+//     console.log($("#games").id);
+// };

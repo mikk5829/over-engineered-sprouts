@@ -320,20 +320,18 @@ input[type="button"] {
     display: block;
     box-sizing: border-box;
     white-space: nowrap;
-    vertical-align: center;
-    width: 7em;
-    height: 2em;
-    margin: 0 auto;
+    width: 8.5em;
+    height: 2.3em;
+    margin: 0.5em auto;
 
     background-color: #d7f3e3;
     color: #4bac88;
     border: 0.1em solid #4bac88;
-    border-radius: 5px;
+    border-radius: 4px;
 
     cursor: pointer;
 
     font-weight: 600;
-    /*letter-spacing: 0.1rem;*/
     text-transform: lowercase;
     text-align: center;
 }
@@ -527,7 +525,7 @@ td:last-child {
 button,
 .button {
     /*margin-bottom: 0.5rem;*/
-    margin-bottom: 0.3rem;
+    /*margin-bottom: 0.3rem;*/
 }
 
 input,
