@@ -99,8 +99,8 @@ $(function () {
 
     //Adds a new chat message to the chatlog
     socket.on('updatechat', function (timestamp, sender, msg) {
-        let date = new Date(timestamp);
-        let sent = `${date.getHours()}:${date.getMinutes()} ${sender}`;
+        let time = new Date(timestamp).toTimeString().slice(0,5);
+        let sent = `(${time}) ${sender}:`;
         $('#messages > tbody:last-child').append('<tr> <th class="w3-left-align">' + sent + '</th><th class="w3-right-align">' + msg + ' </th></tr>');
     });
 });

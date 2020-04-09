@@ -13,17 +13,6 @@ function reset() {
 paper.install(window); // Make the paper scope global
 $(function() {
     paper.setup(getCanvas());
-
-    /*// Draw background layer
-    let rect = new paper.Path.Rectangle({
-        point: [0, 0],
-        size: [getCanvas().clientWidth, getCanvas().clientHeight],
-        fillColor: 'lavender'
-    });
-    rect.sendToBack();
-    let backgroundLayer = new paper.Layer(rect);
-    paper.project.insertLayer(0, backgroundLayer);*/
-
     let world = new SproutWorld();
     world.initializeMap(null, 10);
 
@@ -65,6 +54,5 @@ $(function() {
         }
 
         if (world.source) world.source.fillColor = SEL_POINT_COLOR;
-
     }
 });
