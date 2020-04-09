@@ -96,6 +96,7 @@ io.sockets.on('connection', function (socket) {
     });
 
     socket.on('sendchat', function (msg) {
+        console.log("received sendchat from " + socket.username + ": " + msg);
         io.sockets.in(socket.room).emit('updatechat', socket.username, msg);
     });
 

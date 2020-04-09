@@ -1,3 +1,14 @@
+body {
+  background: #61daac;
+  color: #4bac88;
+  text-align: center;
+}
+
+.container {
+  width: 100%;
+  position: relative;
+}
+
 /* Disables link coloring and underlining */
 a, a:hover {
     color: inherit;
@@ -8,6 +19,10 @@ a, a:hover {
 canvas[resize] {
     width: 100%;
     height: 100%;
+}
+
+.hidden {
+  display: none !important;
 }
 
 .center-text {
@@ -72,58 +87,31 @@ td {
     border-left: none;
 }
 
-/* Pages */
-
-.pages {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    width: 100%;
-}
-
-.page {
-    /*height: 100%;*/
-    position: relative;
-    width: 95%;
-}
-
-.lobby.page {
-
-}
-
-.lobby.page .main-block {
+.main-block {
     width: 50em;
-    height: 35em;
+    height: 45em;
     position: relative;
     top: -5.5em;
-
     background-color: #f7f7e7ff;
     border-radius: 7px;
 
     justify-content: center;
-    align-items: center;
+    /*align-items: center;*/
     z-index: 3;
 }
 
-.lobby.page .w3-table {
-    width: 24em;
-    cursor: pointer;
-    background-color: #fefff9;
-    border: 2px solid #4bac88;
-    border-radius: 4px;
-}
+/*.flex-container {*/
+/*    display: inline-block;*/
+/*}*/
 
-.lobby.page .flex-container {
-    display: inline-flex;
-}
-
-.game.page {
+/*.game.page {
     display: none;
     width: 100%;
     height: 100%;
-}
+}*/
 
+/*
 .game.page canvas {
-    border: solid .2em #4bac88;
-    height: 90vh;
-}
+    !*border: solid .2em #4bac88;*!
+    !*height: 90vh;*!
+}*/

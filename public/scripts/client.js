@@ -1,22 +1,40 @@
 $(function () {
-   /* var $window = $(window);
-    var $messages = $('.messages');
-    var $inputMessage = $('.inputMessage');
-    var $currentInput = $usernameInput.focus();
-*/
-    var $lobbyPage = $('.lobby.page');
-    var $gamePage = $('.game.page');
+    // const mainMenu = $("#mainMenu");
+    // const gamePane = $("#gamePane");
+
+    // TODO ??
+    /* var $window = $(window);
+     var $messages = $('.messages');
+     var $inputMessage = $('.inputMessage');
+     var $currentInput = $usernameInput.focus();
+ */
+    /*var $lobbyPage = $('.lobby.page');
+    var $gamePage = $('.game.page');*/
     var username;
 
     var socket = io();
 
     function joinRoom(room) {
         // window.location = $(this).data("href");
-        socket.emit('joinroom',room, function(url) {
-            $('#lobbyPage').css("display","none");
-            $('#gamePage').css("display","block");
+        socket.emit('joinroom', room, function (url) {
+            console.log("yep i'm here");
+            /* const mainMenu = $("#mainMenu");
+             const gamePane = $("#gamePane");*/
+            const mainMenu = document.getElementById("mainMenu");
+            const gamePane = document.getElementById("gamePane");
+
+            mainMenu.classList.add('hidden');
+            gamePane.classList.remove('hidden');
         });
     }
+
+    $('form').submit(function (e) {
+        console.log("submitting...");
+        e.preventDefault(); // prevents page reloading
+        socket.emit('sendchat', $('#msg').val());
+        $('#msg').val('');
+        return false;
+    });
 
     $('#rooms').on("click", "tr[role=\"button\"]", function (e) {
         // window.location = $(this).data("href");
@@ -91,5 +109,10 @@ $(function () {
                 $('#rooms').append('<div><a href="#" onclick="switchRoom(\'' + value + '\')">' + value + '</a></div>');
             }
         });*/
+    });
+
+    socket.on('updatechat', function (sender, msg) {
+        console.log("received updatechat", sender, msg);
+        $('#messages').append($('<li>').text(msg));
     });
 });
