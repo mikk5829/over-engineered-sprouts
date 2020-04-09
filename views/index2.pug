@@ -11,19 +11,29 @@ block scripts
 
 block content
     style.
-        .w3-table {
+        .w3-table#rooms {
             margin: 0 1em;
             width: 24em;
-            /*height:35em;*/
+            height:30em;
             cursor: pointer;
             background-color: #fefff9;
             border: 2px solid #4bac88;
             border-radius: 4px;
         }
 
+        .w3-table#messages {
+            background-color: #fefff9;
+            border: 2px solid #4bac88;
+            border-radius: 4px;
+            height: 100%;
+            font-size: 0.7em;
+            font-weight: normal;
+            letter-spacing: 0.1em;
+            line-height: 0.5em;
+        }
+
         #sproutGameCanvas {
-            /*(resize="true" style="border:2px solid black; position:relative;bottom:5%; ")*/
-            border:2px solid #4bac88;
+            border: 2px solid #4bac88;
             background-color: #e7ffe7;
             position: relative;
             width: 100%;
@@ -31,6 +41,10 @@ block content
             z-index: 4;
         }
 
+        #messages {
+            list-style: none;
+            max-height:10em;
+        }
 
     div(class="container")
         // Sprouts logo
@@ -60,10 +74,13 @@ block content
                 a(class='button')#quickplayBtn Quickplay
 
         div(class="main-block flex-container hidden" style= "display:inline-block;")#gamePane
-            canvas#sproutGameCanvas
-            ul#messages
-                form(action="")
-                    input(type="text")#msg
+            canvas(resize="true")#sproutGameCanvas
+            table(class="w3-table w3-striped w3-text-teal")#messages
+                tbody
+
+            form(action="" autocomplete="off")
+                div(class="flex-container" style="display:inline-flex; width:100%")
+                    input(type="text" style="width:90%;")#msg
                     button Send
 
 

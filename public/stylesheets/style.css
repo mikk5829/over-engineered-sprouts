@@ -52,6 +52,7 @@ canvas[resize] {
 }
 
 /* Custom scrollbar */
+/*TODO: cross-browser scrollbar*/
 thead tr {
     color: rgba(75, 172, 136, 0.49);
 }
@@ -71,20 +72,24 @@ tbody::-webkit-scrollbar-thumb:hover {
 
 tbody {
     display: block; /* to enable vertical scrolling */
-    height: 23em;
-    overflow-y: auto; /* keeps the scrollbar even if it doesn't need it; display purpose */
+    height: inherit;
+    overflow-y: auto;
 }
 
 tr {
     display: table; /* display purpose; th's border */
     width: 100%;
     box-sizing: border-box; /* because of the border (Chrome needs this line, but not FF) */
+    overflow-y: auto;
 }
 
 td {
     text-align: center;
     border-bottom: none;
     border-left: none;
+    overflow-y: auto;
+    white-space: nowrap;
+    display: block;
 }
 
 .main-block {
@@ -99,19 +104,3 @@ td {
     /*align-items: center;*/
     z-index: 3;
 }
-
-/*.flex-container {*/
-/*    display: inline-block;*/
-/*}*/
-
-/*.game.page {
-    display: none;
-    width: 100%;
-    height: 100%;
-}*/
-
-/*
-.game.page canvas {
-    !*border: solid .2em #4bac88;*!
-    !*height: 90vh;*!
-}*/

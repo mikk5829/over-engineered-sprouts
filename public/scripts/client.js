@@ -15,13 +15,9 @@ $(function () {
     var socket = io();
 
     function joinRoom(room) {
-        // window.location = $(this).data("href");
         socket.emit('joinroom', room, function (url) {
-            console.log("yep i'm here");
-            /* const mainMenu = $("#mainMenu");
-             const gamePane = $("#gamePane");*/
-            const mainMenu = document.getElementById("mainMenu");
-            const gamePane = document.getElementById("gamePane");
+            const mainMenu = $("#mainMenu")[0];
+            const gamePane = $("#gamePane")[0];
 
             mainMenu.classList.add('hidden');
             gamePane.classList.remove('hidden');
@@ -57,10 +53,7 @@ $(function () {
         console.log("click");
     });
 
-    $('#quickplayBtn').click(function (e) {
-
-        console.log($('gamePage').innerText);
-
+    $('#quickplayBtn').click(function () {
         socket.emit('quickplay', function (success, room) {
             if (success) {
                 console.log("Joining room " + room);
@@ -93,7 +86,7 @@ $(function () {
         });
     });
 
-// listener, whenever the server emits 'updaterooms', this updates the room the client is in
+    // Updates the list of rooms in the lobby
     socket.on('updaterooms', function (rooms) {
         $('#rooms>tbody').empty();
         for (let room of rooms) {
@@ -101,18 +94,13 @@ $(function () {
             let name = room;
             $('#rooms > tbody:last-child').append('<tr data-href="hej" role="button" class="w3-hover-pale-green w3-hover-text-green"> <th class="w3-left-align">' + name + '</th><th class="w3-right-align">' + capacity + ' </th></tr>');
         }
-
-        /*$.each(rooms, function (key, value) {
-            if (value === current_room) {
-                $('#rooms').append('<div>' + value + '</div>');
-            } else {
-                $('#rooms').append('<div><a href="#" onclick="switchRoom(\'' + value + '\')">' + value + '</a></div>');
-            }
-        });*/
     });
 
-    socket.on('updatechat', function (sender, msg) {
-        console.log("received updatechat", sender, msg);
-        $('#messages').append($('<li>').text(msg));
+
+    //Adds a new chat message to the chatlog
+    socket.on('updatechat', function (timestamp, sender, msg) {
+        let date = new Date(timestamp);
+        let sent = `${date.getHours()}:${date.getMinutes()} ${sender}`;
+        $('#messages > tbody:last-child').append('<tr> <th class="w3-left-align">' + sent + '</th><th class="w3-right-align">' + msg + ' </th></tr>');
     });
 });
