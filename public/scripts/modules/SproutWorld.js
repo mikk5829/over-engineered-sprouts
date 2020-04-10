@@ -117,6 +117,7 @@ export class SproutWorld {
         // Save the path if it is a legal path
         if (source && target && this.legalMove(source, target, line)) {
             let newPoint = this.addPoint(line.getPointAt(line.length / 2), 0);
+            source.neighbours.push(newPoint);
             let line2 = line.splitAt(line.length/2);
             let line1 = line.clone();
             line1.vertices = [];
@@ -136,8 +137,10 @@ export class SproutWorld {
     addLine(source, target, line) {
         source.connections += 1;
         source.edges.push(line);
+        source.neighbours.push(target);
         target.connections += 1;
         target.edges.push(line);
+        target.neighbours.push(source);
         line.vertices = [source, target];
         line.addTo(this.lineGroup);
     }
@@ -157,6 +160,9 @@ export class SproutWorld {
         });
         point.connections = connections;
         point.edges = [];
+        point.neighbours = [];
+        point.status = "";
+        point.root = point;
         this.points.push(point);
         let _this = this;
 
@@ -187,7 +193,6 @@ export class SproutWorld {
         };
 
         point.onClick = function () {
-
             if (!_this.source) _this.clickSelection = true;
             if (_this.clickSelection) _this.select(point);
         };
@@ -220,6 +225,28 @@ export class SproutWorld {
                     _this.dragEnabled = true;
                 }
             }
+        };
+
+        point.dfs = function (toFind) {
+            //Marker som søgende
+            point.status = "seeking";
+            //Kør dfs på alle naboer
+            for (let p of point.neighbours) {
+                if (p !== point.root) {
+                    //Er en nabo søgende eller færdig, find alle links op til nabo og tilføj liste til cycles[]
+                    if (p.status === "") {
+                        //Sæt parent til dette point
+                        p.root = point;
+                        point.edges.find(e => (e.vertices.includes(p) && e.vertices.includes(point))).strokeColor = "red";
+                        p.dfs(toFind);
+                    } else {
+                        toFind.push([p, point]);
+                        point.edges.find(e => (e.vertices.includes(p) && e.vertices.includes(point))).strokeColor = "green";
+                    }
+                }
+            }
+            //Marker som færdig
+            point.status = "done";
         };
 
         return point;
