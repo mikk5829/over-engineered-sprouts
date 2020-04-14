@@ -275,4 +275,25 @@ export class SproutWorld {
             alert("NOT DONE");
         }
     }
+
+    getCycles() {
+        let toFind = [];
+        //Reset alle punkter til ikke at have nogen root, status eller branches
+        for (let p of this.points) {
+            p.root = null;
+            p.status = "";
+        }
+        //For hver node, tjek om den allerede er blevet kørt dfs på. ellers, gør det
+        for (let p of this.points){
+            if (p.status !== "done"){
+                p.root = p;
+                p.dfs(toFind);
+            }
+        }
+        //For hvert element i toFind
+            //For det første element i toFind, følg træet til roden
+            //For andet element i toFind, følg træet til første element indeholdt i første
+            //Tilføj deres fælles edge
+            //Gem eller returner ruten
+    }
 }

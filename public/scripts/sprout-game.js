@@ -62,10 +62,6 @@ window.onload = function () {
         for (let point of world.selectedPoints) {
             point.fillColor = SEL_POINT_COLOR;
             for (let p of world.points){
-                p.status = "";
-            }
-            point.dfs([]);
-            for (let p of world.points){
                 if (p.status === "done")
                     p.selected = true;
                 else
