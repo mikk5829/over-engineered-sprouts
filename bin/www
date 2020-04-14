@@ -37,26 +37,28 @@ server.on('listening', onListening);
 /*
 * Socket IO stuff
 * */
-var io = require('socket.io').listen(server);
+const io = require('socket.io').listen(server);
+let usernames = [];
+let rooms = [];
 
-var usernames = [];
-var rooms = [];
-io.sockets.on('connection', function (socket) {
-    socket.emit('updaterooms', rooms);
+io.sockets.on('connect', function (socket) {
+
+    // TODO: Only emit to lobby socket
+    socket.emit('updateLobby', rooms);
     setInterval(function () {
-        socket.emit('updaterooms', rooms);
+        socket.emit('updateLobby', rooms);
     }, 1000);
 
     // when the client emits 'adduser', this listens and executes
-    socket.on('adduser', function (fn) {
+    socket.on('addUser', function (fn) {
         String.prototype.capitalize = function () {
             return this.charAt(0).toUpperCase() + this.slice(1);
         };
 
         let name;
         do {
-            var randInt = Math.floor(Math.random() * 10);
-            var adjective = Sentencer.make("{{ adjective }}").capitalize();
+            let randInt = Math.floor(Math.random() * 10);
+            let adjective = Sentencer.make("{{ adjective }}").capitalize();
             name = adjective + "Guest" + randInt;
         } while (usernames.includes(name));
 
@@ -66,11 +68,14 @@ io.sockets.on('connection', function (socket) {
         fn(name);
     });
 
-    socket.on('joinroom', function (room, fn) {
-        console.log("joinroom", socket.username, room);
-        socket.room = room;
-        socket.join(room);
-        fn(`game-${room}`);
+    socket.on('joinRoom', function (id, fn) {
+        console.log("joinRoom", socket.username, id);
+        if (!rooms.some(e=>e.id===id)) fn(false);
+        else {
+            socket.room = id;
+            socket.join(id);
+            fn(true);
+        }
 
     });
 
@@ -79,25 +84,29 @@ io.sockets.on('connection', function (socket) {
     socket.on('quickplay', function (fn) {
         if (rooms.length === 0) fn(false);
         else {
-            fn(true, rooms[0]);
+            fn(true, rooms[0].id);
         }
     });
 
-    socket.on('addroom', function (id, fn) {
-        if (rooms.includes(id)) fn(false);
+    socket.on('addRoom', function (id, fn) {
+        if (rooms.some(e=>e.id===id)) fn(false);
         else {
             console.log("Creating new room: " + id);
-            rooms.push(id);
+            rooms.push({
+                'id': id,
+                'maxCapacity': 2,
+                'currentPlayers': 0
+            });
             // nsp.push(io.of('/' + id));
             fn(true, id);
-            io.emit('updaterooms', rooms,)
+            io.emit('updateLobby', rooms,)
         }
     });
 
-    socket.on('sendchat', function (msg) {
-        console.log("received sendchat from " + socket.username + ": " + msg);
+    socket.on('sendChat', function (msg) {
+        console.log("received sendChat from " + socket.username + ": " + msg);
         let timestamp = +new Date();
-        io.sockets.in(socket.room).emit('updatechat', timestamp, socket.username, msg);
+        io.sockets.in(socket.room).emit('updateChat', timestamp, socket.username, msg);
     });
 
     // when the user disconnects.. perform this

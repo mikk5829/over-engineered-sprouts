@@ -1,106 +1,12 @@
-$(function () {
-    // const mainMenu = $("#mainMenu");
-    // const gamePane = $("#gamePane");
+let socket = io();
+let username;
+const viewIDs = ['mainMenu', 'gamePane'];
 
-    // TODO ??
-    /* var $window = $(window);
-     var $messages = $('.messages');
-     var $inputMessage = $('.inputMessage');
-     var $currentInput = $usernameInput.focus();
- */
-    /*var $lobbyPage = $('.lobby.page');
-    var $gamePage = $('.game.page');*/
-    var username;
-
-    var socket = io();
-
-    function joinRoom(room) {
-        socket.emit('joinroom', room, function (url) {
-            const mainMenu = $("#mainMenu")[0];
-            const gamePane = $("#gamePane")[0];
-
-            mainMenu.classList.add('hidden');
-            gamePane.classList.remove('hidden');
-        });
-    }
-
-    $('form').submit(function (e) {
-        console.log("submitting...");
-        e.preventDefault(); // prevents page reloading
-        socket.emit('sendchat', $('#msg').val());
-        $('#msg').val('');
-        return false;
-    });
-
-    $('#rooms').on("click", "tr[role=\"button\"]", function (e) {
-        // window.location = $(this).data("href");
-        console.log($(this).data("href"));
-    });
-
-    $('#importBtn').click(function () {
-        console.log("click");
-    });
-
-    $('#generateBtn').click(function () {
-        console.log("click");
-    });
-
-    $('#settingsBtn').click(function () {
-        console.log("click");
-    });
-
-    $('#scoreboardBtn').click(function () {
-        console.log("click");
-    });
-
-    $('#quickplayBtn').click(function () {
-        socket.emit('quickplay', function (success, room) {
-            if (success) {
-                console.log("Joining room " + room);
-                joinRoom(room);
-            } else {
-                socket.emit('addroom', prompt("Name of new room"), function (success, room = "") {
-                    if (success) {
-                        console.log("Added new room" + room);
-                        joinRoom(room);
-                    } else alert("Failed to add room");
-                });
-            }
-        });
-    });
-
-    // When you click on a row in the list of games
-    $('#rooms tr').click(function () {
-        var href = $(this).find("a").attr("href");
-        if (href) {
-            window.location = href;
-        }
-    });
-
-// Connect to server and receive a random guest username
-    socket.on('connect', function () {
-        // TODO: get username from cookies
-        socket.emit('adduser', function (response) {
-            username = response;
-            console.log("Joined as", username);
-        });
-    });
-
-    // Updates the list of rooms in the lobby
-    socket.on('updaterooms', function (rooms) {
-        $('#rooms>tbody').empty();
-        for (let room of rooms) {
-            let capacity = 1 + "/" + 2;
-            let name = room;
-            $('#rooms > tbody:last-child').append('<tr data-href="hej" role="button" class="w3-hover-pale-green w3-hover-text-green"> <th class="w3-left-align">' + name + '</th><th class="w3-right-align">' + capacity + ' </th></tr>');
-        }
-    });
-
-
-    //Adds a new chat message to the chatlog
-    socket.on('updatechat', function (timestamp, sender, msg) {
-        let time = new Date(timestamp).toTimeString().slice(0,5);
-        let sent = `(${time}) ${sender}:`;
-        $('#messages > tbody:last-child').append('<tr> <th class="w3-left-align">' + sent + '</th><th class="w3-right-align">' + msg + ' </th></tr>');
+socket.on('connect', function () {
+    console.log('Connect');
+    // TODO: get username from cookies
+    socket.emit('addUser', function (response) {
+        username = response;
+        console.log("Joined as", username);
     });
 });

@@ -1,12 +1,13 @@
 extends layout
 
 block scripts
-    //script(type="text/javascript" src="scripts/main-menu.js")
+    //script(type="text/javascript" src="scripts/lobby-handler.js")
     script(type="text/javascript" src="scripts/client.js")
+    script(type="text/javascript" src="scripts/lobby-handler.js")
     script(type="text/javascript" src="https://unpkg.com/acorn")
     script(type='text/javascript' src='scripts/frameworks/paper-full.js')
-    script(type='module' src='scripts/sprout-game.js')
-    //script(type='text/javascript' src='scripts/webelements.js')
+    script(type='module' src='scripts/game-handler.js')
+    script(type='text/javascript' src='scripts/webelements.js')
 
 
 block content
@@ -57,7 +58,7 @@ block content
             // Buttons on left side
             div(style="position:relative;bottom:5%;")
                 a(class='button')#importBtn Import
-                    input(type='file' name='world-input' id='world-file-input' style="display:none" accept="text/plain,.txt" onchange="handleFile(this.files)")
+                    input(type='file' name='world-input' style="display:none" accept="text/plain,.txt" onchange="handleFile(this.files)")#fileInput
                 a(class='button' href="game")#generateBtn Generate
                 a(class='button' href="customize")#settingsBtn Settings
                 a(class='button' href="scoreboard")#scoreboardBtn Scoreboard
@@ -70,8 +71,9 @@ block content
                             th(class="w3-left-align") name
                             th(class="w3-right-align") players
                     tbody
-
-                a(class='button')#quickplayBtn Quickplay
+                div(class="flex-container" style="display:inline-flex; width:70%")
+                    a(class='button')#quickplayBtn Quickplay
+                    a(class='button')#newGameBtn New Game
 
         div(class="main-block flex-container hidden" style= "display:inline-block;")#gamePane
             canvas(resize="true")#sproutGameCanvas
