@@ -18,19 +18,10 @@ $(function () {
         });
     }
 
-    /*// Submit the current chat message
-    $msgField.submit(function (e) {
-        e.preventDefault(); // prevents page reloading
-        socket.emit('sendChat', $msgField.val());
-        $msgField.val('');
-        return false;
-    });*/
-
     $("#chatMsgForm").submit(function(e) {
         e.preventDefault();
         socket.emit('sendChat', $msgField.val());
         $msgField.val('');
-        return false;
     });
 
     $('div.back-btn').click(function() {

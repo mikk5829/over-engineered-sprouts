@@ -40,8 +40,6 @@ $(function () {
             username = playerName;
             console.log(playerName, username)
         }
-
-        // return false;
     })
 });
 
