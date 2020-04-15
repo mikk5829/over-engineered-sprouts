@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@popperjs/core": "^2.0.6",
+    "body-parser": "^1.19.0",
     "bootstrap": "^4.4.1",
     "cookie-parser": "~1.4.4",
     "core-js": "^3.6.4",
@@ -18,7 +19,9 @@
     "http-errors": "~1.6.3",
     "mathjs": "^6.6.1",
     "mocha": "^7.1.0",
+    "mongodb": "^3.5.5",
     "morgan": "~1.9.1",
+    "node": "^13.10.1",
     "paper": "^0.12.4",
     "pug": "^2.0.4"
   },
