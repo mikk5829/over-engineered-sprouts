@@ -6,21 +6,18 @@ function getCanvas() {
     return document.getElementById("sproutGameCanvas");
 }
 
-function generateTileMap(resolution, detail) {
+function generateTileMap(resolution, detail, world) {
     let tile_x = resolution.res_x/detail; let tile_y = resolution.res_y/detail;
     console.log("tile_x: " + tile_x + " " + "tile_y: " + tile_y);
     let matrix = math.zeros(detail, detail);
+    let tile_matrix = math.matrix(); tile_matrix.resize([detail, detail], null);
     let tile_size = tile_x;
-    let tiles = [];
-    let prev_index = [0,0];
-    let count = 0;
 
-    // Get paths before tileMap setup
-    let paths = paper.project.getItems({
-        class: Path
-    });
+    // Get obstacles, that is, things that stand in the way making their position invalid for search
+    let obstacles = [...world.points]; // ToDo - add ,...world.paths later
 
-    // Setup initial tileShapes
+    let tile_shapes = [];
+    // Setup initial tileShape-grid needed to check for collisions
     matrix.forEach(function (value, index) {
         let x = index[0] * tile_size;
         let y = index[1] * tile_size;
@@ -28,18 +25,65 @@ function generateTileMap(resolution, detail) {
         let size = new Size(tile_size, tile_size);
 
         let rect = new Rectangle(new Point(x, y), size);
+        tile_matrix.set(index, rect, null); // Load tiles into tile_matrix
         let rect_shape = new Shape.Rectangle(rect);
-        tiles.push(rect_shape);
+        tile_shapes.push(rect_shape);
     });
 
     // Draw grid to visualize stuff
-    let tile_group = new paper.Group(tiles);
-    tile_group.style = {
+    let tile_shape_group = new paper.Group(tile_shapes);
+    tile_shape_group.style = {
         strokeColor: 'black',
         strokeWidth: 0.5,
         strokeCap: 'round'
     };
 
+    // Collect nearby tiles around obstacle objects
+    let temp_tiles = [];
+    obstacles.forEach(function (obstacle, obst_index, obst_array) {
+        let obstacle_point = obstacle.position;
+        let tile_distance = [math.round(obstacle_point.x/tile_size), math.round(obstacle_point.y/tile_size)];
+
+        let surroundings = getSurroundings(tile_matrix, tile_distance[0], tile_distance[1]);
+        surroundings.forEach(function (consider, cons_index) {
+            temp_tiles.push(tile_matrix.get([consider.x,consider.y]));
+        });
+    });
+
+    // Check if collected tiles intersect with obstacles
+    let surrounding_tiles_group = new paper.Group(temp_tiles);
+
+    //let tile_hit = nearby_tiles.hitTestAll(obstacle_point);
+
+    //let intersections = obstacle.getIntersections();
+
+    //console.log(nearby_tiles.children);
+    //nearby_tiles.fillColor = 'red';
+
+}
+
+// ToDo put into Utility Class and create direction data-structure ignoring corners
+// Distance let you control what level-out you want to search - NOT DONE
+function getSurroundings(matrix, x, y, distance= 1) {
+    let directions = [
+        [-1,-1], [-1, 0], [-1, 1],
+        [0,-1],           [0, 1],
+        [1,-1],  [1, 0],  [1, 1],
+    ];
+
+    directions.forEach(function (dir, index) {
+        dir[0] *= distance; dir[1] *= distance;
+    });
+
+    let neighbors = [];
+    directions.forEach(function (direction, index) {
+        let nrow = x + direction[0];
+        let ncol = y + direction[1];
+        if (nrow >= 0 && nrow < matrix._size[0] && ncol >= 0 && ncol < matrix._size[1]) {
+            neighbors.push({x: nrow, y: ncol});
+        }
+    });
+    return neighbors;
 }
 
 paper.install(window); // Make the paper scope global
@@ -104,7 +148,7 @@ window.onload = function () {
 
     };
 
-    generateTileMap(game_resolution, 64);
+    generateTileMap(game_resolution, 64, world);
 };
 
 
