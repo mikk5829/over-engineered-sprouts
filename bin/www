@@ -42,6 +42,7 @@ let usernames = [];
 let rooms = [];
 
 io.sockets.on('connect', function (socket) {
+    console.log("connect");
 
     // TODO: Only emit to lobby socket
     socket.emit('updateLobby', rooms);

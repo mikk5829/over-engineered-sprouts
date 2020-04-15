@@ -12,7 +12,7 @@ var collection = process.env.MONGO_COLLECTION_USERS;
  * GET home page
  */
 router.get('/', function (req, res, next) {
-    res.render('index2', {title: 'Sprouts'});
+    res.render('index', {title: 'Sprouts'});
 });
 
 router.get('/live', function(req, res, next) {

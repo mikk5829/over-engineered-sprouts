@@ -1,4 +1,10 @@
 $(function () {
+    let dotColor = getCookie("dotColor");
+    let playerName = getCookie("playerName");
+
+    if (playerName)  $('form[name="playerName"]').val(playerName);
+    if (dotColor)  $('form[name="dotColor"]').val(dotColor);
+
     $.changeView = function (newView) {
         $('#' + newView).removeClass('hidden').show();
         for (let viewName of viewIDs) {
@@ -76,14 +82,4 @@ window.onload = function loadValuesToForm() {
 
 };
 */
-
-window.onload = function () {
-    console.log("loaded")
-    let dotColor = getCookie("dotColor");
-    let playerName = getCookie("playerName");
-
-    if (playerName)  $('form[name="playerName"]').val(playerName);
-    if (dotColor)  $('form[name="dotColor"]').val(dotColor);
-
-};
 

@@ -9,6 +9,7 @@ const RESOLUTIONS = [
     {res_x : 3840, res_y:2160 },
 ];
 
+/*
 window.onload = function () {
     // Webstorm does not recognize but it does call webelements.js functions correctly
     loadValuesToForm();
@@ -20,4 +21,4 @@ window.onload = function () {
         option.setAttribute("value",elem.res_x + "x" + elem.res_y);
         resolution_select.appendChild(option);
     }
-};
+};*/
