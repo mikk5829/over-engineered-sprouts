@@ -1,4 +1,5 @@
 import {SproutWorld} from "./modules/SproutWorld.js";
+import {getCookieValue, getResolutionFromCookie} from "./modules/Utility.js"
 import {POINT_COLOR, SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR, POINT_SIZE} from "./modules/SproutWorld.js";
 
 function getCanvas() {
@@ -12,12 +13,17 @@ function reset() {
 
 paper.install(window); // Make the paper scope global
 $(function() {
+
+    // let game_resolution = getResolutionFromCookie("gameResolution");
+    // ${'.gameContainer'}.css({"width": str(game_resolution.res_x + "px"),"height":str(game_resolution.res_y + "px")});
+    // $gameDiv.style.width = game_resolution.res_x + "px"; $gameDiv.style.height = game_resolution.res_y + "px";
+
     paper.setup(getCanvas());
+
     let world = new SproutWorld();
     world.initializeMap(null, 10);
 
     let tool = new paper.Tool();
-
     tool.onMouseUp = function onMouseUp(e) {
         if (!world.clickSelection) {
             // Reset point colors
@@ -27,7 +33,6 @@ $(function() {
             // Reset the selection
             if (world.target) world.submitSelection();
             else if (world.source) world.resetSelection();
-            // world.resetSelection(); evt hernede?
 
         } else if (world.clickSelection) {
             if (world.source && world.target) {
@@ -56,3 +61,27 @@ $(function() {
         if (world.source) world.source.fillColor = SEL_POINT_COLOR;
     }
 });
+
+
+// DON'T Remove commented code yet
+/*
+window.onload = function() {
+
+    let canvas = document.getElementById('sproutGameCanvas');
+
+    const sprout_scope = new paper.PaperScope();
+
+    const world = new SproutWorld(sprout_scope, canvas);
+
+    // Check if user has loaded a map from file
+    let loaded_game = localStorage.getItem("loaded-game");
+    if (loaded_game != null) {
+      let parsed = JSON.parse(loaded_game);
+      world.generateWorld(null,parsed.init_points);
+      localStorage.removeItem("loaded-game"); // Cleaning up local storage
+    } else {
+      world.generateWorld(null,15);
+    }
+
+};
+*/

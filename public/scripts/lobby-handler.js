@@ -4,7 +4,7 @@ $(function () {
 
     $.joinRoom = function(room) {
         socket.emit('joinRoom', room, function (success) {
-            if (success) $.changeView("gamePane");
+            if (success) $.changeView("game");
             else alert("Failed to join room " + room);
         });
     };
@@ -26,9 +26,9 @@ $(function () {
         return false;
     });
 
-    $('div.close-popup').click(function() {
+    $('div.back-btn').click(function() {
         console.log("click")
-        $.changeView('mainMenu');
+        $.changeView("main_menu");
     });
 
     $('#rooms').on("click", "tr[role=\"button\"]", function () {
@@ -45,11 +45,11 @@ $(function () {
     });
 
     $('#settingsBtn').click(function () {
-        $.changeView("settingsPane");
+        $.changeView("settings");
     });
 
     $('#scoreboardBtn').click(function () {
-        $.changeView("scoreboardPane");
+        $.changeView("scoreboard");
         // $("#scoreboardPane").fadeIn(1000);
     });
 

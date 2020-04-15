@@ -1,47 +1,9 @@
-extends layout
-
-block scripts
-    script(type="text/javascript" src="https://unpkg.com/acorn")
-    script(type='text/javascript' src='scripts/frameworks/paper-full.js')
-    script(type='module' src='scripts/game-handler.js')
-
-block content
-    style.
-        form {
-            background: #000;
-            padding: 3px;
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-        }
-
-        form input {
-            border: 0;
-            padding: 10px;
-            width: 100%;
-            margin-right: .5%;
-        }
-
-        #messages {
-            list-style-type: none;
-            margin: 0;
-            padding: 0;
-        }
-
-        #messages li {
-            padding: 5px 10px;
-        }
-
-        #messages li:nth-child(odd) {
-            background: #eee;
-        }
-
-
+div(class="flex-container hidden")#game
     canvas(resize="true")#sproutGameCanvas
+    table(class="w3-table w3-striped w3-text-teal msg-box")#messages
+        tbody
 
-    div
-        ul#messages
-        form(action='')
-            input(type="text")#msg
-            //input(type="submit" value="Send")
-            a(class='button')#sendMsgBtn Send
+    form(action="" autocomplete="off")
+        div(class="flex-container" style="display:inline-flex; width:100%")
+            input(type="text" style="width:90%;")#msg
+            button Send

@@ -1,6 +1,6 @@
 let socket = io();
 let username;
-const viewIDs = ['mainMenu', 'gamePane', 'settingsPane','scoreboardPane'];
+const viewIDs = ['main_menu', 'game', 'settings','scoreboard'];
 
 $(function () {
     socket.on('connect', function () {

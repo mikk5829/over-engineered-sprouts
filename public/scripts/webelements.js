@@ -1,9 +1,9 @@
 $(function () {
     $.changeView = function (newView) {
-        for (let viewName of viewIDs) {
-            $('#' + viewName).addClass('hidden').hide();
-        }
         $('#' + newView).removeClass('hidden').show();
+        for (let viewName of viewIDs) {
+            if (viewName!==newView) $('#' + viewName).addClass('hidden').hide();
+        }
     };
 
     $("form").submit(function (e) {
@@ -38,7 +38,6 @@ function setCookie(name, value) {
  * @memberOf WebElements
  * */
 function getCookie(name) {
-    console.log("sup")
     var re = new RegExp(name + "=([^;]+)");
     var value = re.exec(document.cookie);
     return (value != null) ? unescape(value[1]) : null;
@@ -52,6 +51,7 @@ function getCookie(name) {
 function storeValuesFromForm(form) {
     setCookie("dotColor", form.dotColor.value);
     setCookie("playerName", form.playerName.value);
+    setCookie("gameResolution", form.gameResolution.value);
     return true;
 }
 

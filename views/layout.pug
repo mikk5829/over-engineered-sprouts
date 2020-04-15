@@ -1,14 +1,24 @@
 doctype html
 html
-    head
-        title= title
-        link(rel='stylesheet', href='/stylesheets/normalize.css')
-        link(rel='stylesheet', href='/stylesheets/skeleton.css')
-        link(rel='stylesheet', href='/stylesheets/style.css')
-        script(src='/socket.io/socket.io.js')
-        script(src='https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js')
-        link(rel='stylesheet' href='https://www.w3schools.com/w3css/4/w3.css')
-        block scripts
+    div(class="container")#main_container
+        head
+            title= title
+            // Sprouts logo
+            a(href="/" style="position: relative; z-index: 0;")
+                img(style="width:35em;" src='../assets/sprouts4.svg')
+
+            link(rel='stylesheet', href='/stylesheets/normalize.css')
+            link(rel='stylesheet', href='/stylesheets/skeleton.css')
+            link(rel='stylesheet', href='/stylesheets/style.css')
+
+            link(rel='stylesheet' href='https://www.w3schools.com/w3css/4/w3.css')
             link(href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet")
-    body
-        block content
+
+            block scripts
+                script(src="https://www.w3schools.com/lib/w3.js")
+                script(src='https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js')
+                script(type="text/javascript" src="https://unpkg.com/acorn")
+                script(type='text/javascript' src='scripts/frameworks/paper-full.js')
+
+        body
+             block content
