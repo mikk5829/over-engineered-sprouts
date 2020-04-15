@@ -1,6 +1,6 @@
 
 $(function () {
-    let $msgField = $('#msg');
+    let $msgField = $('#chatMsgField');
 
     $.joinRoom = function(room) {
         socket.emit('joinRoom', room, function (success) {
@@ -18,9 +18,16 @@ $(function () {
         });
     }
 
-    // Submit the current chat message
-    $('form').submit(function (e) {
+    /*// Submit the current chat message
+    $msgField.submit(function (e) {
         e.preventDefault(); // prevents page reloading
+        socket.emit('sendChat', $msgField.val());
+        $msgField.val('');
+        return false;
+    });*/
+
+    $("#chatMsgForm").submit(function(e) {
+        e.preventDefault();
         socket.emit('sendChat', $msgField.val());
         $msgField.val('');
         return false;

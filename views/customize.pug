@@ -5,7 +5,7 @@
 div(class="flex-container hidden")#settings
     div(class="back-btn") X
 
-    form(name="customization" id="customization" onsubmit="return storeValuesFromForm(customization)")
+    form#customization
         div(class="container")
             h1(class='center-text') Customization
             //- Space between header and content
@@ -30,8 +30,8 @@ div(class="flex-container hidden")#settings
                     select(class="u-full-width" id="resolution-dropdown-select", name="gameResolution") Select
 
             div(class='row center-text')
-                a(class='button', id='saveForm', onclick='storeValuesFromForm(customization)')
-                    h4 save
+                input(class="button", type="submit", value="Save")#submitBtn
+
 
 
 //input(type="text")#textInput

@@ -13,7 +13,7 @@ function reset() {
 
 paper.install(window); // Make the paper scope global
 $(function() {
-
+    // FIXME
     // let game_resolution = getResolutionFromCookie("gameResolution");
     // ${'.gameContainer'}.css({"width": str(game_resolution.res_x + "px"),"height":str(game_resolution.res_y + "px")});
     // $gameDiv.style.width = game_resolution.res_x + "px"; $gameDiv.style.height = game_resolution.res_y + "px";

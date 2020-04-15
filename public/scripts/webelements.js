@@ -1,21 +1,47 @@
 $(function () {
     let dotColor = getCookie("dotColor");
     let playerName = getCookie("playerName");
+    // let gameResolution = getCookie("gameResolution");
 
-    if (playerName)  $('form[name="playerName"]').val(playerName);
-    if (dotColor)  $('form[name="dotColor"]').val(dotColor);
+    if (playerName) {
+        $('form[name="playerName"]').val(playerName);
+        username = playerName;
+    }
+    if (dotColor) {
+        $('form[name="dotColor"]').val(dotColor);
+    }
+    // if (gameResolution) $('form[name="dotColor"]').val(dotColor);
+
 
     $.changeView = function (newView) {
         $('#' + newView).removeClass('hidden').show();
         for (let viewName of viewIDs) {
-            if (viewName!==newView) $('#' + viewName).addClass('hidden').hide();
+            if (viewName !== newView) $('#' + viewName).addClass('hidden').hide();
         }
     };
 
-    $("form").submit(function (e) {
-        setCookie("playerName", $("#textInput").val());
-        setCookie("dotColor", $("#colorInput").val());
-        return true;
+    $.fillForm = function () {
+        console.log(getCookie("playerName"));
+    };
+
+    $("#customization").submit(function (e) {
+        console.log("submit");
+        e.preventDefault();
+        setCookie("dotColor", $("input[name=dotColor]").val());
+        setCookie("playerName", $("input[name=playerName]").val());
+        setCookie("gameResolution", $("input[name=gameResolution]").val());
+        $.changeView('main_menu');
+
+        // LAURA TODO: Fortæl serveren at brugeren vil ændre navn, ændr navnet som hører til brugerens socket
+
+        let playerName = getCookie("playerName");
+        if (playerName) {
+            console.log(username)
+            username = playerName;
+            console.log(playerName, username)
+        }
+
+        // return false;
     })
 });
 
@@ -54,12 +80,14 @@ function getCookie(name) {
  * @param {string} form The form we are storing from.
  * @memberOf WebElements
  * */
+/*
 function storeValuesFromForm(form) {
     setCookie("dotColor", form.dotColor.value);
     setCookie("playerName", form.playerName.value);
     setCookie("gameResolution", form.gameResolution.value);
     return true;
 }
+*/
 
 /**
  * Saves entire cookies when "enter" is pressed inside form
@@ -70,16 +98,3 @@ function storeValuesFromForm(form) {
         storeValuesFromForm(document.customization)
     }
 };*/
-
-/**
- * Loads entire cookies when window is loaded
- * @memberOf WebElements
- * */
-
-/*
-window.onload = function loadValuesToForm() {
-    console.log(getCookie("playerName"));
-
-};
-*/
-

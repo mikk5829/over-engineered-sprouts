@@ -21,4 +21,5 @@ window.onload = function () {
         option.setAttribute("value",elem.res_x + "x" + elem.res_y);
         resolution_select.appendChild(option);
     }
-};*/
+};
+*/
