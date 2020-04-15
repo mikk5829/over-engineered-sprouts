@@ -20,6 +20,8 @@ router.get('/', function (req, res, next) {
     res.render('index2', {title: 'Sprouts'});
 });
 
+/*
+
 router.get('/live', function (req, res, next) {
     res.send('YES I AM LIVE');
 });
@@ -37,6 +39,7 @@ router.get(/game/, function(req,res) {
     console.log(res);
     res.render('game',{title: 'Game'});
 });
+*/
 
 /**
  * @memberOf routes

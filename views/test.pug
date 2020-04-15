@@ -1,0 +1,22 @@
+// The main content of the page
+div(class="main-block flex-container" style="align-items: center; display:inline-flex;")#mainMenu
+
+    // Buttons on left side
+    div(style="position:relative;bottom:5%;")
+        a(class='button')#importBtn Import
+            input(type='file' name='world-input' style="display:none" accept="text/plain,.txt" onchange="handleFile(this.files)")#fileInput
+        a(class='button' )#generateBtn Generate
+        a(class='button')#settingsBtn Settings
+        a(class='button')#scoreboardBtn Scoreboard
+
+    div
+        // Table containing a list of games
+        table(class="w3-table w3-hoverable")#rooms
+            thead
+                tr
+                    th(class="w3-left-align") name
+                    th(class="w3-right-align") players
+            tbody
+        div(class="flex-container" style="display:inline-flex; width:70%")
+            a(class='button')#quickplayBtn Quickplay
+            a(class='button')#newGameBtn New Game

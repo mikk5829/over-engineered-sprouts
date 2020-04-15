@@ -2,16 +2,9 @@
 $(function () {
     let $msgField = $('#msg');
 
-    function changeView(newView) {
-        for (let viewName of viewIDs) {
-            $('#' + viewName).addClass('hidden').hide();
-        }
-        $('#' + newView).removeClass('hidden').show();
-    }
-
     $.joinRoom = function(room) {
         socket.emit('joinRoom', room, function (success) {
-            if (success) changeView("gamePane");
+            if (success) $.changeView("gamePane");
             else alert("Failed to join room " + room);
         });
     };
@@ -33,6 +26,11 @@ $(function () {
         return false;
     });
 
+    $('div.close-popup').click(function() {
+        console.log("click")
+        $.changeView('mainMenu');
+    });
+
     $('#rooms').on("click", "tr[role=\"button\"]", function () {
         $.joinRoom($(this).data("href"));
     });
@@ -47,12 +45,14 @@ $(function () {
     });
 
     $('#settingsBtn').click(function () {
-        console.log("click");
+        $.changeView("settingsPane");
     });
 
     $('#scoreboardBtn').click(function () {
-        console.log("click");
+        $.changeView("scoreboardPane");
+        // $("#scoreboardPane").fadeIn(1000);
     });
+
 
     $('#quickplayBtn').click(function () {
         socket.emit('quickplay', function (success, room) {

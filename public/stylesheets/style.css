@@ -104,3 +104,13 @@ td {
     /*align-items: center;*/
     z-index: 3;
 }
+
+.close-popup {
+    float: right;
+    color: rgba(255,204,0,1);
+    font-size: 30px;
+    font-weight: 700;
+    z-index: 75;
+    margin: 20px;
+    cursor: pointer;
+}
