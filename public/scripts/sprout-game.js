@@ -6,6 +6,42 @@ function getCanvas() {
     return document.getElementById("sproutGameCanvas");
 }
 
+function generateTileMap(resolution, detail) {
+    let tile_x = resolution.res_x/detail; let tile_y = resolution.res_y/detail;
+    console.log("tile_x: " + tile_x + " " + "tile_y: " + tile_y);
+    let matrix = math.zeros(detail, detail);
+    let tile_size = tile_x;
+    let tiles = [];
+    let prev_index = [0,0];
+    let count = 0;
+
+    // Get paths before tileMap setup
+    let paths = paper.project.getItems({
+        class: Path
+    });
+
+    // Setup initial tileShapes
+    matrix.forEach(function (value, index) {
+        let x = index[0] * tile_size;
+        let y = index[1] * tile_size;
+
+        let size = new Size(tile_size, tile_size);
+
+        let rect = new Rectangle(new Point(x, y), size);
+        let rect_shape = new Shape.Rectangle(rect);
+        tiles.push(rect_shape);
+    });
+
+    // Draw grid to visualize stuff
+    let tile_group = new paper.Group(tiles);
+    tile_group.style = {
+        strokeColor: 'black',
+        strokeWidth: 0.5,
+        strokeCap: 'round'
+    };
+
+}
+
 paper.install(window); // Make the paper scope global
 window.onload = function () {
     let game_resolution = getResolutionFromCookie("gameResolution");
@@ -22,6 +58,7 @@ window.onload = function () {
     rect.sendToBack();
     let backgroundLayer = new paper.Layer(rect);
     paper.project.insertLayer(0, backgroundLayer);
+
 
     let world = new SproutWorld();
     world.initializeMap(null, 10);
@@ -65,7 +102,9 @@ window.onload = function () {
 
         if (world.source) world.source.fillColor = SEL_POINT_COLOR;
 
-    }
+    };
+
+    generateTileMap(game_resolution, 64);
 };
 
 
