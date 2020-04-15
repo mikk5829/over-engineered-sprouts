@@ -52,24 +52,26 @@ function storeValuesFromForm(form)
 {
     setCookie("dotColor", form.dotColor.value);
     setCookie("playerName", form.playerName.value);
+    setCookie("gameResolution", form.gameResolution.value);
     return true;
 }
-
-/**
- * Saves entire cookies when "enter" is pressed inside form
- * @memberOf WebElements
- * */
-document.customization.onkeydown = function(event) {
-    if (event.keyCode == 13) {
-        storeValuesFromForm(document.customization)
-    }
-};
 
 /**
  * Loads entire cookies when window is loaded
  * @memberOf WebElements
  * */
-window.onload = function loadValuesToForm() {
+function loadValuesToForm() {
     if(field1 = getCookie("dotColor")) document.customization.dotColor.value = field1;
     if(field2 = getCookie("playerName")) document.customization.playerName.value = field2;
-};
+    if(field3 = getCookie("gameResolution")) document.customization.gameResolution.value = field3;
+
+    /**
+     * Saves entire cookies when "enter" is pressed inside form
+     * @memberOf WebElements
+     * */
+    document.customization.onkeydown = function(event) {
+        if (event.keyCode == 13) {
+            storeValuesFromForm(document.customization)
+        }
+    };
+}

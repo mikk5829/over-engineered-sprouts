@@ -1,6 +1,6 @@
 import {SproutWorld} from "./modules/SproutWorld.js";
+import {getCookieValue, getResolutionFromCookie} from "./modules/Utility.js"
 import {POINT_COLOR, SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR, POINT_SIZE} from "./modules/SproutWorld.js";
-
 
 function getCanvas() {
     return document.getElementById("sproutGameCanvas");
@@ -8,6 +8,9 @@ function getCanvas() {
 
 paper.install(window); // Make the paper scope global
 window.onload = function () {
+    let game_resolution = getResolutionFromCookie("gameResolution");
+    let game_div = document.getElementById("game-container");
+    game_div.style.width = game_resolution.res_x + "px"; game_div.style.height = game_resolution.res_y + "px";
     paper.setup(getCanvas());
 
     // Draw background layer

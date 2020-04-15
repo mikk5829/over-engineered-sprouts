@@ -3,5 +3,6 @@
   <component name="JavaScriptLibraryMappings">
     <file url="PROJECT" libraries="{w3}" />
     <includedPredefinedLibrary name="Node.js Core" />
+    <file url="PROJECT" libraries="{bootstrap, math}" />
   </component>
 </project>
