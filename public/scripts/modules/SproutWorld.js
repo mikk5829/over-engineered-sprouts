@@ -158,6 +158,7 @@ export class SproutWorld {
             radius: POINT_SIZE,
             fillColor: POINT_COLOR
         });
+        point.center = location;
         point.connections = connections;
         point.edges = [];
         point.neighbours = [];
@@ -227,21 +228,30 @@ export class SproutWorld {
             }
         };
 
+        point.commonEdges = function (p2) {
+            let inCommon = [];
+            for (let edge of point.edges) {
+                if (edge.vertices.includes(point) && edge.vertices.includes(p2))
+                    inCommon.push(edge);
+            }
+            return inCommon;
+        };
+
         point.dfs = function (toFind) {
+            //OMSKRIV TIL AT VIRKE PÅ EDGES I STEDET
             //Marker som søgende
             point.status = "seeking";
             //Kør dfs på alle naboer
-            for (let p of point.neighbours) {
-                if (p !== point.root) {
+            for (let e of point.edges) {
+                let p = e.vertices.find(x => x !== point);
+                if (p !== point.root && p !== undefined) {
                     //Er en nabo søgende eller færdig, find alle links op til nabo og tilføj liste til cycles[]
                     if (p.status === "") {
                         //Sæt parent til dette point
                         p.root = point;
-                        point.edges.find(e => (e.vertices.includes(p) && e.vertices.includes(point))).strokeColor = "red";
                         p.dfs(toFind);
-                    } else {
+                    } else if (p.status === "done") {
                         toFind.push([p, point]);
-                        point.edges.find(e => (e.vertices.includes(p) && e.vertices.includes(point))).strokeColor = "green";
                     }
                 }
             }
@@ -277,6 +287,10 @@ export class SproutWorld {
     }
 
     getCycles() {
+        /*
+        PROBLEM lige nu er at to punkter med 2 paths mellem sig ikke bliver godkendt, da den ene er den andens root. DFS skal ændres til at tjekke alle edges i stedet
+        passer den traverserede edge ned så den ikke tjekkes to gange
+         */
         let toFind = [];
         //Reset alle punkter til ikke at have nogen root, status eller branches
         for (let p of this.points) {
@@ -290,10 +304,83 @@ export class SproutWorld {
                 p.dfs(toFind);
             }
         }
+        let loops = [];
         //For hvert element i toFind
+        for (let t of toFind){
             //For det første element i toFind, følg træet til roden
-            //For andet element i toFind, følg træet til første element indeholdt i første
+            let r1 = t[0];
+            let paths = [];
+            let p1 = [];
+            let p2 = [];
+            while (r1.root !== r1) {
+                p1.push(r1);
+                r1 = r1.root;
+            }
+            p1.push(r1);
+            //For andet element i toFind, følg træet til roden
+            let r2 = t[1];
+            while (r2.root !== r2) {
+                p2.push(r2);
+                r2 = r2.root;
+            }
+            p2.push(r2);
+            //Start fra t[0], arbejd opad indtil en fællesnode mellem t[0] og t[1] findes. Slet alt derefter i begge.
+            for (let i = 0; i < p1.length; i++){
+                if (p2.includes(p1[i])) {
+                    p1.splice(i, p1.length);
+                    break;
+                }
+            }
+            //Fjern alt efter første fælles element
+            for (let i = 0; i < p2.length; i++){
+                if (p1.includes(p2[i])) {
+                    p2.splice(i, p2.length);
+                    break;
+                }
+            }
+            for (let v of p1) { //tilføj  alle edges op til v1's rod
+                if(v.root !== v)
+                    paths.push(v.edges.find(e => e.vertices.includes(v.root)));
+                if (p2.includes(v))
+                    break;
+            }
+            //paths.concat(p1[p1.length-1].commonEdges(p2[p2.length-1]));
+            paths.push(p1[p1.length-1].edges.find(e => e.vertices.includes(p2[p2.length-1])));
+
+            for (let i = p2.length-1; i >= 1; i--){ //tilføj  alle edges op til v2's rod
+                let v = p2[i];
+                paths.push(v.edges.find(e => e.vertices.includes(p2[i-1])));
+            }
+
             //Tilføj deres fælles edge
+            paths.push(t[0].edges.find(e => (e.vertices.includes(t[1]))));
             //Gem eller returner ruten
+            loops.push(paths);
+        }
+        return loops;
+    }
+
+    possibleMove(p1, p2, debug = false) {
+        for (let c of this.getCycles()){
+            let total = new paper.Path();
+            for (let p of c){
+                if (p !== undefined) {//TODO: dont add undefined to cycles
+                for (let s of p.segments)
+                    total.add(s);
+                }
+            }
+            if (debug)
+                total.fillColor = "green";
+            total.opacity = 0.5;
+            if ((total.contains(p1.center) && !total.contains(p2.center)) || (total.contains(p2.center) && !total.contains(p1.center)))
+                return false;
+            //total.fillColor = "green";
+            /*var area = new paper.CompoundPath(c);
+            area.closed = true;
+            area.fillColor = 'red';
+            area.closePath();
+            c[0].fillColor = 'blue';*/
+        }
+        return true;
     }
 }

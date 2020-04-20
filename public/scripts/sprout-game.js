@@ -39,6 +39,7 @@ window.onload = function () {
         } else if (world.clickSelection) {
             if (world.source && world.target) {
                 console.log(`Selection: source ${world.source.id}, target ${world.target.id}`);
+                console.log(world.possibleMove(world.source, world.target, true));
                 // The user has clicked on two points.
                 // TODO: Check if a path exists between these points
                 world.resetSelection();
@@ -61,12 +62,6 @@ window.onload = function () {
 
         for (let point of world.selectedPoints) {
             point.fillColor = SEL_POINT_COLOR;
-            for (let p of world.points){
-                if (p.status === "done")
-                    p.selected = true;
-                else
-                    p.selected = false;
-            }
         }
 
         if (world.source) world.source.fillColor = SEL_POINT_COLOR;
