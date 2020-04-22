@@ -251,6 +251,10 @@ export class SproutWorld {
                         //Sæt parent til dette point
                         p.root = point;
                         p.rootEdge = e;
+                        if (!(e.vertices[0] === p)){
+                            e.reverse();
+                            e.vertices.reverse();
+                        }
                         p.dfs(toFind);
                     } else if (p.status === "done") {
                         toFind.push(e);
