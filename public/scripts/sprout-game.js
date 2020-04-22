@@ -54,7 +54,7 @@ window.onload = function () {
         for (let point of world.points) {
             point.fillColor = POINT_COLOR;
             for (let path of point.edges){
-                path.strokeColor = "black";
+                //path.strokeColor = "black";
             }
         }
 
