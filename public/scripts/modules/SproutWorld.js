@@ -253,7 +253,7 @@ export class SproutWorld {
                         p.rootEdge = e;
                         p.dfs(toFind);
                     } else if (p.status === "done") {
-                        toFind.push([p, point, e]);
+                        toFind.push(e);
                     }
                 }
             }
@@ -289,6 +289,8 @@ export class SproutWorld {
     }
 
     getCycles() {
+        //TODO: Sørg for at alle edges "vender" rigtigt
+        //TODO: Ikke alle kanter i et loop bliver tilføjet selv om loopet er opdaget
         let toFind = [];
         for (let p of this.points){
             p.root = p;
@@ -305,9 +307,9 @@ export class SproutWorld {
 
         for (let t of toFind){
             let paths0 = [];
-            let loop = [t[2]];
-            let p0 = t[2].vertices[0];
-            let p1 = t[2].vertices[1];
+            let loop = [t];
+            let p0 = t.vertices[0];
+            let p1 = t.vertices[1];
             while (p0.root !== p0){
                 paths0.push(p0.rootEdge);
                 p0 = p0.root;
@@ -323,6 +325,8 @@ export class SproutWorld {
             }
             paths0.splice(i+1, paths0.length);
             loop.concat(paths0.reverse());
+            for (let l of loop)
+                l.selected = true;
             cycles.push(loop);
         }
         return cycles;
