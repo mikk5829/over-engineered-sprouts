@@ -1,64 +1,38 @@
 import {SproutWorld} from "./modules/SproutWorld.js";
 import {getCookieValue, getResolutionFromCookie} from "./modules/Utility.js"
 import {POINT_COLOR, SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR, POINT_SIZE} from "./modules/SproutWorld.js";
+import {CollisionGrid} from "./modules/CollisionGrid.js";
 
 function getCanvas() {
     return document.getElementById("sproutGameCanvas");
 }
 
-function generateTileMap(resolution, detail, world) {
-    let tile_x = resolution.res_x/detail; let tile_y = resolution.res_y/detail;
-    console.log("tile_x: " + tile_x + " " + "tile_y: " + tile_y);
-    let matrix = math.zeros(detail, detail);
-    let tile_matrix = math.matrix(); tile_matrix.resize([detail, detail], null);
-    let tile_size = tile_x;
+function visualizeObstacles(collisionGrid, sproutWorld) {
+    let cell_size = collisionGrid.cell_size;
+    // Get initial obstacles
+    let circle_obstacles = [...sproutWorld.points];
+    // ToDo - paths and curves are also considered obstacles
 
-    // Get obstacles, that is, things that stand in the way making their position invalid for search
-    let obstacles = [...world.points]; // ToDo - add ,...world.paths later
+    // Let's add them to our collisionGrid aka. spatialHash
+    circle_obstacles.forEach(obst => collisionGrid.t_insert_rectangle(obst.bounds, obst));
 
-    let tile_shapes = [];
-    // Setup initial tileShape-grid needed to check for collisions
-    matrix.forEach(function (value, index) {
-        let x = index[0] * tile_size;
-        let y = index[1] * tile_size;
-
-        let size = new Size(tile_size, tile_size);
-
-        let rect = new Rectangle(new Point(x, y), size);
-        tile_matrix.set(index, rect, null); // Load tiles into tile_matrix
+    // DEBUGGING - Now let's draw those tiles that overlap with hitboxes
+    let tile_shape_group = new paper.Group();
+    for(let [key, set] of Object.entries(collisionGrid.contents)){
+        let tile_pos = key.split(';');
+        let x = tile_pos[0]*cell_size; let y = tile_pos[1]*cell_size;
+        // Creating rectangle shape to visualize collided tile
+        let rect = new Rectangle(new Point(x, y), cell_size);
         let rect_shape = new Shape.Rectangle(rect);
-        tile_shapes.push(rect_shape);
-    });
-
-    // Draw grid to visualize stuff
-    let tile_shape_group = new paper.Group(tile_shapes);
+        rect_shape.opacity = 0.35;
+        tile_shape_group.addChild(rect_shape);
+    }
     tile_shape_group.style = {
+        fillColor: 'red',
         strokeColor: 'black',
-        strokeWidth: 0.5,
-        strokeCap: 'round'
+        strokeWidth: 1
     };
 
-    // Collect nearby tiles around obstacle objects
-    let temp_tiles = [];
-    obstacles.forEach(function (obstacle, obst_index, obst_array) {
-        let obstacle_point = obstacle.position;
-        let tile_distance = [math.round(obstacle_point.x/tile_size), math.round(obstacle_point.y/tile_size)];
-
-        let surroundings = getSurroundings(tile_matrix, tile_distance[0], tile_distance[1]);
-        surroundings.forEach(function (consider, cons_index) {
-            temp_tiles.push(tile_matrix.get([consider.x,consider.y]));
-        });
-    });
-
-    // Check if collected tiles intersect with obstacles
-    let surrounding_tiles_group = new paper.Group(temp_tiles);
-
-    //let tile_hit = nearby_tiles.hitTestAll(obstacle_point);
-
-    //let intersections = obstacle.getIntersections();
-
-    //console.log(nearby_tiles.children);
-    //nearby_tiles.fillColor = 'red';
 
 }
 
@@ -106,6 +80,9 @@ window.onload = function () {
 
     let world = new SproutWorld();
     world.initializeMap(null, 10);
+    let collisionGrid = new CollisionGrid(16);
+    visualizeObstacles(collisionGrid, world);
+
 
     let tool = new paper.Tool();
 
@@ -147,8 +124,6 @@ window.onload = function () {
         if (world.source) world.source.fillColor = SEL_POINT_COLOR;
 
     };
-
-    generateTileMap(game_resolution, 64, world);
 };
 
 
