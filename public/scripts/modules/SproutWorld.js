@@ -257,6 +257,7 @@ export class SproutWorld {
                         }
                         p.dfs(toFind);
                     } else if (p.status === "done") {
+                        p.selected = true;
                         toFind.push(e);
                     }
                 }
@@ -310,7 +311,9 @@ export class SproutWorld {
         let cycles = [];
 
         for (let t of toFind){
+            t.selected = true;
             let paths0 = [];
+            let paths1 = [];
             let loop = [t];
             let p0 = t.vertices[0];
             let p1 = t.vertices[1];
@@ -318,33 +321,24 @@ export class SproutWorld {
                 paths0.push(p0.rootEdge);
                 p0 = p0.root;
             }
-            while (p1.root !== p1 && !paths0.includes(p1.rootEdge)){
-                loop.push(p1.rootEdge);
+            while (p1.root !== p1){
+                paths1.push(p1.rootEdge);
                 p1 = p1.root;
             }
-            let i = 0;
-            for (; i < paths0.length; i++){
-                if (paths0[i].vertices.includes(p1))
-                    break;
-            }
-            paths0.splice(i+1, paths0.length);
-            loop.concat(paths0.reverse());
-            for (let l of loop)
-                l.selected = true;
-            cycles.push(loop);
+            let difference = paths0.filter(x => !paths1.includes(x)).concat(paths1.filter(x => !paths0.includes(x)));
+            loop = loop.concat(difference);
+            cycles.push([...loop]);
         }
         return cycles;
     }
 
     possibleMove(p1, p2, debug = false) {
-        let cycles = this.getCycles()
+        let cycles = this.getCycles();
         for (let c of cycles){
             let total = new paper.Path();
             for (let p of c){
-                p.strokeColor = "red";
                 for (let s of p.segments)
                     total.add(s);
-
             }
             if (debug) {
                 total.fillColor = "green";
@@ -352,6 +346,7 @@ export class SproutWorld {
             total.opacity = 0.1;
             if ((total.contains(p1.center) && !total.contains(p2.center)) || (total.contains(p2.center) && !total.contains(p1.center)))
                 return false;
+            //total.remove();
         }
         return true;
     }
