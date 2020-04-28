@@ -120,6 +120,8 @@ export class SproutWorld {
             source.neighbours.push(newPoint);
             let line2 = line.splitAt(line.length/2);
             let line1 = line.clone();
+            line1.insert(0, source.center);
+            line2.add(target.center);
             line1.vertices = [];
             line2.vertices = [];
             line1.simplify(3);
@@ -257,7 +259,6 @@ export class SproutWorld {
                         }
                         p.dfs(toFind);
                     } else if (p.status === "done") {
-                        p.selected = true;
                         toFind.push(e);
                     }
                 }
@@ -311,7 +312,6 @@ export class SproutWorld {
         let cycles = [];
 
         for (let t of toFind){
-            t.selected = true;
             let paths0 = [];
             let paths1 = [];
             let loop = [t];
@@ -342,9 +342,9 @@ export class SproutWorld {
             }
             if (debug) {
                 total.fillColor = "green";
+                total.opacity = 0.1;
             }
-            total.opacity = 0.1;
-            if ((total.contains(p1.center) && !total.contains(p2.center)) || (total.contains(p2.center) && !total.contains(p1.center)))
+            if (((total.contains(p1.center) && total.getLocationOf(p1.center) === null) && !total.contains(p2.center)) || ((total.contains(p2.center) && total.getLocationOf(p2.center) === null) && !total.contains(p1.center)))
                 return false;
             //total.remove();
         }
