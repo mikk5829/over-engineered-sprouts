@@ -333,6 +333,10 @@ export class SproutWorld {
     }
 
     possibleMove(p1, p2, debug = false) {
+        /*TODO: Known bugs
+        Sometimes the "parent edge" from DFS will be reversed and create an area outside the cycle. Check if direction is correct?
+        If one large cycle is also split into 2 smaller cycles, one of them will be able to access all points on the other, but not vice versa.
+         */
         let cycles = this.getCycles();
         for (let c of cycles){
             let total = new paper.Path();
