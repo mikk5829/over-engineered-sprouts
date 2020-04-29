@@ -10,6 +10,10 @@ export function getCookieValue(cookieName) {
 
 export function getResolutionFromCookie(cookieName) {
     let value = getCookieValue(cookieName);
-    let components = value.split('x'); 
-    return {res_x:components[0],res_y:components[1]};
+    let components;
+    if (value) {
+        components = value.split('x');
+        return {res_x:components[0],res_y:components[1]};
+    }
+    return components;
 }

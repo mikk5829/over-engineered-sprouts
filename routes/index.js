@@ -6,12 +6,13 @@ var MongoClient = require('mongodb').MongoClient;
 var dbName = process.env.MONGO_DBO;
 var collection = process.env.MONGO_COLLECTION_USERS;
 
+
 /**
  * @namespace routes
  * GET home page
  */
-router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Sprouts' });
+router.get('/', function (req, res, next) {
+    res.render('index', {title: 'Sprouts'});
 });
 
 router.get('/live', function(req, res, next) {
