@@ -1,7 +1,10 @@
-// The idea is that tiles are like buckets. Buckets are associated with keys and several keys/buckets
+// The idea is that tiles are like buckets. Buckets are associated with keys and/or several keys
 // connects with a set of objects.
+import {SproutWorld} from "./SproutWorld.js";
+
 export class CollisionGrid {
     constructor(cell_size) {
+        console.log("CollisionGrid Created!");
         this.cell_size = cell_size;
         this.contents = {};
         //this.tile_matrix = math.matrix(); this.tile_matrix.resize([cell_size, cell_size], null); // May not be needed
@@ -9,8 +12,7 @@ export class CollisionGrid {
 
 // Return position of tile from point (Hash function)
     t_return(point) {
-        let key = Math.floor(point.x/this.cell_size)+";"+Math.floor(point.y/this.cell_size);
-        return key;
+        return Math.floor(point.x / this.cell_size) + ";" + Math.floor(point.y / this.cell_size);
     }
 
 // Return tile indices overlapping hitbox (Hash function)
@@ -35,7 +37,7 @@ export class CollisionGrid {
         if (this.contents[tile] === undefined) {
             this.contents[tile] = new Set();
         }
-        this.contents[tile].add(object);
+        this.contents[tile].add({object: object, visualized: false});
     }
 
 // Insert object from rectangle - Intended for use with hitboxes
@@ -49,6 +51,51 @@ export class CollisionGrid {
                 this.t_insert_point({x: x,y: y}, object);
             }
         }
+    }
+
+    t_insert_line(curves, object) {
+        console.log("curves");
+        console.log(curves);
+        for (let i = 0; i < curves.length; i++) {
+            for (let j = 0; j < curves[i].length; j++) {
+                let location = curves[i].getLocationAt(j);
+                this.t_insert_point(location.point, object);
+            }
+            //this.t_insert_point(curves[i].segment1.point, object);
+            //this.t_insert_point(curves[i].segment2.point, object);
+        }
+    }
+
+    v_update() {
+        let cell_size = this.cell_size;
+        let tile_shape_group = new paper.Group();
+        for(let [key, obj] of Object.entries(this.contents)) {
+            if (!obj.visualized) {
+                let tile_pos = key.split(';');
+                let x = tile_pos[0]*cell_size; let y = tile_pos[1]*cell_size;
+                // Creating rectangle shape to visualize collided tile
+                let rect = new Rectangle(new Point(x, y), cell_size);
+                let rect_shape = new Shape.Rectangle(rect);
+                rect_shape.opacity = 0.35;
+                tile_shape_group.addChild(rect_shape);
+                this.contents[key].visualized = true;
+            }
+            tile_shape_group.sendToBack();
+            tile_shape_group.style = {
+                fillColor: 'red',
+                strokeColor: 'black',
+                strokeWidth: 1
+            };
+        }
+    }
+
+    u_initObstacles(sproutWorld) {
+        let cell_size = this.cell_size;
+        // Get initial obstacles
+        let circle_obstacles = [...sproutWorld.points];
+
+        // Let's add them to our collisionGrid aka. spatialHash
+        circle_obstacles.forEach(obst => this.t_insert_rectangle(obst.bounds, obst));
     }
 
 }
