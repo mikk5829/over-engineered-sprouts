@@ -124,6 +124,7 @@ export class SproutWorld {
         if (source && target && this.legalMove(source, target, line)) {
             this.addPoint(line.getPointAt(line.length / 2), 2);
             this.addLine(source, target, line);
+            // CollisionGrid handling and updating
             this.collisionGrid.t_insert_line(line.curves, line);
             this.collisionGrid.v_update();
         } else {
@@ -156,6 +157,9 @@ export class SproutWorld {
         point.data.connections = connections;
         this.points.push(point);
         let _this = this;
+        if (this.collisionGrid != null) {
+            this.collisionGrid.t_insert_rectangle(point.bounds, point);
+        }
 
         point.onMouseDrag = function (e) {
             // When first starting to draw a line, reset the current selection
