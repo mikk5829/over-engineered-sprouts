@@ -354,4 +354,75 @@ export class SproutWorld {
         }
         return true;
     }
+
+    findPath(p1, p2, debug = false) {
+        let nodes = [p1.center, p2.center];
+        //Opdel alle streger efter segment-punkter og halvvejs mellem hver 2 segment-punkter
+        //Sæt punkter på hver side af hver  streg vinkelret ift. stregen
+        //10px væk hvis der er plads. Ellers halvdelen af afstanden til første kollision
+        for (let line of this.lineGroup.children){
+            for (let segment of line.segments){
+                let tangent = new paper.Point(segment.handleOut.x-segment.handleIn.x, segment.handleOut.y-segment.handleIn.y);
+                let normal = new paper.Point(-tangent.y, tangent.x);
+                normal.x = normal.x / (Math.sqrt(normal.x**2 + normal.y**2));
+                normal.y = normal.y / (Math.sqrt(normal.x**2 + normal.y**2));
+                let s1 = new paper.Point(segment.point.x + (normal.x*10.0), segment.point.y + (normal.y*10.0));
+
+                let s2 = new paper.Point(segment.point.x - (normal.x*10.0), segment.point.y - (normal.y*10.0));
+                nodes.push(s1);
+                nodes.push(s2);
+                let c1 = new paper.Path.Circle(s1, 2);
+                let c2 = new paper.Path.Circle(s2, 2);
+                c1.fillColor = "red";
+                c2.fillColor = "red";
+            }
+        }
+        //TODO: Sæt punkter langs kanten af spil-området. 1 pr. 100 pixels
+        //Alle punkter, inklusiv p1 og p2, får explored = false
+        for (let p of nodes)
+            p.explored = false;
+
+        let horizon = [p1.center];
+        p1.explored = true;
+        while (!p2.center.explored) {
+            if (horizon.length === 0) {
+                console.log("No path found");
+                return
+            }
+            let newHorizon = [];
+            //  for hvert element i horizon, find alle punkter hvor der kan gå en lige streg uden intersections og som ikke er explored
+            for (let n of horizon){
+                for (let n1 of nodes) {
+                    let ray = new paper.Path();
+                    ray.add(n);
+                    ray.add(n1);
+                    ray.legal = true;
+                    for (let p of this.lineGroup.children){
+                        if (n !== n1 && !n1.explored && p.getIntersections(ray).length === 0){
+                            ray.strokeColor = "red";
+                            ray.opacity = 0.1;
+                        } else {
+                            ray.remove();
+                            ray.legal = false;
+                        }
+                    }
+                    if (ray.legal){
+                        n1.explored = true;
+                        n1.parentRay = n;
+                        newHorizon.push(n1)
+                    }
+                }
+            }
+            horizon = [...newHorizon];
+        }
+        console.log("GOT IT");
+        let suggestion = new paper.Path();
+        let v = p2.center;
+        suggestion.add(p2.center);
+        while (v !== p1.center) {
+            suggestion.add(v.parentRay);
+            v = v.parentRay
+        }
+        suggestion.strokeColor = "black";
+    }
 }
