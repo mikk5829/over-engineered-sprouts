@@ -366,9 +366,9 @@ export class SproutWorld {
                 let normal = new paper.Point(-tangent.y, tangent.x);
                 normal.x = normal.x / (Math.sqrt(normal.x**2 + normal.y**2));
                 normal.y = normal.y / (Math.sqrt(normal.x**2 + normal.y**2));
-                let s1 = new paper.Point(segment.point.x + (normal.x*10.0), segment.point.y + (normal.y*10.0));
+                let s1 = new paper.Point(segment.point.x + (normal.x*10.0), segment.point.y + (normal.y*20.0));
 
-                let s2 = new paper.Point(segment.point.x - (normal.x*10.0), segment.point.y - (normal.y*10.0));
+                let s2 = new paper.Point(segment.point.x - (normal.x*10.0), segment.point.y - (normal.y*20.0));
                 nodes.push(s1);
                 nodes.push(s2);
                 let c1 = new paper.Path.Circle(s1, 2);
@@ -399,8 +399,15 @@ export class SproutWorld {
                     ray.legal = true;
                     for (let p of this.lineGroup.children){
                         if (n !== n1 && !n1.explored && p.getCrossings(ray).length === 0){
-                            ray.strokeColor = "red";
-                            ray.opacity = 0.1;
+                            for(let v of this.points) {
+                                if ((v === p1 || v === p2)  || v.getIntersections(ray).length === 0) {
+                                    ray.strokeColor = "red";
+                                    ray.opacity = 0.1;
+                                } else {
+                                    ray.legal = false;
+                                    ray.remove();
+                                }
+                            }
                         } else {
                             ray.remove();
                             ray.legal = false;
