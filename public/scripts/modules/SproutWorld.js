@@ -398,7 +398,7 @@ export class SproutWorld {
                     ray.add(n1);
                     ray.legal = true;
                     for (let p of this.lineGroup.children){
-                        if (n !== n1 && !n1.explored && p.getIntersections(ray).length === 0){
+                        if (n !== n1 && !n1.explored && p.getCrossings(ray).length === 0){
                             ray.strokeColor = "red";
                             ray.opacity = 0.1;
                         } else {
