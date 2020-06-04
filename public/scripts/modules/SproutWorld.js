@@ -241,7 +241,6 @@ export class SproutWorld {
         };
 
         point.dfs = function (toFind) {
-            //OMSKRIV TIL AT VIRKE PÅ EDGES I STEDET
             //Marker som søgende
             point.status = "seeking";
             //Kør dfs på alle naboer
