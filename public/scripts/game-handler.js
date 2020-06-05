@@ -37,6 +37,8 @@ $(function() {
         } else if (world.clickSelection) {
             if (world.source && world.target) {
                 console.log(`Selection: source ${world.source.id}, target ${world.target.id}`);
+                if (world.possibleMove(world.source, world.target))
+                    world.findPath(world.source, world.target);
                 // The user has clicked on two points.
                 // TODO: Check if a path exists between these points
                 world.resetSelection();
@@ -50,6 +52,9 @@ $(function() {
         // Update the colors of the points
         for (let point of world.points) {
             point.fillColor = POINT_COLOR;
+            for (let path of point.edges){
+                //path.strokeColor = "black";
+            }
         }
 
         if (world.hoveredPoint) world.hoveredPoint.fillColor = HOVER_POINT_COLOR;
