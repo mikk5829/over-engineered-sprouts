@@ -2,7 +2,6 @@
  * Generates the world
  * @namespace SproutWorld
  * */
-
 const POINT_COLOR = 'Indigo';
 const SEL_POINT_COLOR = 'Yellow';
 const HOVER_POINT_COLOR = 'CornflowerBlue';

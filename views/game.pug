@@ -1,9 +1,10 @@
-extends layout
-
-block scripts
-    script(type="text/javascript" src="https://unpkg.com/acorn")
-    script(type='text/javascript' src='scripts/frameworks/paper-full.js')
-    script(type='module' src='scripts/sprout-game.js')
-
-block content
+div(class="flex-container hidden")#game
     canvas(resize="true")#sproutGameCanvas
+    table(class="w3-table w3-striped w3-text-teal msg-box")#messages
+        tbody
+
+    form(action="" autocomplete="off")#chatMsgForm
+        div(class="flex-container" style="display:inline-flex; width:100%")
+            input(type="text" style="width:95%;")#chatMsgField
+            //input(class="button", type="submit", value="Save")#sendMsgBtn
+            button(type="submit", form="chatMsgForm" style="font-weight:bold") send

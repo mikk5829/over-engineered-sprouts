@@ -7,5 +7,8 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="w3" level="application" />
+    <orderEntry type="library" name="math" level="application" />
+    <orderEntry type="library" name="bootstrap" level="application" />
+    <orderEntry type="library" name="w3" level="application" />
   </component>
 </module>

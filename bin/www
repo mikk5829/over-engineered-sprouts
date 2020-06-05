@@ -7,6 +7,7 @@
 var app = require('../app');
 var debug = require('debug')('over-engineered-sprout:server');
 var http = require('http');
+var Sentencer = require('sentencer');
 
 /**
  * Get port from environment and store in Express.
@@ -25,66 +26,145 @@ var server = http.createServer(app);
  * Listen on provided port, on all network interfaces.
  */
 
-server.listen(port);
+server.listen(port, function () {
+    console.log("listening on *:3000")
+});
+
 server.on('error', onError);
 server.on('listening', onListening);
+
+
+/*
+* Socket IO stuff
+* */
+const io = require('socket.io').listen(server);
+let usernames = [];
+let rooms = [];
+
+io.sockets.on('connect', function (socket) {
+    console.log("connect");
+
+    // TODO: Only emit to lobby socket
+    socket.emit('updateLobby', rooms);
+    setInterval(function () {
+        socket.emit('updateLobby', rooms);
+    }, 1000);
+
+    // when the client emits 'adduser', this listens and executes
+    socket.on('addUser', function (fn) {
+        String.prototype.capitalize = function () {
+            return this.charAt(0).toUpperCase() + this.slice(1);
+        };
+
+        let name;
+        do {
+            let randInt = Math.floor(Math.random() * 10);
+            let adjective = Sentencer.make("{{ adjective }}").capitalize();
+            name = adjective + "Guest" + randInt;
+        } while (usernames.includes(name));
+
+        socket.username = name;
+        usernames.push(name);
+        console.log("Added user", name);
+        fn(name);
+    });
+
+    socket.on('joinRoom', function (id, fn) {
+        console.log("joinRoom", socket.username, id);
+        if (!rooms.some(e=>e.id===id)) fn(false);
+        else {
+            socket.room = id;
+            socket.join(id);
+            fn(true);
+        }
+
+    });
+
+    // Lets the user connect to an existing room if one exists
+    // Otherwise prompts them to create their own room
+    socket.on('quickplay', function (fn) {
+        if (rooms.length === 0) fn(false);
+        else {
+            fn(true, rooms[0].id);
+        }
+    });
+
+    socket.on('addRoom', function (id, fn) {
+        if (rooms.some(e=>e.id===id)) fn(false);
+        else {
+            console.log("Creating new room: " + id);
+            rooms.push({
+                'id': id,
+                'maxCapacity': 2,
+                'currentPlayers': 0
+            });
+            // nsp.push(io.of('/' + id));
+            fn(true, id);
+            io.emit('updateLobby', rooms,)
+        }
+    });
+
+    socket.on('sendChat', function (msg) {
+        console.log("received sendChat from " + socket.username + ": " + msg);
+        let timestamp = +new Date();
+        io.sockets.in(socket.room).emit('updateChat', timestamp, socket.username, msg);
+    });
+
+    // when the user disconnects.. perform this
+    socket.on('disconnect', function () {
+        // Remove username from list
+        const index = usernames.indexOf(socket.username);
+        if (index > -1) usernames.splice(index, 1);
+        socket.leave(socket.room);
+    });
+});
 
 /**
  * Normalize a port into a number, string, or false.
  */
-
 function normalizePort(val) {
-  var port = parseInt(val, 10);
-
-  if (isNaN(port)) {
-    // named pipe
-    return val;
-  }
-
-  if (port >= 0) {
-    // port number
-    return port;
-  }
-
-  return false;
+    let port = parseInt(val, 10);
+    if (isNaN(port)) return val;
+    if (port >= 0) return port;
+    return false;
 }
 
 /**
  * Event listener for HTTP server "error" event.
  */
-
 function onError(error) {
-  if (error.syscall !== 'listen') {
-    throw error;
-  }
+    if (error.syscall !== 'listen') {
+        throw error;
+    }
 
-  var bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
+    var bind = typeof port === 'string'
+        ? 'Pipe ' + port
+        : 'Port ' + port;
 
-  // handle specific listen errors with friendly messages
-  switch (error.code) {
-    case 'EACCES':
-      console.error(bind + ' requires elevated privileges');
-      process.exit(1);
-      break;
-    case 'EADDRINUSE':
-      console.error(bind + ' is already in use');
-      process.exit(1);
-      break;
-    default:
-      throw error;
-  }
+    // handle specific listen errors with friendly messages
+    switch (error.code) {
+        case 'EACCES':
+            console.error(bind + ' requires elevated privileges');
+            process.exit(1);
+            break;
+        case 'EADDRINUSE':
+            console.error(bind + ' is already in use');
+            process.exit(1);
+            break;
+        default:
+            throw error;
+    }
 }
 
 /**
  * Event listener for HTTP server "listening" event.
  */
-
 function onListening() {
-  var addr = server.address();
-  var bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'port ' + addr.port;
-  debug('Listening on ' + bind);
+    let addr = server.address();
+    let bind = typeof addr === 'string'
+        ? 'pipe ' + addr
+        : 'port ' + addr.port;
+    debug('Listening on ' + bind);
 }
+
+
