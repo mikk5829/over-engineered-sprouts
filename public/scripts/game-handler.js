@@ -5,6 +5,7 @@ import {POINT_COLOR, SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR, POINT_SIZ
 function openGame() {
 
 }
+let world;
 
 function getCanvas() {
     return document.getElementById("sproutGameCanvas");
@@ -18,7 +19,35 @@ function reset() {
 paper.install(window); // Make the paper scope global
 $(function () {
     socket.on("startGame", function (initialConfig) {
-        console.log(initialConfig);
+        console.log(getCanvas().width,getCanvas().height);
+        console.log("startGame",initialConfig);
+
+        paper.setup(getCanvas());
+
+        world = new SproutWorld();
+        // TODO parse json objects, cast to circle objects
+        world.initializeMap(JSON.parse(new paper.Path.Circle()));
+
+
+        paper.view.onFrame = function () {
+            // Update the colors of the points
+            for (let point of world.points) {
+                point.fillColor = POINT_COLOR;
+                for (let path of point.edges) {
+                    //path.strokeColor = "black";
+                }
+            }
+
+            if (world.hoveredPoint) world.hoveredPoint.fillColor = HOVER_POINT_COLOR;
+
+            for (let point of world.selectedPoints) {
+                point.fillColor = SEL_POINT_COLOR;
+            }
+
+            if (world.source) world.source.fillColor = SEL_POINT_COLOR;
+        }
+
+
     });
 
     socket.on('updateGame', function (data) {
@@ -38,10 +67,17 @@ $(function () {
     // ${'.gameContainer'}.css({"width": str(game_resolution.res_x + "px"),"height":str(game_resolution.res_y + "px")});
     // $gameDiv.style.width = game_resolution.res_x + "px"; $gameDiv.style.height = game_resolution.res_y + "px";
 
-    paper.setup(getCanvas());
+  /*  paper.setup(getCanvas());
 
     let world = new SproutWorld();
     world.initializeMap(null, 10);
+*/
+    socket.on('updateGame', function (path1, path2, point) {
+        console.log("received game update from server");
+        path1.addTo(world.lineGroup);
+        path2.addTo(world.lineGroup);
+        world.addPoint(point);
+    });
 
     let tool = new paper.Tool();
     tool.onMouseUp = function onMouseUp(e) {
@@ -68,7 +104,7 @@ $(function () {
         }
     };
 
-    paper.view.onFrame = function () {
+    /*paper.view.onFrame = function () {
         // Update the colors of the points
         for (let point of world.points) {
             point.fillColor = POINT_COLOR;
@@ -84,5 +120,5 @@ $(function () {
         }
 
         if (world.source) world.source.fillColor = SEL_POINT_COLOR;
-    }
+    }*/
 });

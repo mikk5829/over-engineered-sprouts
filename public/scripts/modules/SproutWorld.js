@@ -11,6 +11,7 @@ const POINT_SIZE = 10;
 
 export {POINT_COLOR, SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR, POINT_SIZE}
 
+
 export class SproutWorld {
 
     /**
@@ -43,10 +44,10 @@ export class SproutWorld {
      * Generates the map
      * @memberof SproutWorld
      * */
-    initializeMap(map_configuration = null, amount = null) {
-        // Generate initial points
-        for (let i = 0; i < amount; i++) {
-            this.addPoint(this.randomPointPosition())
+    initializeMap(points) {
+        for (let point of points) {
+            console.log(point);
+            this.addPoint(point, location, point.connections);
         }
     }
 
@@ -93,12 +94,6 @@ export class SproutWorld {
     }
 
     submitSelection() {
-        // fixme: dette er clientside!
-
-        socket.emit('path',this.currentLine, function (response) {
-            console.log(response);
-        });
-
         if (this.currentLine.segments.length <= 2) {
             this.resetSelection();
             return false;
@@ -115,21 +110,21 @@ export class SproutWorld {
         line.curves[0].point1 = sourcePoint.point;
         line.curves[line.curves.length - 1].point2 = targetPoint.point;
 
+        // Send to server for validation
+        socket.emit('submitPath', {
+            path: line,
+            from: source,
+            to: target
+        }, function (response) {
+            console.log(response);
+            // if receive callback saying false: resetselection (illegal move)
+            // todo if true/false
+        });
 
         // Save the path if it is a legal path
         if (source && target && this.legalMove(source, target, line)) {
             let newPoint = this.addPoint(line.getPointAt(line.length / 2), 0);
-            source.neighbours.push(newPoint);
-            let line2 = line.splitAt(line.length/2);
-            let line1 = line.clone();
-            line1.insert(0, source.center);
-            line2.add(target.center);
-            line1.vertices = [];
-            line2.vertices = [];
-            line1.simplify(3);
-            line2.simplify(3);
-            this.addLine(source, newPoint, line1);
-            this.addLine(newPoint, target, line2);
+
         } else {
             this.resetSelection();
             return false;
@@ -138,16 +133,6 @@ export class SproutWorld {
         return true;
     }
 
-    addLine(source, target, line) {
-        source.connections += 1;
-        source.edges.push(line);
-        source.neighbours.push(target);
-        target.connections += 1;
-        target.edges.push(line);
-        target.neighbours.push(source);
-        line.vertices = [source, target];
-        line.addTo(this.lineGroup);
-    }
 
     eventStatus(point) {
         // For debugging purposes
@@ -156,7 +141,8 @@ export class SproutWorld {
         return `\nPoint: ${point.id}, source: ${source}, target: ${target}, dragEnabled: ${this.dragEnabled}, clickSelection: ${this.clickSelection}`;
     }
 
-    addPoint(location, connections = 0) {
+    addPoint(location, connections = 0) {        // let point = new paper.Point(pointObj);
+
         let point = new paper.Path.Circle({
             center: location,
             radius: POINT_SIZE,
@@ -254,7 +240,7 @@ export class SproutWorld {
                         //Sæt parent til dette point
                         p.root = point;
                         p.rootEdge = e;
-                        if (!(e.vertices[0] === p)){
+                        if (!(e.vertices[0] === p)) {
                             e.reverse();
                             e.vertices.reverse();
                         }
@@ -299,30 +285,30 @@ export class SproutWorld {
         //TODO: Sørg for at alle edges "vender" rigtigt
         //TODO: Ikke alle kanter i et loop bliver tilføjet selv om loopet er opdaget
         let toFind = [];
-        for (let p of this.points){
+        for (let p of this.points) {
             p.root = p;
             p.rootEdge = null;
             p.status = "";
         }
-        for (let p of this.points){
-            if (p.status !== "done"){
+        for (let p of this.points) {
+            if (p.status !== "done") {
                 p.root = p;
                 p.dfs(toFind);
             }
         }
         let cycles = [];
 
-        for (let t of toFind){
+        for (let t of toFind) {
             let paths0 = [];
             let paths1 = [];
             let loop = [t];
             let p0 = t.vertices[0];
             let p1 = t.vertices[1];
-            while (p0.root !== p0){
+            while (p0.root !== p0) {
                 paths0.push(p0.rootEdge);
                 p0 = p0.root;
             }
-            while (p1.root !== p1){
+            while (p1.root !== p1) {
                 paths1.push(p1.rootEdge);
                 p1 = p1.root;
             }
@@ -339,9 +325,9 @@ export class SproutWorld {
         If one large cycle is also split into 2 smaller cycles, one of them will be able to access all points on the other, but not vice versa.
          */
         let cycles = this.getCycles();
-        for (let c of cycles){
+        for (let c of cycles) {
             let total = new paper.Path();
-            for (let p of c){
+            for (let p of c) {
                 for (let s of p.segments)
                     total.add(s);
             }
@@ -361,15 +347,15 @@ export class SproutWorld {
         //Opdel alle streger efter segment-punkter og halvvejs mellem hver 2 segment-punkter
         //Sæt punkter på hver side af hver  streg vinkelret ift. stregen
         //10px væk hvis der er plads. Ellers halvdelen af afstanden til første kollision
-        for (let line of this.lineGroup.children){
-            for (let segment of line.segments){
-                let tangent = new paper.Point(segment.handleOut.x-segment.handleIn.x, segment.handleOut.y-segment.handleIn.y);
+        for (let line of this.lineGroup.children) {
+            for (let segment of line.segments) {
+                let tangent = new paper.Point(segment.handleOut.x - segment.handleIn.x, segment.handleOut.y - segment.handleIn.y);
                 let normal = new paper.Point(-tangent.y, tangent.x);
-                normal.x = normal.x / (Math.sqrt(normal.x**2 + normal.y**2));
-                normal.y = normal.y / (Math.sqrt(normal.x**2 + normal.y**2));
-                let s1 = new paper.Point(segment.point.x + (normal.x*10.0), segment.point.y + (normal.y*20.0));
+                normal.x = normal.x / (Math.sqrt(normal.x ** 2 + normal.y ** 2));
+                normal.y = normal.y / (Math.sqrt(normal.x ** 2 + normal.y ** 2));
+                let s1 = new paper.Point(segment.point.x + (normal.x * 10.0), segment.point.y + (normal.y * 20.0));
 
-                let s2 = new paper.Point(segment.point.x - (normal.x*10.0), segment.point.y - (normal.y*20.0));
+                let s2 = new paper.Point(segment.point.x - (normal.x * 10.0), segment.point.y - (normal.y * 20.0));
                 nodes.push(s1);
                 nodes.push(s2);
                 if (debug) {
@@ -394,16 +380,16 @@ export class SproutWorld {
             }
             let newHorizon = [];
             //  for hvert element i horizon, find alle punkter hvor der kan gå en lige streg uden intersections og som ikke er explored
-            for (let n of horizon){
+            for (let n of horizon) {
                 for (let n1 of nodes) {
                     let ray = new paper.Path();
                     ray.add(n);
                     ray.add(n1);
                     ray.legal = true;
-                    for (let p of this.lineGroup.children){
-                        if (n !== n1 && !n1.explored && p.getCrossings(ray).length === 0){
-                            for(let v of this.points) {
-                                if ((v === p1 || v === p2)  || v.getIntersections(ray).length === 0) {
+                    for (let p of this.lineGroup.children) {
+                        if (n !== n1 && !n1.explored && p.getCrossings(ray).length === 0) {
+                            for (let v of this.points) {
+                                if ((v === p1 || v === p2) || v.getIntersections(ray).length === 0) {
                                     if (debug) {
                                         ray.strokeColor = "red";
                                         ray.opacity = 0.1;
@@ -418,7 +404,7 @@ export class SproutWorld {
                             ray.legal = false;
                         }
                     }
-                    if (ray.legal){
+                    if (ray.legal) {
                         n1.explored = true;
                         n1.parentRay = n;
                         newHorizon.push(n1)
