@@ -93,6 +93,12 @@ export class SproutWorld {
     }
 
     submitSelection() {
+        // fixme: dette er clientside!
+
+        socket.emit('path',this.currentLine, function (response) {
+            console.log(response);
+        });
+
         if (this.currentLine.segments.length <= 2) {
             this.resetSelection();
             return false;
