@@ -8,7 +8,11 @@ var app = require('../app');
 var debug = require('debug')('over-engineered-sprout:server');
 var http = require('http');
 var Sentencer = require('sentencer');
-// const gameServer = require('/public/scripts/game-server.js');
+
+var paper = require('paper');
+paper.install(this);
+paper.setup([400, 200]);
+
 
 /**
  * Get port from environment and store in Express.
@@ -36,37 +40,26 @@ server.on('listening', onListening);
 
 
 /*
-* Socket IO stuff
+* Socket IO
 * */
 const io = require('socket.io').listen(server);
 let activeRooms = [];
 
-function getSockets() {
-    return Object.keys(io.sockets.sockets);
-    // io.sockets is an object where a key is a socketId and value is reference to the socket object.
-
-    // Object.keys(io.sockets).forEach((socketId) => {
-    //     const socket = io.sockets[socketId];
-    // })
-}
-
-function isValid(username) {
-
-    if (!username || !(3 <= username.length <= 15) || !(/^[a-z0-9]+$/i.test(username))) return false;
-
-    return !getSockets().some(e => io.sockets.sockets[e].username === username);
-}
-
 io.sockets.on('connect', function (socket) {
 
-    socket.on('path', function (data, fn) {
-        console.log(data);
-        fn("gotcha");
-        // send to room including sender:
-        // io.sockets.in(socket.room).emit('updateGame', "hej venner");
+    // Client has submitted a path -> server will validate the path
+    socket.on('submitPath', (from, to, path, fn) => {
+        console.log(`${socket.username} in game ${socket.room.id} submits a path`);
 
-        // send to room excluding sender:
-        socket.broadcast.to(socket.room).emit('updateGame', data);
+        let game = socket.room.game;
+        if (!game.isLegal(from, to, path)) {
+            fn(false); // Callback - path not accepted
+            return false;
+        } else {
+            fn(true); // Callback - path accepted
+            io.sockets.in(socket.room).emit('updateGame', game.savePath(from, to, path));
+            return true;
+        }
     });
 
     // TODO: Only emit to lobby socket
@@ -76,13 +69,14 @@ io.sockets.on('connect', function (socket) {
 
     // when the client emits 'join', this listens and executes
     socket.on('join', (requestedUsername, fn) => {
+        console.log("Client wants to join with username", requestedUsername);
+
         String.prototype.capitalize = function () {
             return this.charAt(0).toUpperCase() + this.slice(1);
         };
 
         let username;
-        console.log("Client wants to join with username", requestedUsername);
-        if (isValid(requestedUsername)) {
+        if (usernameIsValid(requestedUsername)) {
             username = requestedUsername;
         } else {
             do {
@@ -97,7 +91,7 @@ io.sockets.on('connect', function (socket) {
     });
 
     socket.on('changeUsername', (requestedUsername, fn) => {
-        if (isValid(requestedUsername)) {
+        if (usernameIsValid(requestedUsername)) {
             //todo update the username of the socket and in the list, fn(true)
             console.log(`${socket.username} changed their username to ${requestedUsername}`);
             socket.username = requestedUsername;
@@ -107,7 +101,6 @@ io.sockets.on('connect', function (socket) {
 
     socket.on('joinRoom', function (id, fn) {
         console.log("joinRoom", socket.username, id);
-        // if (!activeRooms.some(e => e.id === id)) fn(false);
         if (activeRooms[id] === undefined) fn(false);
         else {
             socket.room = id;
@@ -115,10 +108,16 @@ io.sockets.on('connect', function (socket) {
             activeRooms[id].playerCount++;
             fn(true);
 
-            if (activeRooms[id].playerCount >= 2) {
-                console.log(`2 players connected to game ${id}`)
-                io.sockets.in(socket.room).emit('startGame', "gg hf");
-                // io.sockets.in(socket.room).emit('updateChat', timestamp, socket.username, msg);
+            if (activeRooms[id].playerCount === 2) {
+                console.log(`2 players connected to game ${id}`);
+                console.log(activeRooms[id].game.points[0]);
+
+                /*let pointList = [];
+                for (let point of activeRooms[id].game.points) {
+                    pointList.push()
+                }*/
+                //todo: emit json strings (json.stringify), not the objects themselves
+                io.sockets.in(socket.room).emit('startGame', activeRooms[id].game.points);
             }
         }
     });
@@ -138,19 +137,19 @@ io.sockets.on('connect', function (socket) {
         fn(false);
     });
 
-    socket.on('addRoom', function (id, fn) {
-        // if (activeRooms.some(r => r.id === id)) fn(false);
+    // Client wants to create a new room => server validates room name, creates new room
+    socket.on('addRoom', (id, fn) => {
         if (activeRooms[id] !== undefined) fn(false);
         else {
             console.log("Creating new room: " + id);
             activeRooms[id] = ({
                 'id': id,
                 'maxCapacity': 2,
-                'playerCount': 0
+                'playerCount': 0,
+                'game': new Game(id)
             });
             fn(true, id);
         }
-        console.log(activeRooms)
     });
 
     socket.on('sendChat', function (msg) {
@@ -217,4 +216,98 @@ function onListening() {
     debug('Listening on ' + bind);
 }
 
+function getSockets() {
+    return Object.keys(io.sockets.sockets);
+}
 
+function usernameIsValid(username) {
+    if (!username || !(3 <= username.length <= 15) || !(/^[a-z0-9]+$/i.test(username))) return false;
+    return !getSockets().some(e => io.sockets.sockets[e].username === username);
+}
+
+class Game {
+    constructor(id, initPoints = 10) {
+        this.id = id;
+        this.playerCount = 0;
+        this.maxCapacity = 2;
+        this.project = new paper.Project([400, 200]);
+        this.lineGroup = new paper.Group();
+        this.points = [];
+        this.initializePoints(initPoints);
+    }
+
+    isLegal(from, to, path) {
+        // check legality of a path
+        if (!(from || to)) return false;
+        else if (from === to && from.connections >= 2) return false;
+        else if (from.connections >= 3 || to.connections >= 3) return false;
+
+        this.project.activate();
+        if (this.project.hitTest(path)) {
+            console.log("hit something");
+        } else console.log("didn't hit anything");
+        return path.getIntersections(path).length <= 0;
+    }
+
+    addPath(from, to, path) {
+        from.connections += 1;
+        from.edges.push(path);
+        to.connections += 1;
+        to.edges.push(path);
+        path.vertices = [from, to];
+        path.addTo(this.lineGroup);
+        return path;
+    }
+
+    addPoint(location, connections = 0) {
+        let point = new paper.Path.Circle({
+            center: location,
+            radius: 10
+        });
+        point.center = location;
+        point.connections = connections;
+        this.points.push(point);
+        return point;
+    }
+
+    savePath(from, to, path) {
+        // first check if legal, then:
+        if (!this.isLegal(from, to, path)) return false;
+
+        // New point at midpoint
+        let newPoint = this.addPoint(path.getPointAt(path.length / 2));
+
+        let path2 = path.splitAt(path.length / 2);
+        let path1 = path.clone();
+        path1.insert(0, source.center);
+        path2.add(to.center);
+        path1.vertices = [];
+        path2.vertices = [];
+        path1.simplify(3);
+        path2.simplify(3);
+
+        path1 = this.addPath(from, newPoint, path1);
+        path2 = this.addPath(newPoint, to, path2);
+
+        return {
+            path1: path1,
+            path2: path2,
+            newPoint: newPoint
+        }
+    }
+
+    initializePoints(amount) {
+        for (let i = 0; i < amount; i++) {
+            this.addPoint(this.randomPointPosition());
+        }
+    }
+
+    randomPointPosition() {
+        this.project.activate();
+        // FIXME: Point's center needs to be at least one point's distance from the game border
+        const x = Math.floor(Math.random() * paper.view.size.width);
+        const y = Math.floor(Math.random() * paper.view.size.height);
+        const point = new paper.Point(x, y);
+        return point.round();
+    }
+}
