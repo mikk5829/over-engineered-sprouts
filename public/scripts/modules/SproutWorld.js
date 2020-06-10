@@ -2,6 +2,8 @@
  * Generates the world
  * @namespace SproutWorld
  * */
+import {CollisionGrid} from './CollisionGrid.js';
+
 const POINT_COLOR = 'Indigo';
 const SEL_POINT_COLOR = 'Yellow';
 const HOVER_POINT_COLOR = 'CornflowerBlue';
@@ -39,6 +41,8 @@ export class SproutWorld {
         this.hoveredPoint = null; // A legal point that the mouse hovers on
         this.selectedPoints = []; // The points which are currently selected/pressed
         this.currentLine = null; // The line currently being drawn by the player
+
+        this.collisionGrid = null; // Holds an instance of an collisionGrid object
     }
 
     /**
@@ -57,6 +61,9 @@ export class SproutWorld {
                 this.addPoint(this.randomPointPosition())
             }
         }
+        this.collisionGrid = new CollisionGrid(8);
+        this.collisionGrid.u_initObstacles(this);
+        this.collisionGrid.v_update();
     }
 
     select(point) {
@@ -174,6 +181,9 @@ export class SproutWorld {
         point.rootEdge = null;
         this.points.push(point);
         let _this = this;
+        if (this.collisionGrid != null) {
+            this.collisionGrid.t_insert_rectangle(point.bounds, point);
+        }
 
         point.onMouseDrag = function (e) {
             // When first starting to draw a line, reset the current selection
