@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Namespace: ExampleTesting</title>
+    <title>JSDoc: Source: server/db/simple-db.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,99 +17,40 @@
 
 <div id="main">
 
-    <h1 class="page-title">Namespace: ExampleTesting</h1>
+    <h1 class="page-title">Source: server/db/simple-db.js</h1>
 
     
 
 
 
-
-<section>
-
-<header>
     
-        <h2>ExampleTesting</h2>
-        
-    
-</header>
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const JSONdb = require('simple-json-db');
+const db = new JSONdb('/database.json');
+/**
+ * These functions are used to manipulate the simple database
+ * @namespace Database
+ * @author Mikkel Anderson
+ * */
 
-<article>
-    <div class="container-overview">
-    
-        
-            <div class="description">sum.js used for example testing</div>
-        
-
-        
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="public_scripts_sum.js.html">public/scripts/sum.js</a>, <a href="public_scripts_sum.js.html#line1">line 1</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-        
-    
-    </div>
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</article>
-
-</section>
+/**
+ * Creates new user in database
+ * @param {string} user_name
+ * @param {number} user_wins
+ * @param {number} user_losses
+ * @memberOf Database
+ */
+export function createUser(user_name, user_wins, user_losses) {
+    const score = {
+        'wins': user_wins,
+        'losses': user_losses
+    };
+    db.set(user_name, score);
+}
+</code></pre>
+        </article>
+    </section>
 
 
 

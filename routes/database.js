@@ -1,43 +1,31 @@
-var express = require('express');
-var router = express.Router();
-const db = require('../public/scripts/db-scripts');
-
-router.get('/', function(req, res, next) {
-  res.send('You are about to go to db views');
-});
-
-router.post('/create-collection', function(req, res, next) {
-  res.send(db.createCollection());
-});
-
-router.post('/create-test-user', function(req, res, next) {
-  res.send(db.createTestUser());
-});
+var express = require('express')
+var router = express.Router()
+const db = require('../server/db/simple-db')
 
 router.post('/create-user', function(req, res) {
-  var user_name = req.body.name;
-  var user_wins = req.body.wins;
-  var user_losses = req.body.losses;
+    var user_name = req.body.name;
+    var user_wins = 0;
+    var user_losses = 0;
 
-  db.createUser(user_name,user_wins,user_losses);
+    var response = db.createUser(user_name,user_wins,user_losses);
 
-  res.send("User with name: " + user_name + " Wins: " + user_wins + " Losses: " + user_losses + " created");
+    res.send('wins: ' + response.wins + ' losses: ' + response.losses);
 });
 
 router.post('/add-win', function(req, res) {
-  var user_name = req.body.name;
+    var user_name = req.body.name;
 
-  db.addWin(user_name);
+    var response = db.addWin(user_name);
 
-  res.send("User with name: " + user_name + " got an extra win");
+    res.send('wins: ' + response.wins + ' losses: ' + response.losses);
 });
 
 router.post('/add-loss', function(req, res) {
-  var user_name = req.body.name;
+    var user_name = req.body.name;
 
-  db.addLoss(user_name);
+    var response = db.addLoss(user_name);
 
-  res.send("User with name: " + user_name + " got an extra loss");
+    res.send('wins: ' + response.wins + ' losses: ' + response.losses);
 });
 
 module.exports = router;

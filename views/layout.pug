@@ -1,8 +1,12 @@
 doctype html
 html
-    div(class="container")#main_container
+
+
         head
+            link(rel="icon" href="../assets/favicon.svg")
+
             title= title
+
             // Sprouts logo
             a(href="/" style="position: relative; z-index: 0;")
                 img(style="width:35em;" src='../assets/sprouts4.svg')
@@ -21,4 +25,5 @@ html
                 script(type='text/javascript' src='scripts/frameworks/paper-full.js')
 
         body
+            div(class="container")#main_container
              block content
