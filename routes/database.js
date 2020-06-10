@@ -12,4 +12,20 @@ router.post('/create-user', function(req, res) {
     res.send('wins: ' + response.wins + ' losses: ' + response.losses);
 });
 
+router.post('/add-win', function(req, res) {
+    var user_name = req.body.name;
+
+    var response = db.addWin(user_name);
+
+    res.send('wins: ' + response.wins + ' losses: ' + response.losses);
+});
+
+router.post('/add-loss', function(req, res) {
+    var user_name = req.body.name;
+
+    var response = db.addLoss(user_name);
+
+    res.send('wins: ' + response.wins + ' losses: ' + response.losses);
+});
+
 module.exports = router;

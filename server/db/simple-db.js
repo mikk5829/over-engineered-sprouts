@@ -7,28 +7,6 @@ var fs = require('fs');
  * */
 
 /**
- * Generates a file path and name based on current UNIX timestamp.
- * @returns {string}
- */
-// function genFileName() {
-//     return '/tmp/database.json';
-// }
-//
-// /**
-//  * Makes sure that a unique filename is generated.
-//  */
-// (function genFilePath() {
-//     while (true) {
-//         try {
-//             global.filePath = genFileName();
-//             fs.statSync(global.filePath);
-//         } catch (err) {
-//             break;
-//         }
-//     }
-// })();
-
-/**
  * Returns a new instance of JSONdb.
  * @returns {JSONdb}
  */
@@ -44,12 +22,43 @@ function createInstance() {
  * @param {number} user_wins
  * @param {number} user_losses
  * @memberOf Database
+ * @returns {Object}
  */
-exports.createUser = (user_name, user_wins, user_losses) => {
+var createUser = exports.createUser = (user_name, user_wins, user_losses) => {
     var db = createInstance();
     const score = {
         'wins': user_wins,
         'losses': user_losses
+    }
+
+    db.set(user_name, score);
+    return db.get(user_name);
+}
+
+exports.addWin = (user_name) => {
+    var db = createInstance();
+    // if (!db.has(user_name)) {
+    //     createUser(user_name,0,0)
+    // }
+    let user_score = db.get(user_name);
+    const score = {
+        'wins': user_score.wins + 1,
+        'losses': user_score.losses
+    }
+
+    db.set(user_name, score);
+    return db.get(user_name);
+}
+
+exports.addLoss = (user_name) => {
+    var db = createInstance();
+    // if (!db.has(user_name)) {
+    //     createUser(user_name,0,0)
+    // }
+    let user_score = db.get(user_name);
+    const score = {
+        'wins': user_score.wins,
+        'losses': user_score.losses + 1
     }
 
     db.set(user_name, score);
