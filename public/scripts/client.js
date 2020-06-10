@@ -1,4 +1,4 @@
-let socket = io('http://localhost:3000/');
+let socket = io(window.location.href);
 let username;
 const viewIDs = ['main_menu', 'game', 'settings','scoreboard'];
 

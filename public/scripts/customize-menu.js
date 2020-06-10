@@ -35,18 +35,20 @@ $(function () {
         console.log("submit");
         e.preventDefault();
         setCookie("dotColor", $("input[name=dotColor]").val());
-        setCookie("playerName", $("input[name=playerName]").val());
         setCookie("gameResolution", $("input[name=gameResolution]").val());
         $.changeView('main_menu');
 
         // LAURA TODO: Fortæl serveren at brugeren vil ændre navn, ændr navnet som hører til brugerens socket
 
-        let playerName = getCookie("playerName");
+        // let playerName = getCookie("playerName");
+        let playerName =  $("input[name=playerName]").val();
         if (playerName) {
-            username = playerName;
-            console.log(playerName, username)
+            socket.emit('changeUsername', playerName, function(response) {
+                console.log(playerName,username,response);
+                username = response ? playerName : username;
+                setCookie("playerName", username);
+            });
         }
-        // todo send til server
     })
 });
 

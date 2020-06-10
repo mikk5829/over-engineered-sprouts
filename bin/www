@@ -39,15 +39,29 @@ server.on('listening', onListening);
 * Socket IO stuff
 * */
 const io = require('socket.io').listen(server);
-let connectedSockets = [];
 let activeRooms = [];
+
+function getSockets() {
+    return Object.keys(io.sockets.sockets);
+    // io.sockets is an object where a key is a socketId and value is reference to the socket object.
+
+    // Object.keys(io.sockets).forEach((socketId) => {
+    //     const socket = io.sockets[socketId];
+    // })
+}
+
+function isValid(username) {
+
+    if (!username || !(3 <= username.length <= 15) || !(/^[a-z0-9]+$/i.test(username))) return false;
+
+    return !getSockets().some(e => io.sockets.sockets[e].username === username);
+}
 
 io.sockets.on('connect', function (socket) {
 
     socket.on('path', function (data, fn) {
         console.log(data);
         fn("gotcha");
-
         // send to room including sender:
         // io.sockets.in(socket.room).emit('updateGame', "hej venner");
 
@@ -70,28 +84,24 @@ io.sockets.on('connect', function (socket) {
         console.log("Client wants to join with username", requestedUsername);
         if (isValid(requestedUsername)) {
             username = requestedUsername;
-            // TODO: check other requirements here
         } else {
             do {
                 let randInt = Math.floor(Math.random() * 10);
                 let adjective = Sentencer.make("{{ adjective }}").capitalize();
                 username = adjective + "Guest" + randInt;
-            } while (connectedSockets.some(e => e.username === username));
+            } while (getSockets().some(e => e.username === username));
         }
         socket.username = username;
-        connectedSockets.push(socket);
         console.log("Added user", username);
         fn(username);
     });
 
-    function isValid(username) {
-        // todo check if username is legal
-        // if (requestedUsername && !connectedSockets.some(e => e.username === username)) {
-    }
-
     socket.on('changeUsername', (requestedUsername, fn) => {
         if (isValid(requestedUsername)) {
             //todo update the username of the socket and in the list, fn(true)
+            console.log(`${socket.username} changed their username to ${requestedUsername}`);
+            socket.username = requestedUsername;
+            fn(true);
         } else fn(false)
     });
 
@@ -103,7 +113,6 @@ io.sockets.on('connect', function (socket) {
             socket.join(id);
             fn(true);
         }
-
     });
 
     // Lets the user connect to an existing room if one exists
@@ -137,9 +146,10 @@ io.sockets.on('connect', function (socket) {
 
     // when the user disconnects.. perform this
     socket.on('disconnect', function () {
-        // Remove username from list
-        const index = connectedSockets.indexOf(socket.username);
-        if (index > -1) connectedSockets.splice(index, 1);
+        console.log(`${socket.username} disconnected`);
+        // if (typeof connectedSockets[socket] !== 'undefined') {
+        //     // connectedSockets[socket] = undefined;
+        // }
         socket.leave(socket.room);
     });
 });
