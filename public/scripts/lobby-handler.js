@@ -1,3 +1,4 @@
+//const cookieParser = require("cookie-parser");
 
 $(function () {
     let $msgField = $('#chatMsgField');
@@ -35,7 +36,28 @@ $(function () {
 
     $('#importBtn').click(function () {
         $('#fileInput')[0].click();
-        console.log("click");
+    });
+    
+    // Handles the import button (game world from file) - Vanilla not jQuery
+    document.getElementById('fileInput').addEventListener('change', () => {
+        const file = document.getElementById('fileInput').files[0];
+        const reader = new FileReader();
+        reader.onload = event => {
+            const result = event.target.result;
+            const split = result.split('\n');
+            const totalDots = split.length-1;
+            let paths = [];
+            for (let i = 1; i<split.length; i++) {
+                const dots = split[i].split(' ');
+                paths.push( {dot1: dots[0], dot2: dots[1]} );
+            }
+            // ToDo validate it is a valid world
+            localStorage.setItem("FileResultDotTotal", String(totalDots));
+            localStorage.setItem("FileResultPaths", JSON.stringify(paths));
+        }
+        reader.readAsText(file);
+        document.getElementById('infoBoxP').innerText = "Loaded new map. Click generate!";
+        document.getElementById('infoBox').style.display = "inline"
     });
 
     $('#generateBtn').click(function () {
@@ -85,30 +107,3 @@ $(function () {
         $('#messages > tbody:last-child').append('<tr> <th class="w3-left-align">' + sent + '</th><th class="w3-right-align">' + msg + ' </th></tr>');
     });
 });
-
-//TODO Test: file validation
-//FIXME: Not able to use back() redirect correctly
-function handleFile(files) {
-    console.log("hello");
-    const file = files[0];
-    const fileReader = new FileReader();
-    fileReader.readAsText(file);
-    fileReader.onload = function (e) {
-        console.log(e);
-        let split = e.target.result.split("\n");
-        let init_points = split[0];
-        let action_list = [];
-        for (let i = 1; i < split.length; i++) {
-            action_list.push(split[i]);
-        }
-        const sproutUpload = {
-            init_points: init_points,
-            action_list: action_list
-        };
-        console.log(sproutUpload);
-        localStorage.setItem("loaded-game", JSON.stringify(sproutUpload));
-
-        // TODO: Create new room and join it
-        // $.joinRoom('fhg');
-    };
-}

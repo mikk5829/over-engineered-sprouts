@@ -8,7 +8,6 @@ const HOVER_POINT_COLOR = 'CornflowerBlue';
 const STROKE_COLOR = 'Indigo';
 
 const POINT_SIZE = 10;
-
 export {POINT_COLOR, SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR, POINT_SIZE}
 
 export class SproutWorld {
@@ -48,8 +47,15 @@ export class SproutWorld {
      * */
     initializeMap(map_configuration = null, amount = null) {
         // Generate initial points
-        for (let i = 0; i < amount; i++) {
-            this.addPoint(this.randomPointPosition())
+        if (map_configuration !== null) {
+            console.log("Not done! Need to draw the paths..");
+            for (let dot = 0; dot < int(map_configuration.dots); dot++) {
+                this.addPoint(this.randomPointPosition())
+            }
+        } else {
+            for (let i = 0; i < amount; i++) {
+                this.addPoint(this.randomPointPosition())
+            }
         }
     }
 
