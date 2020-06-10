@@ -51,6 +51,7 @@ $(function() {
     };
 
     paper.view.onFrame = function () {
+        console.log("Updates");
         // Update the colors of the points
         for (let point of world.points) {
             point.fillColor = POINT_COLOR;
