@@ -44,6 +44,7 @@ window.onload = function () {
         } else if (world.clickSelection) {
             if (world.source && world.target) {
                 console.log(`Selection: source ${world.source.id}, target ${world.target.id}`);
+                console.log(world.collisionGrid.u_Astar(world.source.center, world.target.center));
                 // The user has clicked on two points.
                 // TODO: Check if a path exists between these points
                 world.resetSelection();

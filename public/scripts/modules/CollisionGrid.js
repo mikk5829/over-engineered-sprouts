@@ -32,8 +32,7 @@ export class CollisionGrid {
     }
 
 // Insert object at "tile from point" to dictionary
-    t_insert_point(point, object) {
-        let tile = this.t_return(point);
+    t_insert_point(tile, object) {
         if (this.contents[tile] === undefined) {
             this.contents[tile] = new Set();
         }
@@ -43,12 +42,12 @@ export class CollisionGrid {
 // Insert object from rectangle - Intended for use with hitboxes
     t_insert_rectangle(rectangle, object) {
         // Min and Max corners of rectangle
-        let min = rectangle.topLeft;
-        let max = rectangle.bottomRight;
+        let min = this.t_return(rectangle.topLeft).split(";");
+        let max = this.t_return(rectangle.bottomRight).split(";");
         // Iterate over area and add objects to tiles/buckets
-        for(let x = min.x; x < max.x; x++) {
-            for(let y = min.y; y < max.y; y++) {
-                this.t_insert_point({x: x,y: y}, object);
+        for(let x = min[0]; x <= max[0]; x++) {
+            for(let y = min[1]; y <= max[1]; y++) {
+                this.t_insert_point(x+";"+y, object);
             }
         }
     }
@@ -59,7 +58,7 @@ export class CollisionGrid {
         for (let i = 0; i < curves.length; i++) {
             for (let j = 0; j < curves[i].length; j++) {
                 let location = curves[i].getLocationAt(j);
-                this.t_insert_point(location.point, object);
+                this.t_insert_point(this.t_return(location.point), object);
             }
             //this.t_insert_point(curves[i].segment1.point, object);
             //this.t_insert_point(curves[i].segment2.point, object);
@@ -96,6 +95,30 @@ export class CollisionGrid {
 
         // Let's add them to our collisionGrid aka. spatialHash
         circle_obstacles.forEach(obst => this.t_insert_rectangle(obst.bounds, obst));
+    }
+
+    t_getNeighbours(point){
+        let N = [];
+        for (let p of [new paper.Point(point.x+this.cell_size, point.y), new paper.Point(point.x-this.cell_size, point.y),
+            new paper.Point(point.x, point.y+this.cell_size), new paper.Point(point.x, point.y-this.cell_size)])
+            N.push(this.t_return(p));
+        console.log(this.contents);
+        return N;
+    }
+
+    u_dist(tile_1, tile_2){
+        tile_1 = tile_1.split(";");
+        tile_2 = tile_2.split(";");
+        return (tile_2[0]-tile_1[0])**2+(tile_2[1]-tile_1[1])**2
+    }
+
+    u_Astar(start, goal){
+        let grid = {};
+        let goal_tile = this.t_return(goal);
+        grid[this.t_return(start)] = (goal.x-start.x)**2+(goal.y-start.y)**2;
+        let horizon = this.t_getNeighbours(start);
+        //TODO: Giv parents til hver tile.
+        //TODO: implementer A*
     }
 
 }

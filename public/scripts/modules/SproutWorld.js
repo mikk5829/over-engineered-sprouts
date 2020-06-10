@@ -154,6 +154,7 @@ export class SproutWorld {
             radius: POINT_SIZE,
             fillColor: POINT_COLOR
         });
+        point.center = location;
         point.data.connections = connections;
         this.points.push(point);
         let _this = this;
