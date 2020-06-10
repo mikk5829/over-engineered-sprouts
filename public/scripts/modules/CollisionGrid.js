@@ -97,12 +97,9 @@ export class CollisionGrid {
         circle_obstacles.forEach(obst => this.t_insert_rectangle(obst.bounds, obst));
     }
 
-    t_getNeighbours(point){
-        let N = [];
-        for (let p of [new paper.Point(point.x+this.cell_size, point.y), new paper.Point(point.x-this.cell_size, point.y),
-            new paper.Point(point.x, point.y+this.cell_size), new paper.Point(point.x, point.y-this.cell_size)])
-            N.push(this.t_return(p));
-        console.log(this.contents);
+    t_getNeighbours(tile){
+        tile = tile.split(";")
+        let N = [(parseInt(tile[0])+1)+";"+tile[1], (parseInt(tile[0])-1)+";"+tile[1], tile[0]+";"+(parseInt(tile[1])+1), tile[0]+";"+(parseInt(tile[1])-1)];
         return N;
     }
 
@@ -112,13 +109,65 @@ export class CollisionGrid {
         return (tile_2[0]-tile_1[0])**2+(tile_2[1]-tile_1[1])**2
     }
 
+    u_object_of(key, obj){
+        for (let o of this.contents[key]){
+            if (o.object.center === obj.center)
+                return true;
+        }
+        return false;
+    }
+
+    u_middle(tile){
+        let x = tile.split(";")[0];
+        let y = tile.split(";")[1];
+        x = x*this.cell_size;
+        x += 0.5*this.cell_size;
+        y = y*this.cell_size;
+        y += 0.5*this.cell_size
+        return new paper.Point(x, y);
+    }
+
     u_Astar(start, goal){
         let grid = {};
-        let goal_tile = this.t_return(goal);
-        grid[this.t_return(start)] = (goal.x-start.x)**2+(goal.y-start.y)**2;
-        let horizon = this.t_getNeighbours(start);
-        //TODO: Giv parents til hver tile.
-        //TODO: implementer A*
+        let goal_tile = this.t_return(goal.center);
+        let start_tile = this.t_return(start.center);
+        let horizon = [{tile: start_tile, f: this.u_dist(start_tile, goal_tile), parent: ""}];
+        console.log("Start node in start tile: " + this.u_object_of(start_tile, start));
+        console.log(this.contents[start_tile])
+
+        while (grid[goal_tile] === undefined && horizon.length !== 0){
+            //Get closest to goal
+            let best_pick = horizon[0];
+            for (let tile of horizon){
+                if (this.u_dist(best_pick.tile, goal_tile) > this.u_dist(tile.tile, goal_tile))
+                    best_pick = tile;
+            }
+            //Remove the element
+            horizon = horizon.filter(item => item.tile !== best_pick.tile);
+            //If it is already explored, ignore it
+            if (horizon[best_pick.tile] !== undefined)
+                continue;
+            //Otherwise, add it to explored
+            grid[best_pick.tile] = best_pick;
+            //For each neighbour, if it is traversible and unexplored, add it
+            for (let n of this.t_getNeighbours(best_pick.tile)){
+                if (grid[n] === undefined && (this.contents[n] === undefined || this.u_object_of(n, start) || this.u_object_of(n, goal)))
+                    horizon.push({tile: n, f:this.u_dist(n, goal_tile), parent: best_pick.tile});
+            }
+
+
+        }
+        console.log(grid);
+        if (grid[goal_tile] !== undefined) {
+            let t = grid[goal_tile];
+            let path = new paper.Path();
+            while (t.parent !== ""){
+                t = grid[t.parent];
+                path.add(this.u_middle(t.tile));
+            }
+            path.strokeColor = "black";
+            path.simplify(2)
+        }
     }
 
 }
