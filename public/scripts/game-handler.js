@@ -2,6 +2,10 @@ import {SproutWorld} from "./modules/SproutWorld.js";
 import {getCookieValue, getResolutionFromCookie} from "./modules/Utility.js"
 import {POINT_COLOR, SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR, POINT_SIZE} from "./modules/SproutWorld.js";
 
+function openGame() {
+
+}
+
 function getCanvas() {
     return document.getElementById("sproutGameCanvas");
     // return $('#sproutGameCanvas'); //fixme virker ikke?
@@ -12,9 +16,13 @@ function reset() {
 }
 
 paper.install(window); // Make the paper scope global
-$(function() {
-    socket.on('updateGame', function(data) {
-        console.log("updateGame",data);
+$(function () {
+    socket.on("startGame", function (initialConfig) {
+        console.log(initialConfig);
+    });
+
+    socket.on('updateGame', function (data) {
+        console.log("updateGame", data);
         let newLine = new paper.Path(data);
     });
 
@@ -64,7 +72,7 @@ $(function() {
         // Update the colors of the points
         for (let point of world.points) {
             point.fillColor = POINT_COLOR;
-            for (let path of point.edges){
+            for (let path of point.edges) {
                 //path.strokeColor = "black";
             }
         }
@@ -78,27 +86,3 @@ $(function() {
         if (world.source) world.source.fillColor = SEL_POINT_COLOR;
     }
 });
-
-
-// DON'T Remove commented code yet
-/*
-window.onload = function() {
-
-    let canvas = document.getElementById('sproutGameCanvas');
-
-    const sprout_scope = new paper.PaperScope();
-
-    const world = new SproutWorld(sprout_scope, canvas);
-
-    // Check if user has loaded a map from file
-    let loaded_game = localStorage.getItem("loaded-game");
-    if (loaded_game != null) {
-      let parsed = JSON.parse(loaded_game);
-      world.generateWorld(null,parsed.init_points);
-      localStorage.removeItem("loaded-game"); // Cleaning up local storage
-    } else {
-      world.generateWorld(null,15);
-    }
-
-};
-*/

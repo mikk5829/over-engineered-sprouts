@@ -71,7 +71,7 @@ io.sockets.on('connect', function (socket) {
 
     // TODO: Only emit to lobby socket
     setInterval(function () {
-        socket.emit('updateLobby', activeRooms);
+        socket.emit('updateLobby', Object.values(activeRooms));
     }, 1000);
 
     // when the client emits 'join', this listens and executes
@@ -107,35 +107,50 @@ io.sockets.on('connect', function (socket) {
 
     socket.on('joinRoom', function (id, fn) {
         console.log("joinRoom", socket.username, id);
-        if (!activeRooms.some(e => e.id === id)) fn(false);
+        // if (!activeRooms.some(e => e.id === id)) fn(false);
+        if (activeRooms[id] === undefined) fn(false);
         else {
             socket.room = id;
             socket.join(id);
+            activeRooms[id].playerCount++;
             fn(true);
+
+            if (activeRooms[id].playerCount >= 2) {
+                console.log(`2 players connected to game ${id}`)
+                io.sockets.in(socket.room).emit('startGame', "gg hf");
+                // io.sockets.in(socket.room).emit('updateChat', timestamp, socket.username, msg);
+            }
         }
     });
 
     // Lets the user connect to an existing room if one exists
     // Otherwise prompts them to create their own room
     socket.on('quickplay', function (fn) {
-        if (activeRooms.length === 0) fn(false);
+        if (Object.keys(activeRooms).length === 0) fn(false);
         else {
-            fn(true, activeRooms[0].id);
+            Object.keys(activeRooms).forEach((roomId) => {
+                let room = activeRooms[roomId];
+                if (room.playerCount < 2) {
+                    fn(true, roomId);
+                }
+            })
         }
+        fn(false);
     });
 
     socket.on('addRoom', function (id, fn) {
-        if (activeRooms.some(r => r.id === id)) fn(false);
+        // if (activeRooms.some(r => r.id === id)) fn(false);
+        if (activeRooms[id] !== undefined) fn(false);
         else {
             console.log("Creating new room: " + id);
-            activeRooms.push({
+            activeRooms[id] = ({
                 'id': id,
                 'maxCapacity': 2,
                 'playerCount': 0
             });
             fn(true, id);
-            io.emit('updateLobby', activeRooms,)
         }
+        console.log(activeRooms)
     });
 
     socket.on('sendChat', function (msg) {

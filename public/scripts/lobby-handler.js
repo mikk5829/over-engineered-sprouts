@@ -4,7 +4,9 @@ $(function () {
 
     $.joinRoom = function(room) {
         socket.emit('joinRoom', room, function (success) {
-            if (success) $.changeView("game");
+            if (success) {
+                $.changeView("game");
+            }
             else alert("Failed to join room " + room);
         });
     };
