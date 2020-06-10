@@ -53,7 +53,7 @@ export class SproutWorld {
         // Generate initial points
         if (map_configuration !== null) {
             console.log("Not done! Need to draw the paths..");
-            for (let dot = 0; dot < int(map_configuration.dots); dot++) {
+            for (let dot = 0; dot < parseInt(map_configuration.dots); dot++) {
                 this.addPoint(this.randomPointPosition())
             }
         } else {
