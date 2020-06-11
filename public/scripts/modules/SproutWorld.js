@@ -55,7 +55,7 @@ export class SproutWorld {
         for (let i = 0; i < amount; i++) {
             this.addPoint(this.randomPointPosition())
         }
-        this.collisionGrid = new CollisionGrid(8);
+        this.collisionGrid = new CollisionGrid(8, this);
         this.collisionGrid.u_initObstacles(this);
         this.collisionGrid.v_update();
     }
@@ -118,15 +118,22 @@ export class SproutWorld {
         let targetPoint = line.getCrossings(target)[i];
         line.curves[0].point1 = sourcePoint.point;
         line.curves[line.curves.length - 1].point2 = targetPoint.point;
-        line.simplify(3);
+
 
         // Save the path if it is a legal path
         if (source && target && this.legalMove(source, target, line)) {
-            this.addPoint(line.getPointAt(line.length / 2), 2);
-            this.addLine(source, target, line);
-            // CollisionGrid handling and updating
-            this.collisionGrid.t_insert_line(line.curves, line);
-            this.collisionGrid.v_update();
+            let newPoint = this.addPoint(line.getPointAt(line.length / 2), 0);
+            source.neighbours.push(newPoint);
+            let line2 = line.splitAt(line.length/2);
+            let line1 = line.clone();
+            line1.insert(0, source.center);
+            line2.add(target.center);
+            line1.vertices = [];
+            line2.vertices = [];
+            line1.simplify(3);
+            line2.simplify(3);
+            this.addLine(source, newPoint, line1);
+            this.addLine(newPoint, target, line2);
         } else {
             this.resetSelection();
             return false;
@@ -136,9 +143,16 @@ export class SproutWorld {
     }
 
     addLine(source, target, line) {
-        source.data.connections += 1;
-        target.data.connections += 1;
-        line.copyTo(this.lineGroup);
+        source.connections += 1;
+        source.edges.push(line);
+        source.neighbours.push(target);
+        target.connections += 1;
+        target.edges.push(line);
+        target.neighbours.push(source);
+        line.vertices = [source, target];
+        line.addTo(this.lineGroup);
+        this.collisionGrid.t_insert_line(line.curves, line);
+        this.collisionGrid.v_update();
     }
 
     eventStatus(point) {
@@ -155,11 +169,17 @@ export class SproutWorld {
             fillColor: POINT_COLOR
         });
         point.center = location;
-        point.data.connections = connections;
+        point.connections = connections;
+        point.edges = [];
+        point.neighbours = [];
+        point.status = "";
+        point.root = point;
+        point.rootEdge = null;
         this.points.push(point);
         let _this = this;
         if (this.collisionGrid != null) {
             this.collisionGrid.t_insert_rectangle(point.bounds, point);
+            this.collisionGrid.v_update();
         }
 
         point.onMouseDrag = function (e) {
@@ -174,7 +194,7 @@ export class SproutWorld {
         };
 
         point.onMouseDown = function () {
-            if (point.data.connections < 3) {
+            if (point.connections < 3) {
                 _this.selectedPoints.push(point);
             }
         };
@@ -194,10 +214,10 @@ export class SproutWorld {
         };
 
         point.onMouseEnter = function () {
-            if ((point.data.connections < 3) && !(_this.source && _this.target)) _this.hoveredPoint = point;
+            if ((point.connections < 3) && !(_this.source && _this.target)) _this.hoveredPoint = point;
             if (_this.dragEnabled && _this.source && !_this.target) {
                 // If ending on the point is illegal, reset the selection
-                if ((_this.source === point && point.data.connections >= 2) || (point.data.connections >= 3)) {
+                if ((_this.source === point && point.connections >= 2) || (point.connections >= 3)) {
                     _this.resetSelection();
                     _this.dragEnabled = false;
                 } else { // Select the point
@@ -221,6 +241,41 @@ export class SproutWorld {
                     _this.dragEnabled = true;
                 }
             }
+        };
+
+        point.commonEdges = function (p2) {
+            let inCommon = [];
+            for (let edge of point.edges) {
+                if (edge.vertices.includes(point) && edge.vertices.includes(p2))
+                    inCommon.push(edge);
+            }
+            return inCommon;
+        };
+
+        point.dfs = function (toFind) {
+            //Marker som søgende
+            point.status = "seeking";
+            //Kør dfs på alle naboer
+            for (let e of point.edges) {
+                let p = e.vertices.find(x => x !== point);
+                if (e !== point.rootEdge && p !== undefined) {
+                    //Er en nabo søgende eller færdig, find alle links op til nabo og tilføj liste til cycles[]
+                    if (p.status === "") {
+                        //Sæt parent til dette point
+                        p.root = point;
+                        p.rootEdge = e;
+                        if (!(e.vertices[0] === p)){
+                            e.reverse();
+                            e.vertices.reverse();
+                        }
+                        p.dfs(toFind);
+                    } else if (p.status === "done") {
+                        toFind.push(e);
+                    }
+                }
+            }
+            //Marker som færdig
+            point.status = "done";
         };
 
         return point;
@@ -248,5 +303,66 @@ export class SproutWorld {
         for (const group of this.groups) {
             alert("NOT DONE");
         }
+    }
+
+    getCycles() {
+        //TODO: Sørg for at alle edges "vender" rigtigt
+        //TODO: Ikke alle kanter i et loop bliver tilføjet selv om loopet er opdaget
+        let toFind = [];
+        for (let p of this.points){
+            p.root = p;
+            p.rootEdge = null;
+            p.status = "";
+        }
+        for (let p of this.points){
+            if (p.status !== "done"){
+                p.root = p;
+                p.dfs(toFind);
+            }
+        }
+        let cycles = [];
+
+        for (let t of toFind){
+            let paths0 = [];
+            let paths1 = [];
+            let loop = [t];
+            let p0 = t.vertices[0];
+            let p1 = t.vertices[1];
+            while (p0.root !== p0){
+                paths0.push(p0.rootEdge);
+                p0 = p0.root;
+            }
+            while (p1.root !== p1){
+                paths1.push(p1.rootEdge);
+                p1 = p1.root;
+            }
+            let difference = paths0.filter(x => !paths1.includes(x)).concat(paths1.filter(x => !paths0.includes(x)));
+            loop = loop.concat(difference);
+            cycles.push([...loop]);
+        }
+        return cycles;
+    }
+
+    possibleMove(p1, p2, debug = false) {
+        /*TODO: Known bugs
+        Sometimes the "parent edge" from DFS will be reversed and create an area outside the cycle. Check if direction is correct?
+        If one large cycle is also split into 2 smaller cycles, one of them will be able to access all points on the other, but not vice versa.
+         */
+        let cycles = this.getCycles();
+        for (let c of cycles){
+            let total = new paper.Path();
+            for (let p of c){
+                for (let s of p.segments)
+                    total.add(s);
+            }
+            if (debug) {
+                total.fillColor = "green";
+                total.opacity = 0.1;
+            }
+            if (((total.contains(p1) && total.getLocationOf(p1) === null) && !total.contains(p2)) || ((total.contains(p2) && total.getLocationOf(p2) === null) && !total.contains(p1)))
+                return false;
+            //total.remove();
+        }
+        return true;
     }
 }
