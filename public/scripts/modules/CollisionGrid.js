@@ -1,18 +1,66 @@
-// The idea is that tiles are like buckets. Buckets are associated with keys and/or several keys
+// The idea is that tiles are like buckets. Buc7kets are associated with keys and/or several keys
 // connects with a set of objects.
-import {SproutWorld} from "./SproutWorld.js";
+import {SproutWorld} from './SproutWorld.js';
 
 export class CollisionGrid {
-    constructor(cell_size) {
+    constructor(cell_size, gridSize = null) {
         console.log("CollisionGrid Created!");
         this.cell_size = cell_size;
         this.contents = {};
-        //this.tile_matrix = math.matrix(); this.tile_matrix.resize([cell_size, cell_size], null); // May not be needed
+        this.gridSize = gridSize;
     }
 
 // Return position of tile from point (Hash function)
     t_return(point) {
         return Math.floor(point.x / this.cell_size) + ";" + Math.floor(point.y / this.cell_size);
+    }
+
+    t_pointToTile(point) {
+        return { x: Math.floor(point.x / this.cell_size), y: Math.floor(dot.y / this.cell_size) };
+    }
+    t_tileToPoint(tile) {
+        return { x: Math.floor(tile.x * this.cell_size), y: Math.floor(tile.y * this.cell_size) };
+    }
+
+    randomIntFromInterval(min, max) {
+        return Math.floor(Math.random() * (max - min + 1) + min);
+    }
+
+    // Random Dot Placement (Dots may overlap)
+    t_randomTiles(dot_count) {
+        let safeSpace = 4;
+        let permuted = [];
+        let totalTiles = Math.floor(this.gridSize.width / this.cell_size) * Math.floor(this.gridSize.height / this.cell_size);
+        let tries = 0;
+
+        if (dot_count > totalTiles) {
+            console.log("dot_count > totalTiles... t_random won't be able to find enough random tiles!");
+        }
+
+        let notInPermuted = (dot) => {
+            if (permuted.length === 0) return true;
+            for (var i = 0; i < permuted.length; i++) {
+                if (i === (permuted.length - 1) && (permuted[i].x, permuted[i].y) !== (dot.x, dot.y)) {
+                    return true;
+                }
+                if ((permuted[i].x, permuted[i].y) === (dot.x, dot.y)) {
+                    return false;
+                }
+            }
+        }
+
+        while (permuted.length < dot_count && tries < 100) {
+            var x = this.randomIntFromInterval(safeSpace, Math.floor(this.gridSize.width / this.cell_size) - safeSpace);
+            var y = this.randomIntFromInterval(safeSpace, Math.floor(this.gridSize.height / this.cell_size) - safeSpace);
+            var tile_coord = { x: x, y: y };
+            var dot = new Point(x * this.cell_size, y * this.cell_size);
+            if (notInPermuted(dot)) {
+                permuted.push(dot);
+            }
+            tries++;
+        }
+        return permuted;
+        
     }
 
 // Return tile indices overlapping hitbox (Hash function)
@@ -99,3 +147,76 @@ export class CollisionGrid {
     }
 
 }
+
+/*
+ 
+         let randomFromAllowedRange = () => {
+            let possible = [];
+            allowedRanges.forEach((range) => {
+                let random_x = this.randomIntFromInterval(range.x_range.from, range.x_range.to);
+                let random_y = this.randomIntFromInterval(range.y_range.from, range.y_range.to);
+                possible.push({ x: random_x, y: random_y });
+            });
+            let randomIndex = Math.floor(Math.random() * possible.length);
+            return possible[randomIndex];
+        }
+
+        let occupyRange = (tile_coord) => {
+            let x_range = {
+                from: (tile_coord.x - safeSpace),
+                to: (tile_coord.x + safeSpace)
+            };
+            let x_range = {
+                from: (tile_coord.y - safeSpace),
+                to: (tile_coord.y + safeSpace)
+            };
+            return { x_range: x_range, y_range: y_range};
+        }
+
+
+        let notInUsedRanges = (occ_range) => {
+            if (occRanges.includes(occ_range)) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+
+
+let randomFromMatrix = () => {
+            tile_matrix.forEach(function (value, index, matrix) {
+                console.log(index);
+                if (math.isZero(value)) {
+                    indices.push(index);
+                    console.log(indices);
+                }
+            });
+            if (indices.length === 0) console.log("No available places to put new dot..");
+            return indices[Math.floor(Math.random() * indices.length)];
+        }
+
+        let updateMatrix = (tile_coord) => {
+            let x_range = math.range(tile_coord.x - safeSpace, tile_coord.x + safeSpace);
+            let y_range = math.range(tile_coord.y - safeSpace, tile_coord.y + safeSpace);
+
+            let inRange = (range, check) => {
+                range.forEach(val => {
+                    if (val === check) {
+                        return true;
+                    }
+                });
+                return false;
+            }
+
+            tile_matrix.forEach(function (value, index, matrix) {
+                indices = [];
+                if (inRange(x_range, index[0]) && inRange(y_range, index[1])) {
+                    value = 1;
+                }
+            });
+            //matrix = matrix.set(math.index(math.range(tile_coord.x - safeSpace, tile_coord.x + safeSpace), math.range(tile_coord.y - safeSpace, tile_coord.y + safeSpace)), 1);
+        }
+ 
+ 
+ 
+ */
