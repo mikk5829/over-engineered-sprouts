@@ -26,41 +26,50 @@ export class CollisionGrid {
         return Math.floor(Math.random() * (max - min + 1) + min);
     }
 
-    // Random Dot Placement (Dots may overlap)
-    t_randomTiles(dot_count) {
-        let safeSpace = 4;
-        let permuted = [];
-        let totalTiles = Math.floor(this.gridSize.width / this.cell_size) * Math.floor(this.gridSize.height / this.cell_size);
-        let tries = 0;
+    g_randomPoints(dot_count, tile_size) {
+        let totalTiles = Math.floor(this.gridSize.width / tile_size) * Math.floor(this.gridSize.height / tile_size);
+        let tile_matrix = math.zeros(Math.floor(this.gridSize.width / tile_size), Math.floor(this.gridSize.height / tile_size));
+        
+        // Set edge tiles to 1 to prevent dots being placed partially outside game canvas
+        let tile_matrix_width = Math.floor(this.gridSize.width / tile_size);
+        let tile_matrix_height = Math.floor(this.gridSize.height / tile_size);
+        tile_matrix.subset(math.index(0,math.range(0,tile_matrix_height)),math.ones(tile_matrix_height));
+        tile_matrix.subset(math.index(tile_matrix_width-1,math.range(0,tile_matrix_height)),math.ones(tile_matrix_height));
+        tile_matrix.subset(math.index(math.range(0,tile_matrix_width),0),math.ones(tile_matrix_width));
+        tile_matrix.subset(math.index(math.range(0,tile_matrix_width),tile_matrix_height-1),math.ones(tile_matrix_width));
 
         if (dot_count > totalTiles) {
             console.log("dot_count > totalTiles... t_random won't be able to find enough random tiles!");
         }
 
-        let notInPermuted = (dot) => {
-            if (permuted.length === 0) return true;
-            for (var i = 0; i < permuted.length; i++) {
-                if (i === (permuted.length - 1) && (permuted[i].x, permuted[i].y) !== (dot.x, dot.y)) {
-                    return true;
+        let getIndices = (value) => {
+            var indices = [];
+            tile_matrix.forEach( (val, index, matrix) => {
+                if (val === value) {
+                    indices.push(index);
                 }
-                if ((permuted[i].x, permuted[i].y) === (dot.x, dot.y)) {
-                    return false;
-                }
-            }
+            });
+            return indices;
         }
 
-        while (permuted.length < dot_count && tries < 100) {
-            var x = this.randomIntFromInterval(safeSpace, Math.floor(this.gridSize.width / this.cell_size) - safeSpace);
-            var y = this.randomIntFromInterval(safeSpace, Math.floor(this.gridSize.height / this.cell_size) - safeSpace);
-            var tile_coord = { x: x, y: y };
-            var dot = new Point(x * this.cell_size, y * this.cell_size);
-            if (notInPermuted(dot)) {
-                permuted.push(dot);
-            }
-            tries++;
+        let updateMatrix = (index, value) => {
+            tile_matrix = tile_matrix.set(index, value);
+        }
+
+        let getRandomIndex = (value) => {
+            var indices = getIndices(value);
+            var randomIndex = Math.floor(Math.random() * indices.length);
+            updateMatrix(indices[randomIndex], 1);
+            return indices[randomIndex];
+        }
+
+        let permuted = [];
+        for (var i = 0; i < dot_count; i++) {
+            let random_index = getRandomIndex(0);
+            var dot_point = new Point(random_index[0] * tile_size, random_index[1] * tile_size);
+            permuted.push(dot_point);
         }
         return permuted;
-        
     }
 
 // Return tile indices overlapping hitbox (Hash function)

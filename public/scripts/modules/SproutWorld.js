@@ -54,14 +54,14 @@ export class SproutWorld {
         // Generate initial points
         if (map_configuration !== null) {
             console.log("Not done! Need to draw the paths..");
-            let randomPoints = this.collisionGrid.t_randomTiles(map_configuration.dots);
-            for (var dot = 0; dot < randomPoints.length; dot++) {
-                this.addPoint(randomPoints[dot]);
+            let dot_points = this.collisionGrid.g_randomPoints(map_configuration.dots, 40);
+            for (var i = 0; i < dot_points.length; i++) {
+                this.addPoint(dot_points[i]);
             }
         } else {
-            let randomPoints = this.collisionGrid.t_randomTiles(amount);
-            for (var dot = 0; dot < randomPoints.length; dot++) {
-                this.addPoint(randomPoints[dot]);
+            let dot_points = this.collisionGrid.g_randomPoints(amount, 40);
+            for (var i = 0; i < dot_points.length; i++) {
+                this.addPoint(dot_points[i]);
             }
         }
         this.collisionGrid.u_initObstacles(this);
