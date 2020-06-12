@@ -3,6 +3,7 @@ $(function () {
     let $msgField = $('#chatMsgField');
 
     $.joinRoom = function(roomId) {
+        console.log(roomId)
         socket.emit('joinRoom', roomId, function (success) {
             if (success) {
                 $.changeView("game");
@@ -22,7 +23,7 @@ $(function () {
 
     $("#chatMsgForm").submit(function(e) {
         e.preventDefault();
-        socket.emit('sendChat', $msgField.val());
+        socket.emit('sendChatMsg', $msgField.val());
         $msgField.val('');
     });
 

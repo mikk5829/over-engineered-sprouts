@@ -27,6 +27,12 @@ $(function () {
         paper.setup(getCanvas());
         world = new SproutWorld();
 
+        // for (let point of initialPoints) {
+        //     // let pos = new paper.Point(point.position[1], initialPoints[i][2]);
+        //     let pos = new paper.Point(point.position);
+        //     world.addPoint(point.id, pos, 0)
+        // }
+
         for (let i = 0; i < initialPoints.length; i++) {
             let pos = new paper.Point(initialPoints[i][1], initialPoints[i][2]);
             world.addPoint(i, pos, 0)
@@ -70,66 +76,65 @@ $(function () {
       let world = new SproutWorld();
       world.initializeMap(null, 10);
   */
-    socket.on('updateGame', function (fromId, toId, segments, newPointData) {
-        console.log("received game update from server");
-        console.log("fromId:", fromId);
-        console.log("toId:", toId);
-        console.log("segments:", segments);
-        console.log("newPointData:", newPointData);
+    socket.on('updateGame', function (fromId, toId, pathJson, pointData) {
+        console.log("Received game update from server");
 
-
-        let path = new paper.Path().importJSON(segments);
-        path.strokeColor=STROKE_COLOR;
-        path.strokeCap= 'round';
+        let path = new paper.Path().importJSON(pathJson);
+        path.strokeColor = STROKE_COLOR;
+        path.strokeCap = 'round';
         path.strokeJoin = 'round';
-        // path.sendToBack();
         path.addTo(world.lineGroup);
 
-        let pos = new paper.Point(newPointData.center[1], newPointData.center[2]);
-        world.addPoint(newPointData.id, pos, 0)
+        world.points[fromId].connections++;
+        world.points[toId].connections++;
+
+        let pos = new paper.Point(pointData.center[1], pointData.center[2]);
+        world.addPoint(pointData.id, pos, 2)
     });
+
+    socket.on('showIntersections', function (intersections) {
+        console.log("showintersects", intersections);
+
+        for (let pointData of intersections) {
+            console.log(pointData);
+            let pos = new paper.Point(pointData[1], pointData[2]);
+            let point = new paper.Path.Circle(pos, POINT_SIZE);
+            point.fillColor = 'red';
+        }
+    });
+
 
     let tool = new paper.Tool();
     tool.onMouseUp = function onMouseUp(e) {
+        console.log("tool.onmouseup", world.eventStatus());
         if (!world.clickSelection) {
             // Reset point colors
             for (let p of world.points) p.fillColor = POINT_COLOR;
             if (world.points.includes(e.item)) e.item.fillColor = HOVER_POINT_COLOR;
 
             // Reset the selection
-            if (world.target) world.submitSelection();
-            else if (world.source) world.resetSelection();
+            if (world.target !== null) {
+                console.log("submitselection", world.target);
+                world.submitSelection();
+            } else if (world.source !== null) {
+                console.log("resetselection", world.source);
+                world.resetSelection();
+            }
 
             // TODO move to serverside, fix ids
         } else if (world.clickSelection) {
-            if (world.source && world.target) {
+            if (world.source !== null && world.target !== null) {
                 console.log(`Selection: source ${world.source.id}, target ${world.target.id}`);
                 if (world.possibleMove(world.source, world.target))
                     world.findPath(world.source, world.target);
                 // The user has clicked on two points.
                 // TODO: Check if a path exists between these points
+                console.log("resetselection clicksel", world.source, world.target);
                 world.resetSelection();
             } else if (!world.points.includes(e.item)) {
+                console.log("resetselection clicksel cancelled");
                 world.resetSelection();
             }
         }
     };
-
-    /*paper.view.onFrame = function () {
-        // Update the colors of the points
-        for (let point of world.points) {
-            point.fillColor = POINT_COLOR;
-            for (let path of point.edges) {
-                //path.strokeColor = "black";
-            }
-        }
-
-        if (world.hoveredPoint) world.hoveredPoint.fillColor = HOVER_POINT_COLOR;
-
-        for (let point of world.selectedPoints) {
-            point.fillColor = SEL_POINT_COLOR;
-        }
-
-        if (world.source) world.source.fillColor = SEL_POINT_COLOR;
-    }*/
 });

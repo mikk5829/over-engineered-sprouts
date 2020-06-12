@@ -13,7 +13,6 @@ var paper = require('paper');
 paper.install(this);
 paper.setup([400, 200]);
 
-
 /**
  * Get port from environment and store in Express.
  */
@@ -48,18 +47,37 @@ let activeRooms = [];
 io.sockets.on('connect', function (socket) {
 
     // Client has submitted a path -> server will validate the path
-    socket.on('submitPath', (segments, from, to, fn) => {
-        console.log(`${socket.username} in game ${socket.room.id} submits a path`);
-        console.log("segments:", segments);
+    socket.on('submitPath', (pathJson, from, to, fn) => {
+        console.log(`${socket.username} in game ${socket.room} submits a path`);
 
-        let path = new paper.Path().importJSON(segments);
+        console.log(activeRooms[socket.room].lineGroup.children.length);
+        console.log(activeRooms[socket.room].points.length);
+
+        let path = new paper.Path().importJSON(pathJson);
         if (!activeRooms[socket.room].isLegal(from, to, path)) {
+            console.log("illegal");
+
+            let intersections = [];
+            for (let line of activeRooms[socket.room].lineGroup.getItems({type: 'path'})) {
+                for (let intersection of path.getIntersections(line)) {
+                    intersections.push(intersection.point);
+                }
+            }
+            console.log(intersections.length, intersections[0]);
+            if (intersections.length > 0) {
+                socket.emit('showIntersections', intersections);
+            }
+
+
             fn(false); // Callback - path not accepted
+            path.remove();
             return false;
         } else {
             fn(true); // Callback - path accepted
             let resp = activeRooms[socket.room].addPath(from, to, path);
-            io.sockets.in(socket.room).emit('updateGame', from, to, resp.segments, resp.newPointData);
+            io.sockets.in(socket.room).emit('updateGame', from, to, resp.path, resp.pointData);
+
+            path.remove();
             return true;
         }
     });
@@ -148,18 +166,14 @@ io.sockets.on('connect', function (socket) {
         }
     });
 
-    socket.on('sendChat', function (msg) {
+    socket.on('sendChatMsg', function (msg) {
         console.log("received sendChat from " + socket.username + ": " + msg);
         let timestamp = +new Date();
         io.sockets.in(socket.room).emit('updateChat', timestamp, socket.username, msg);
     });
 
-    // when the user disconnects.. perform this
     socket.on('disconnect', function () {
         console.log(`${socket.username} disconnected`);
-        // if (typeof connectedSockets[socket] !== 'undefined') {
-        //     // connectedSockets[socket] = undefined;
-        // }
         socket.leave(socket.room);
     });
 });
@@ -241,6 +255,8 @@ class GameRoom {
                 connections: 0,
                 edges: []
             });
+            this.points[i].data.id=i;
+            // this.points[i].data.id = i + 1;
         }
     }
 
@@ -256,14 +272,14 @@ class GameRoom {
         let originalPath = path.clone();
         originalPath.simplify(3);
         // Create new point at midpoint of path
-        let pointId = this.points.length
+        let pointId = this.points.length;
         let newPoint = new paper.Path.Circle({
-            // center: path.getPointAt(path.length / 2),
-            center: path.getPointAt(path.length/2),
+            center: path.getPointAt(path.length / 2),
             radius: 10,
             edges: [],
             connections: 0, // fixme?
         });
+        newPoint.data.id=pointId;
 
         function save(from, to, path) {
             from.connections += 1;
@@ -277,8 +293,8 @@ class GameRoom {
         // Separate into 2 subpaths - used for pathfinding
         let path2 = path.splitAt(path.length / 2);
         let path1 = path.clone();
-        path1.insert(0, this.points[from].center);
-        path2.add(this.points[to].center);
+        path1.insert(0, this.points[from].position);
+        path2.add(this.points[to].position);
         path1.vertices = [];
         path2.vertices = [];
         path1.simplify(3);
@@ -292,14 +308,14 @@ class GameRoom {
         this.points[pointId] = newPoint;
 
         // Return the unsplit path and the new poin
-        let newPointData = {
+        let pointData = {
             // x: newPoint.
             center: newPoint.position,
             id: pointId,
             connections: 2
         };
 
-        return {segments: originalPath.exportJSON(), newPointData: newPointData};
+        return {path: originalPath.exportJSON(), pointData: pointData};
     }
 
     lobbyRepresentation() {
@@ -312,15 +328,29 @@ class GameRoom {
     }
 
     isLegal(from, to, path) {
-        // check legality of a path
-        if (!(from || to)) return false;
-        else if (from === to && from.connections >= 2) return false;
-        else if (from.connections >= 3 || to.connections >= 3) return false;
-
         this.project.activate();
-        if (this.project.hitTest(path)) {
-            console.log("hit something");
-        } else console.log("didn't hit anything");
+        console.log(`From ${from} (${this.points[from].connections}) to ${to} (${this.points[to].connections})`);
+
+        if (!(from || to)) {
+            console.log("a", from, to);
+            return false;
+        } else if (from === to && from.connections >= 2) {
+            console.log("b", from, to, from.connections);
+            return false;
+        } else if (from.connections >= 3 || to.connections >= 3) {
+            console.log("c", from.connections, to.connections);
+            return false;
+        }
+
+        // Check for intersections w. existing paths
+        for (let line of this.lineGroup.getItems({type: 'path'})) {
+            if (path.getIntersections(line).length > 0) {
+                console.log("d", path.id, line.id, typeof path, typeof line);
+                return false;
+            }
+        }
+
+        if (!(path.getIntersections(path).length <= 0)) console.log("e", path.getIntersections(path).length);
         return path.getIntersections(path).length <= 0;
     }
 
@@ -330,7 +360,6 @@ class GameRoom {
         const x = Math.floor(Math.random() * paper.view.size.width);
         const y = Math.floor(Math.random() * paper.view.size.height);
         const point = new paper.Point(x, y);
-        console.log(point.round())
         return point.round();
     }
 }
