@@ -48,23 +48,25 @@ let activeRooms = [];
 io.sockets.on('connect', function (socket) {
 
     // Client has submitted a path -> server will validate the path
-    socket.on('submitPath', (from, to, path, fn) => {
+    socket.on('submitPath', (segments, from, to, fn) => {
         console.log(`${socket.username} in game ${socket.room.id} submits a path`);
 
-        let game = socket.room.game;
-        if (!game.isLegal(from, to, path)) {
+        let path = new paper.Path(segments);
+        if (!activeRooms[socket.room].isLegal(from, to, path)) {
             fn(false); // Callback - path not accepted
             return false;
         } else {
             fn(true); // Callback - path accepted
-            io.sockets.in(socket.room).emit('updateGame', game.savePath(from, to, path));
+            let resp = activeRooms[socket.room].addPath(from, to, path);
+            io.sockets.in(socket.room).emit('updateGame', from, to, resp.segments, resp.newPointData);
             return true;
         }
     });
 
     // TODO: Only emit to lobby socket
     setInterval(function () {
-        socket.emit('updateLobby', Object.values(activeRooms));
+        let roomList = activeRooms.map(a => a.lobbyRepresentation());
+        socket.emit('updateLobby', roomList);
     }, 1000);
 
     // when the client emits 'join', this listens and executes
@@ -92,7 +94,6 @@ io.sockets.on('connect', function (socket) {
 
     socket.on('changeUsername', (requestedUsername, fn) => {
         if (usernameIsValid(requestedUsername)) {
-            //todo update the username of the socket and in the list, fn(true)
             console.log(`${socket.username} changed their username to ${requestedUsername}`);
             socket.username = requestedUsername;
             fn(true);
@@ -104,20 +105,18 @@ io.sockets.on('connect', function (socket) {
         if (activeRooms[id] === undefined) fn(false);
         else {
             socket.room = id;
-            socket.join(id);
+            socket.join(id); // fixme: .room necessary?
             activeRooms[id].playerCount++;
             fn(true);
 
             if (activeRooms[id].playerCount === 2) {
+                let game = activeRooms[id]
                 console.log(`2 players connected to game ${id}`);
-                console.log(activeRooms[id].game.points[0]);
-
-                /*let pointList = [];
-                for (let point of activeRooms[id].game.points) {
-                    pointList.push()
-                }*/
-                //todo: emit json strings (json.stringify), not the objects themselves
-                io.sockets.in(socket.room).emit('startGame', activeRooms[id].game.points);
+                let points = [];
+                for (let i = 0; i < game.points.length; i++) {
+                    points[i] = game.points[i].position;
+                }
+                io.sockets.in(socket.room).emit('startGame', points);
             }
         }
     });
@@ -138,16 +137,12 @@ io.sockets.on('connect', function (socket) {
     });
 
     // Client wants to create a new room => server validates room name, creates new room
-    socket.on('addRoom', (id, fn) => {
-        if (activeRooms[id] !== undefined) fn(false);
+    socket.on('addRoom', (roomName, fn) => {
+        if (activeRooms[roomName] !== undefined) fn(false);
         else {
-            console.log("Creating new room: " + id);
-            activeRooms[id] = ({
-                'id': id,
-                'maxCapacity': 2,
-                'playerCount': 0,
-                'game': new Game(id)
-            });
+            console.log("Creating new room: " + roomName);
+            let id = activeRooms.length;
+            activeRooms[id] = new GameRoom(id, roomName);
             fn(true, id);
         }
     });
@@ -225,18 +220,103 @@ function usernameIsValid(username) {
     return !getSockets().some(e => io.sockets.sockets[e].username === username);
 }
 
-class Game {
-    constructor(id, initPoints = 10) {
+class GameRoom {
+    constructor(id, name, players = [], numPoints = 10) {
         this.id = id;
+        this.name = name;
+        this.players = players;
         this.playerCount = 0;
         this.maxCapacity = 2;
-        this.project = new paper.Project([400, 200]);
+        this.project = new paper.Project([300, 150]);
         this.lineGroup = new paper.Group();
         this.points = [];
-        this.initializePoints(initPoints);
+
+        // Generate initial points
+        for (let i = 0; i < numPoints; i++) {
+            let center = this.randomPointPosition();
+            this.points[i] = new paper.Path.Circle({
+                center: center,
+                radius: 10,
+                connections: 0,
+                edges: []
+            });
+        }
+    }
+
+    addUser(user) {
+        // this.players.push(user)
+    }
+
+    removeUser(user) {
+        //
+    }
+
+    addPath(from, to, path) {
+        console.log("from", from);
+        console.log("to", to);
+        // Create new point at midpoint of path
+        let pointId = this.points.length
+        let newPoint = new paper.Path.Circle({
+            // center: path.getPointAt(path.length / 2),
+            center: this.randomPointPosition(),
+            radius: 10,
+            edges: [],
+            connections: 0, // fixme?
+        });
+        console.log(newPoint.center)
+
+        function save(from, to, path) {
+            from.connections += 1;
+            from.edges.push(path);
+            to.connections += 1;
+            to.edges.push(path);
+            path.vertices = [from, to];
+            return path;
+        }
+
+        // Separate into 2 subpaths - used for pathfinding
+        let path2 = path.splitAt(path.length / 2);
+        let path1 = path.clone();
+        path1.insert(0, this.points[from].center);
+        path2.add(this.points[to].center);
+        path1.vertices = [];
+        path2.vertices = [];
+        path1.simplify(3);
+        path2.simplify(3);
+
+        save(this.points[from], newPoint, path1);
+        save(newPoint, this.points[to], path2);
+
+        path1.addTo(this.lineGroup);
+        path2.addTo(this.lineGroup);
+        this.points[pointId] = newPoint;
+
+        console.log("newPoint.position:", newPoint.position);
+
+
+        // Return the unsplit path and the new poin
+        let newPointData = {
+            // x: newPoint.
+            center: newPoint.position,
+            id: pointId,
+            connections: 2
+        };
+        return {segments: path.segments, newPointData: newPointData};
+    }
+
+    lobbyRepresentation() {
+        // Returns a representation of this gameroom for the game lobby
+        return {
+            capacity: `${this.playerCount}/${this.maxCapacity}`,
+            id: '' + this.id,
+            name: this.name
+        }
     }
 
     isLegal(from, to, path) {
+        // console.log("from:", from);
+        // console.log("to:", to);
+
         // check legality of a path
         if (!(from || to)) return false;
         else if (from === to && from.connections >= 2) return false;
@@ -249,65 +329,13 @@ class Game {
         return path.getIntersections(path).length <= 0;
     }
 
-    addPath(from, to, path) {
-        from.connections += 1;
-        from.edges.push(path);
-        to.connections += 1;
-        to.edges.push(path);
-        path.vertices = [from, to];
-        path.addTo(this.lineGroup);
-        return path;
-    }
-
-    addPoint(location, connections = 0) {
-        let point = new paper.Path.Circle({
-            center: location,
-            radius: 10
-        });
-        point.center = location;
-        point.connections = connections;
-        this.points.push(point);
-        return point;
-    }
-
-    savePath(from, to, path) {
-        // first check if legal, then:
-        if (!this.isLegal(from, to, path)) return false;
-
-        // New point at midpoint
-        let newPoint = this.addPoint(path.getPointAt(path.length / 2));
-
-        let path2 = path.splitAt(path.length / 2);
-        let path1 = path.clone();
-        path1.insert(0, source.center);
-        path2.add(to.center);
-        path1.vertices = [];
-        path2.vertices = [];
-        path1.simplify(3);
-        path2.simplify(3);
-
-        path1 = this.addPath(from, newPoint, path1);
-        path2 = this.addPath(newPoint, to, path2);
-
-        return {
-            path1: path1,
-            path2: path2,
-            newPoint: newPoint
-        }
-    }
-
-    initializePoints(amount) {
-        for (let i = 0; i < amount; i++) {
-            this.addPoint(this.randomPointPosition());
-        }
-    }
-
     randomPointPosition() {
         this.project.activate();
         // FIXME: Point's center needs to be at least one point's distance from the game border
         const x = Math.floor(Math.random() * paper.view.size.width);
         const y = Math.floor(Math.random() * paper.view.size.height);
         const point = new paper.Point(x, y);
+        console.log(point.round())
         return point.round();
     }
 }

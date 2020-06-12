@@ -54,7 +54,7 @@ export class SproutWorld {
     select(point) {
         if (point.connections >= 3) return;
         if (!this.source) {
-            this.source = point;
+            this.source = point.data.id;
             if (!this.clickSelection) {
                 this.currentLine = new paper.Path({
                     segments: [point.position],
@@ -65,7 +65,7 @@ export class SproutWorld {
                 this.currentLine.sendToBack();
             }
         } else if (!this.target) {
-            this.target = point;
+            this.target = point.data.id;
         }
     }
 
@@ -98,10 +98,11 @@ export class SproutWorld {
             this.resetSelection();
             return false;
         }
-
+        console.log("source:", typeof this.source, this.source);
+        console.log("target:", typeof this.target, this.target);
         let line = this.currentLine;
-        let source = this.source;
-        let target = this.target;
+        let source = this.points[this.source];
+        let target = this.points[this.target];
 
         // Trim the path underneath the points
         let sourcePoint = line.getCrossings(source)[0];
@@ -111,51 +112,41 @@ export class SproutWorld {
         line.curves[line.curves.length - 1].point2 = targetPoint.point;
 
         // Send to server for validation
-        socket.emit('submitPath', {
-            path: line,
-            from: source,
-            to: target
-        }, function (response) {
+        socket.emit('submitPath', this.currentLine.segments, this.source, this.target, function (response) {
             console.log(response);
-            // if receive callback saying false: resetselection (illegal move)
-            // todo if true/false
         });
-
-        // Save the path if it is a legal path
-        if (source && target && this.legalMove(source, target, line)) {
-            let newPoint = this.addPoint(line.getPointAt(line.length / 2), 0);
-
-        } else {
-            this.resetSelection();
-            return false;
-        }
         this.resetSelection();
-        return true;
     }
 
 
     eventStatus(point) {
         // For debugging purposes
-        let source = !this.source ? "null" : this.source.id;
-        let target = !this.target ? "null" : this.source.id;
-        return `\nPoint: ${point.id}, source: ${source}, target: ${target}, dragEnabled: ${this.dragEnabled}, clickSelection: ${this.clickSelection}`;
+        let source = !this.source ? "null" : this.source;
+        let target = !this.target ? "null" : this.source;
+        return `\nPoint: ${point.data.id}, source: ${source}, target: ${target}, dragEnabled: ${this.dragEnabled}, clickSelection: ${this.clickSelection}`;
     }
 
-    addPoint(location, connections = 0) {        // let point = new paper.Point(pointObj);
+    // todo: consistency between usage of point/location/position/center
+    addPoint(id, center, connections) {        // let point = new paper.Point(pointObj);
 
+        console.log("addpoint at", center);
         let point = new paper.Path.Circle({
-            center: location,
+            center: center,
             radius: POINT_SIZE,
-            fillColor: POINT_COLOR
+            fillColor: POINT_COLOR,
+            selected: true,
+            connections: connections,
         });
-        point.center = location;
-        point.connections = connections;
-        point.edges = [];
-        point.neighbours = [];
+
+        // ID has to be .data.id, because .id is read-only property of paper.js items
+        point.data.id = id;
+
+        // Used for pathfinding - move serverside
         point.status = "";
         point.root = point;
         point.rootEdge = null;
-        this.points.push(point);
+        this.points[id] = point;
+
         let _this = this;
 
         point.onMouseDrag = function (e) {
@@ -171,7 +162,7 @@ export class SproutWorld {
 
         point.onMouseDown = function () {
             if (point.connections < 3) {
-                _this.selectedPoints.push(point);
+                _this.selectedPoints.push(point.data.id);
             }
         };
 
@@ -200,7 +191,7 @@ export class SproutWorld {
                     _this.dragEnabled = false;
                     _this.currentLine.add(point.position);
                     _this.select(point);
-                    _this.selectedPoints.push(point);
+                    _this.selectedPoints.push(point.data.id);
                 }
             }
         };
