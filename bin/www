@@ -50,8 +50,9 @@ io.sockets.on('connect', function (socket) {
     // Client has submitted a path -> server will validate the path
     socket.on('submitPath', (segments, from, to, fn) => {
         console.log(`${socket.username} in game ${socket.room.id} submits a path`);
+        console.log("segments:", segments);
 
-        let path = new paper.Path(segments);
+        let path = new paper.Path().importJSON(segments);
         if (!activeRooms[socket.room].isLegal(from, to, path)) {
             fn(false); // Callback - path not accepted
             return false;
@@ -252,18 +253,17 @@ class GameRoom {
     }
 
     addPath(from, to, path) {
-        console.log("from", from);
-        console.log("to", to);
+        let originalPath = path.clone();
+        originalPath.simplify(3);
         // Create new point at midpoint of path
         let pointId = this.points.length
         let newPoint = new paper.Path.Circle({
             // center: path.getPointAt(path.length / 2),
-            center: this.randomPointPosition(),
+            center: path.getPointAt(path.length/2),
             radius: 10,
             edges: [],
             connections: 0, // fixme?
         });
-        console.log(newPoint.center)
 
         function save(from, to, path) {
             from.connections += 1;
@@ -291,9 +291,6 @@ class GameRoom {
         path2.addTo(this.lineGroup);
         this.points[pointId] = newPoint;
 
-        console.log("newPoint.position:", newPoint.position);
-
-
         // Return the unsplit path and the new poin
         let newPointData = {
             // x: newPoint.
@@ -301,7 +298,8 @@ class GameRoom {
             id: pointId,
             connections: 2
         };
-        return {segments: path.segments, newPointData: newPointData};
+
+        return {segments: originalPath.exportJSON(), newPointData: newPointData};
     }
 
     lobbyRepresentation() {
@@ -314,9 +312,6 @@ class GameRoom {
     }
 
     isLegal(from, to, path) {
-        // console.log("from:", from);
-        // console.log("to:", to);
-
         // check legality of a path
         if (!(from || to)) return false;
         else if (from === to && from.connections >= 2) return false;

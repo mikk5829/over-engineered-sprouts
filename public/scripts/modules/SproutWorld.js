@@ -112,7 +112,8 @@ export class SproutWorld {
         line.curves[line.curves.length - 1].point2 = targetPoint.point;
 
         // Send to server for validation
-        socket.emit('submitPath', this.currentLine.segments, this.source, this.target, function (response) {
+        console.log("submitpath segments:", line.segments);
+        socket.emit('submitPath', line.exportJSON(), this.source, this.target, function (response) {
             console.log(response);
         });
         this.resetSelection();
@@ -126,8 +127,7 @@ export class SproutWorld {
         return `\nPoint: ${point.data.id}, source: ${source}, target: ${target}, dragEnabled: ${this.dragEnabled}, clickSelection: ${this.clickSelection}`;
     }
 
-    // todo: consistency between usage of point/location/position/center
-    addPoint(id, center, connections) {        // let point = new paper.Point(pointObj);
+    addPoint(id, center, connections) {
 
         console.log("addpoint at", center);
         let point = new paper.Path.Circle({

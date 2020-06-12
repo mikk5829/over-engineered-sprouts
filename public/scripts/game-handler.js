@@ -28,7 +28,7 @@ $(function () {
         world = new SproutWorld();
 
         for (let i = 0; i < initialPoints.length; i++) {
-            let pos = new paper.Point(initialPoints[i][1],initialPoints[i][2]);
+            let pos = new paper.Point(initialPoints[i][1], initialPoints[i][2]);
             world.addPoint(i, pos, 0)
         }
 
@@ -78,10 +78,14 @@ $(function () {
         console.log("newPointData:", newPointData);
 
 
-        let path = new paper.Path(segments);
+        let path = new paper.Path().importJSON(segments);
+        path.strokeColor=STROKE_COLOR;
+        path.strokeCap= 'round';
+        path.strokeJoin = 'round';
+        // path.sendToBack();
         path.addTo(world.lineGroup);
 
-        let pos = new paper.Point(newPointData.center[1],newPointData.center[2]);
+        let pos = new paper.Point(newPointData.center[1], newPointData.center[2]);
         world.addPoint(newPointData.id, pos, 0)
     });
 
@@ -96,7 +100,7 @@ $(function () {
             if (world.target) world.submitSelection();
             else if (world.source) world.resetSelection();
 
-        // TODO move to serverside, fix ids
+            // TODO move to serverside, fix ids
         } else if (world.clickSelection) {
             if (world.source && world.target) {
                 console.log(`Selection: source ${world.source.id}, target ${world.target.id}`);
