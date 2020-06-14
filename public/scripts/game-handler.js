@@ -77,8 +77,8 @@ $(function () {
         path.strokeJoin = 'round';
         path.addTo(world.lineGroup);
 
-        world.points[fromId].connections++;
-        world.points[toId].connections++;
+        world.points[fromId].data.connections++;
+        world.points[toId].data.connections++;
 
         let pos = new paper.Point(pointData.center[1], pointData.center[2]);
         world.addPoint(pointData.id, pos, 2)

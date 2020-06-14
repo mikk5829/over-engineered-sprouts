@@ -40,20 +40,9 @@ export class SproutWorld {
         this.currentLine = null; // The line currently being drawn by the player
     }
 
-    /**
-     * Generates the map
-     * @memberof SproutWorld
-     * */
-    initializeMap(points) {
-        for (let point of points) {
-            console.log(point);
-            this.addPoint(point, location, point.connections);
-        }
-    }
-
     select(point) {
         console.log("select", point.data.id);
-        if (point.connections >= 3) return;
+        if (point.data.connections >= 3) return;
         if (!this.source) {
             this.source = point;
 
@@ -97,7 +86,6 @@ export class SproutWorld {
         line.curves[line.curves.length - 1].point2 = targetPoint.point;
 
         // Send to server for validation
-        let _this = this;
         socket.emit('submitPath', line.exportJSON(), this.source.data.id, this.target.data.id, function (pathIsLegal, intersections = []) {
             if (pathIsLegal) console.log("Path legal");
             else console.log("Path illegal");
@@ -111,16 +99,26 @@ export class SproutWorld {
             center: center,
             radius: POINT_SIZE,
             fillColor: POINT_COLOR,
-            selected: true,
-            connections: connections,
         });
-        // ID has to be .data.id, because .id is read-only property of paper.js items
-        point.data.id = id;
+        point.data = {
+            id: id,
+            edges: [], // fixme
+            connections: connections,
+        };
+
+        // Shows the point's ID on top of the point
+        let pointText = new paper.PointText({
+            point: point.position,
+            justification: 'center',
+            fillColor: 'white',
+            content: id,
+            locked: true,
+        })
 
         // Used for pathfinding - move serverside??!
-        point.status = "";
-        point.root = point;
-        point.rootEdge = null;
+        point.data.status = "";
+        point.data.root = point;
+        point.data.rootEdge = null;
         this.points[id] = point;
 
         let _this = this;
@@ -137,8 +135,7 @@ export class SproutWorld {
         };
 
         point.onMouseDown = function () {
-            console.log(point.connections);
-            if (point.connections < 3) {
+            if (point.data.connections < 3) {
                 _this.selectedPoints.push(point);
             }
         };
@@ -153,15 +150,18 @@ export class SproutWorld {
         };
 
         point.onClick = function () {
+            console.log(`Point ${point.data.id}, ${point.data.connections} connections`);
             if (!_this.source) _this.clickSelection = true;
             if (_this.clickSelection) _this.select(point);
         };
 
         point.onMouseEnter = function () {
-            if ((point.connections < 3) && !(_this.source && _this.target)) _this.hoveredPoint = point;
+            // Highlights this point if it is possible to draw a line to/from it
+            if ((point.data.connections < 3) && !(_this.source && _this.target)) _this.hoveredPoint = point;
+
             if (_this.dragEnabled && _this.source && !_this.target) {
                 // If ending on the point is illegal, reset the selection
-                if ((_this.source === point && point.connections >= 2) || (point.connections >= 3)) {
+                if ((_this.source === point && point.data.connections >= 2) || (point.data.connections >= 3)) {
                     _this.resetSelection();
                     _this.dragEnabled = false;
                 } else { // Select the point
@@ -177,12 +177,15 @@ export class SproutWorld {
             _this.hoveredPoint = null;
 
             if (_this.dragSelection) {
-                // fixme: If the user draws a line quickly, onMouseLeave is called before onMouseDrag
-                // which means a line won't be drawn. (doesn't break anything, it's just not optimal)
+                /* FIXME: If the user draws a line quickly, onMouseLeave is called before onMouseDrag,
+                    which means a line won't be drawn. (doesn't break anything, it's just not optimal) */
+
                 if (_this.dragEnabled) { // Stop drawing the line once the second point has been selected
                     _this.select(point);
                     _this.dragEnabled = false;
-                } else if (!_this.target) { // Start drawing when leaving the source point
+                } else if (!_this.target) {
+                    /* Only start drawing when leaving the source point
+                        = the part of the line within the point's radius won't be drawn */
                     _this.dragEnabled = true;
                 }
             }
@@ -190,8 +193,8 @@ export class SproutWorld {
 
         point.commonEdges = function (p2) {
             let inCommon = [];
-            for (let edge of point.edges) {
-                if (edge.vertices.includes(point) && edge.vertices.includes(p2))
+            for (let edge of point.data.edges) {
+                if (edge.data.vertices.includes(point) && edge.data.vertices.includes(p2))
                     inCommon.push(edge);
             }
             return inCommon;
@@ -199,45 +202,29 @@ export class SproutWorld {
 
         point.dfs = function (toFind) {
             //Marker som søgende
-            point.status = "seeking";
+            point.data.status = "seeking";
             //Kør dfs på alle naboer
-            for (let e of point.edges) {
-                let p = e.vertices.find(x => x !== point);
-                if (e !== point.rootEdge && p !== undefined) {
+            for (let e of point.data.edges) {
+                let p = e.data.vertices.find(x => x !== point);
+                if (e !== point.data.rootEdge && p !== undefined) {
                     //Er en nabo søgende eller færdig, find alle links op til nabo og tilføj liste til cycles[]
-                    if (p.status === "") {
+                    if (p.data.status === "") {
                         //Sæt parent til dette point
-                        p.root = point;
-                        p.rootEdge = e;
-                        if (!(e.vertices[0] === p)) {
+                        p.data.root = point;
+                        p.data.rootEdge = e;
+                        if (!(e.data.vertices[0] === p)) {
                             e.reverse();
-                            e.vertices.reverse();
+                            e.data.vertices.reverse();
                         }
                         p.dfs(toFind);
-                    } else if (p.status === "done") {
+                    } else if (p.data.status === "done") {
                         toFind.push(e);
                     }
                 }
             }
-            //Marker som færdig
-            point.status = "done";
+            point.data.status = "done";
         };
-
         return point;
-    }
-
-    exportWorld() {
-        //alert("Exporting feature not done");
-        for (const group of this.groups) {
-            console.log(group.exportJSON());
-        }
-    }
-
-    importWorld() {
-        alert("Importing feature not done");
-        for (const group of this.groups) {
-            alert("NOT DONE");
-        }
     }
 
     getCycles() {
@@ -245,13 +232,13 @@ export class SproutWorld {
         //TODO: Ikke alle kanter i et loop bliver tilføjet selv om loopet er opdaget
         let toFind = [];
         for (let p of this.points) {
-            p.root = p;
-            p.rootEdge = null;
-            p.status = "";
+            p.data.root = p;
+            p.data.rootEdge = null;
+            p.data.status = "";
         }
         for (let p of this.points) {
-            if (p.status !== "done") {
-                p.root = p;
+            if (p.data.status !== "done") {
+                p.data.root = p;
                 p.dfs(toFind);
             }
         }
@@ -261,15 +248,15 @@ export class SproutWorld {
             let paths0 = [];
             let paths1 = [];
             let loop = [t];
-            let p0 = t.vertices[0];
-            let p1 = t.vertices[1];
-            while (p0.root !== p0) {
-                paths0.push(p0.rootEdge);
-                p0 = p0.root;
+            let p0 = t.data.vertices[0];
+            let p1 = t.data.vertices[1];
+            while (p0.data.root !== p0) {
+                paths0.push(p0.data.rootEdge);
+                p0 = p0.data.root;
             }
-            while (p1.root !== p1) {
-                paths1.push(p1.rootEdge);
-                p1 = p1.root;
+            while (p1.data.root !== p1) {
+                paths1.push(p1.data.rootEdge);
+                p1 = p1.data.root;
             }
             let difference = paths0.filter(x => !paths1.includes(x)).concat(paths1.filter(x => !paths0.includes(x)));
             loop = loop.concat(difference);
@@ -381,5 +368,19 @@ export class SproutWorld {
             v = v.parentRay
         }
         suggestion.strokeColor = "black";
+    }
+
+    exportWorld() {
+        //alert("Exporting feature not done");
+        for (const group of this.groups) {
+            console.log(group.exportJSON());
+        }
+    }
+
+    importWorld() {
+        alert("Importing feature not done");
+        for (const group of this.groups) {
+            alert("NOT DONE");
+        }
     }
 }

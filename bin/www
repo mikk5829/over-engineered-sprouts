@@ -47,10 +47,11 @@ let activeRooms = [];
 io.sockets.on('connect', function (socket) {
 
     // Client has submitted a path -> server will validate the path
-    socket.on('submitPath', (pathJson, from, to, fn) => {
+    socket.on('submitPath', (pathJson, fromId, toId, fn) => {
         console.log(`${socket.username} in game ${socket.room} submits a path`);
-
         let game = activeRooms[socket.room];
+        let from = game.points[fromId];
+        let to = game.points[toId];
         let path = new paper.Path().importJSON(pathJson);
 
         if (!game.isLegal(from, to, path)) {
@@ -61,7 +62,7 @@ io.sockets.on('connect', function (socket) {
         } else {
             fn(true); // Callback - path accepted
             let resp = game.addPath(from, to, path);
-            io.sockets.in(socket.room).emit('updateGame', from, to, resp.path, resp.pointData);
+            io.sockets.in(socket.room).emit('updateGame', from.data.id, to.data.id, resp.path, resp.pointData);
             path.remove();
             return true;
         }
@@ -234,59 +235,66 @@ class GameRoom {
         // Generate initial points
         for (let i = 0; i < numPoints; i++) {
             let center = this.randomPointPosition();
-            this.points[i] = new paper.Path.Circle({
+            let point = new paper.Path.Circle({
                 center: center,
                 radius: 10,
-                connections: 0,
-                edges: []
             });
-            this.points[i].data.id=i;
-            // this.points[i].data.id = i + 1;
+            point.data = {
+                id: i,
+                edges: [],
+                connections: 0,
+            }
+            this.points[i] = point;
+            console.log(this.points[i].data.connections)
         }
     }
 
     addUser(user) {
-        // this.players.push(user)
+        // todo
     }
 
     removeUser(user) {
-        //
+        // todo
     }
 
     addPath(from, to, path) {
         let originalPath = path.clone();
         originalPath.simplify(3);
+
         // Create new point at midpoint of path
         let pointId = this.points.length;
         let newPoint = new paper.Path.Circle({
             center: path.getPointAt(path.length / 2),
             radius: 10,
-            edges: [],
-            connections: 0, // fixme?
         });
-        newPoint.data.id=pointId;
+        newPoint.data = {
+            id: pointId,
+            edges: [],
+            connections: 0,
+        };
 
         function save(from, to, path) {
-            from.connections += 1;
-            from.edges.push(path);
-            to.connections += 1;
-            to.edges.push(path);
-            path.vertices = [from, to];
+            from.data.connections += 1;
+            from.data.edges.push(path);
+            to.data.connections += 1;
+            to.data.edges.push(path);
+            path.data.vertices = [from, to];
+            path.simplify(3);
             return path;
         }
 
         // Separate into 2 subpaths - used for pathfinding
         let path2 = path.splitAt(path.length / 2);
         let path1 = path.clone();
-        path1.insert(0, this.points[from].position);
-        path2.add(this.points[to].position);
-        path1.vertices = [];
-        path2.vertices = [];
-        path1.simplify(3);
-        path2.simplify(3);
+        path1.insert(0, from.position);
+        path2.add(to.position);
+        // path1.vertices = [];
+        // path2.vertices = [];
+        // path1.simplify(3);
+        // path2.simplify(3);
 
-        save(this.points[from], newPoint, path1);
-        save(newPoint, this.points[to], path2);
+        save(from, newPoint, path1);
+        save(newPoint, to, path2);
 
         path1.addTo(this.lineGroup);
         path2.addTo(this.lineGroup);
@@ -299,6 +307,7 @@ class GameRoom {
             id: pointId,
             connections: 2
         };
+        //todo: send newPoint.data instead
 
         return {path: originalPath.exportJSON(), pointData: pointData};
     }
@@ -314,28 +323,15 @@ class GameRoom {
 
     isLegal(from, to, path) {
         this.project.activate();
-        console.log(`From ${from} (${this.points[from].connections}) to ${to} (${this.points[to].connections})`);
 
-        if (!(from || to)) {
-            console.log("a", from, to);
-            return false;
-        } else if (from === to && from.connections >= 2) {
-            console.log("b", from, to, from.connections);
-            return false;
-        } else if (from.connections >= 3 || to.connections >= 3) {
-            console.log("c", from.connections, to.connections);
-            return false;
-        }
+        if (!(from || to)) return false;
+        else if (from === to && from.data.connections >= 2) return false;
+        else if (from.data.connections >= 3 || to.data.connections >= 3) return false;
 
         // Check for intersections w. existing paths
         for (let line of this.lineGroup.getItems({type: 'path'})) {
-            if (path.getIntersections(line).length > 0) {
-                console.log("d", path.id, line.id, typeof path, typeof line);
-                return false;
-            }
+            if (path.getIntersections(line).length > 0) return false;
         }
-
-        if (!(path.getIntersections(path).length <= 0)) console.log("e", path.getIntersections(path).length);
         return path.getIntersections(path).length <= 0;
     }
 
