@@ -52,11 +52,13 @@ export class SproutWorld {
     }
 
     select(point) {
-        console.log("select", point, point.data.id)
+        console.log("select", point.data.id);
         if (point.connections >= 3) return;
-        if (this.source === null) {
-            this.source = point.data.id;
+        if (!this.source) {
+            this.source = point;
+
             if (!this.clickSelection) {
+                // Start drawing a path
                 this.currentLine = new paper.Path({
                     segments: [point.position],
                     strokeColor: STROKE_COLOR,
@@ -65,9 +67,7 @@ export class SproutWorld {
                 });
                 this.currentLine.sendToBack();
             }
-        } else if (this.target === null) {
-            this.target = point.data.id;
-        }
+        } else if (!this.target) this.target = point;
     }
 
     resetSelection() {
@@ -82,53 +82,31 @@ export class SproutWorld {
     }
 
     submitSelection() {
-        if (this.currentLine.segments.length <= 2 && (this.source === null || this.target === null)) {
-            console.log("submitselection -> resetselection");
+        if (this.currentLine.segments.length <= 2 && (!this.source || !this.target)) {
             this.resetSelection();
             return false;
         }
 
         let line = this.currentLine;
-        // let source = this.points[this.source];
-        // let target = this.points[this.target];
 
         // Trim the path underneath the points
-        let sourcePoint = line.getCrossings(this.points[this.source])[0];
+        let sourcePoint = line.getCrossings(this.source)[0];
         let i = this.source === this.target ? 1 : 0;
-        let targetPoint = line.getCrossings(this.points[this.target])[i];
+        let targetPoint = line.getCrossings(this.target)[i];
         line.curves[0].point1 = sourcePoint.point;
         line.curves[line.curves.length - 1].point2 = targetPoint.point;
 
         // Send to server for validation
         let _this = this;
-        socket.emit('submitPath', line.exportJSON(), this.source, this.target, function (pathIsLegal, intersections = []) {
+        socket.emit('submitPath', line.exportJSON(), this.source.data.id, this.target.data.id, function (pathIsLegal, intersections = []) {
             if (pathIsLegal) console.log("Path legal");
-            else {
-                console.log("Path illegal");
-                for (let pointData of intersections) {
-                    let pos = new paper.Point(pointData.center[1], pointData.center[2]);
-                    let point = _this.addPoint(pointData.id, pos, 0);
-                    point.fillColor = 'red';
-                }
-            }
+            else console.log("Path illegal");
         });
         this.resetSelection();
     }
 
 
-    eventStatus(point = null) {
-        // For debugging purposes
-        let source = this.source === null ? "null" : this.source;
-        let target = this.target === null ? "null" : this.target;
-        if (point) return `\nPoint: ${point.data.id}, source: ${source}, target: ${target}, dragEnabled: ${this.dragEnabled}, clickSelection: ${this.clickSelection}`;
-        else return `Source: ${source}, target: ${target}, dragEnabled: ${this.dragEnabled}, clickSelection: ${this.clickSelection}`;
-
-    }
-
     addPoint(id, center, connections) {
-        console.log("addpoint at", center);
-
-
         let point = new paper.Path.Circle({
             center: center,
             radius: POINT_SIZE,
@@ -136,11 +114,10 @@ export class SproutWorld {
             selected: true,
             connections: connections,
         });
-
         // ID has to be .data.id, because .id is read-only property of paper.js items
         point.data.id = id;
 
-        // Used for pathfinding - move serverside
+        // Used for pathfinding - move serverside??!
         point.status = "";
         point.root = point;
         point.rootEdge = null;
@@ -149,8 +126,6 @@ export class SproutWorld {
         let _this = this;
 
         point.onMouseDrag = function (e) {
-            console.log(`onmousedrag ${point.data.id}:\nConnections: ${point.connections}\nCurrent source: ${this.source}\nCurrent target: ${this.target}\n`)
-
             // When first starting to draw a line, reset the current selection
             if (!_this.dragSelection) {
                 if (!point.hitTest(e.point)) return false;
@@ -162,17 +137,13 @@ export class SproutWorld {
         };
 
         point.onMouseDown = function () {
-            console.log(`onmousedown ${point.data.id}:\nConnections: ${point.connections}\nCurrent source: ${this.source}\nCurrent target: ${this.target}\n`)
-
             console.log(point.connections);
             if (point.connections < 3) {
-                _this.selectedPoints.push(point.data.id);
+                _this.selectedPoints.push(point);
             }
         };
 
         point.onMouseUp = function (e) {
-            console.log(`onmouseup ${point.data.id}:\nConnections: ${point.connections}\nCurrent source: ${this.source}\nCurrent target: ${this.target}\n`)
-
             if (!_this.clickSelection && !_this.dragEnabled) {
                 _this.selectedPoints = [];
             } else if (_this.clickSelection) {
@@ -182,38 +153,31 @@ export class SproutWorld {
         };
 
         point.onClick = function () {
-
-            console.log(`Point ${point.data.id}:\nConnections: ${point.connections}\nCurrent source: ${this.source}\nCurrent target: ${this.target}\n`)
-
-            // if (!_this.source) _this.clickSelection = true;
-            // if (_this.clickSelection) _this.select(point);
+            if (!_this.source) _this.clickSelection = true;
+            if (_this.clickSelection) _this.select(point);
         };
 
         point.onMouseEnter = function () {
-            console.log(`Onmouseenter ${point.data.id}:\nConnections: ${point.connections}\nCurrent source: ${this.source}\nCurrent target: ${this.target}\n`);
-
-
             if ((point.connections < 3) && !(_this.source && _this.target)) _this.hoveredPoint = point;
-            if (_this.dragEnabled && _this.source !== null && !_this.target !== null) {
+            if (_this.dragEnabled && _this.source && !_this.target) {
                 // If ending on the point is illegal, reset the selection
-                if ((_this.source === point.data.id && point.connections >= 2) || (point.connections >= 3)) {
+                if ((_this.source === point && point.connections >= 2) || (point.connections >= 3)) {
                     _this.resetSelection();
                     _this.dragEnabled = false;
                 } else { // Select the point
                     _this.dragEnabled = false;
                     _this.currentLine.add(point.position);
                     _this.select(point);
-                    _this.selectedPoints.push(point.data.id);
+                    _this.selectedPoints.push(point);
                 }
             }
         };
 
         point.onMouseLeave = function () {
-            console.log(`Onmouseleave ${point.data.id}:\nConnections: ${point.connections}\nCurrent source: ${this.source}\nCurrent target: ${this.target}\n`)
-
             _this.hoveredPoint = null;
-            if (_this.dragSelection) { // The user is drawing a line
-                // TODO: If the user draws a line quickly, onMouseLeave is called before onMouseDrag
+
+            if (_this.dragSelection) {
+                // fixme: If the user draws a line quickly, onMouseLeave is called before onMouseDrag
                 // which means a line won't be drawn. (doesn't break anything, it's just not optimal)
                 if (_this.dragEnabled) { // Stop drawing the line once the second point has been selected
                     _this.select(point);

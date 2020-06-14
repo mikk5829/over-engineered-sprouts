@@ -27,12 +27,6 @@ $(function () {
         paper.setup(getCanvas());
         world = new SproutWorld();
 
-        // for (let point of initialPoints) {
-        //     // let pos = new paper.Point(point.position[1], initialPoints[i][2]);
-        //     let pos = new paper.Point(point.position);
-        //     world.addPoint(point.id, pos, 0)
-        // }
-
         for (let i = 0; i < initialPoints.length; i++) {
             let pos = new paper.Point(initialPoints[i][1], initialPoints[i][2]);
             world.addPoint(i, pos, 0)
@@ -40,20 +34,18 @@ $(function () {
 
         paper.view.onFrame = function () {
             // Update the colors of the points
+
             for (let point of world.points) {
                 point.fillColor = POINT_COLOR;
-                /*for (let path of point.edges) {
-                    //path.strokeColor = "black";
-                }*/
             }
 
             if (world.hoveredPoint) world.hoveredPoint.fillColor = HOVER_POINT_COLOR;
 
-            for (let pointId of world.selectedPoints) {
-                world.points[pointId].fillColor = SEL_POINT_COLOR;
+            for (let point of world.selectedPoints) {
+                point.fillColor = SEL_POINT_COLOR;
             }
 
-            if (world.source) world.points[world.source].fillColor = SEL_POINT_COLOR;
+            if (world.source) world.source.fillColor = SEL_POINT_COLOR;
         }
 
 
@@ -92,49 +84,31 @@ $(function () {
         world.addPoint(pointData.id, pos, 2)
     });
 
-    socket.on('showIntersections', function (intersections) {
-        console.log("showintersects", intersections);
-
-        for (let pointData of intersections) {
-            console.log(pointData);
-            let pos = new paper.Point(pointData[1], pointData[2]);
-            let point = new paper.Path.Circle(pos, POINT_SIZE);
-            point.fillColor = 'red';
-        }
-    });
-
-
     let tool = new paper.Tool();
     tool.onMouseUp = function onMouseUp(e) {
-        console.log("tool.onmouseup", world.eventStatus());
+        console.log(`tool.onMouseUp, source ${world.source}, target ${world.target}\n`);
+
         if (!world.clickSelection) {
             // Reset point colors
             for (let p of world.points) p.fillColor = POINT_COLOR;
             if (world.points.includes(e.item)) e.item.fillColor = HOVER_POINT_COLOR;
 
             // Reset the selection
-            if (world.target !== null) {
-                console.log("submitselection", world.target);
-                world.submitSelection();
-            } else if (world.source !== null) {
-                console.log("resetselection", world.source);
-                world.resetSelection();
-            }
+            if (world.target) world.submitSelection();
+            else if (world.source) world.resetSelection();
 
             // TODO move to serverside, fix ids
         } else if (world.clickSelection) {
-            if (world.source !== null && world.target !== null) {
-                console.log(`Selection: source ${world.source.id}, target ${world.target.id}`);
-                if (world.possibleMove(world.source, world.target))
-                    world.findPath(world.source, world.target);
-                // The user has clicked on two points.
-                // TODO: Check if a path exists between these points
+            if (world.source && world.target) {
+                console.log(`Clickselection: source ${world.source.data.id}, target ${world.target.data.id}`);
+
+                // FIXME submit clickselection
+                // if (world.possibleMove(world.source, world.target))world.findPath(world.source, world.target);
+
                 console.log("resetselection clicksel", world.source, world.target);
                 world.resetSelection();
-            } else if (!world.points.includes(e.item)) {
-                console.log("resetselection clicksel cancelled");
-                world.resetSelection();
-            }
+
+            } else if (!world.points.includes(e.item)) world.resetSelection(); // Cancel click-selection
         }
     };
 });

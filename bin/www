@@ -50,33 +50,18 @@ io.sockets.on('connect', function (socket) {
     socket.on('submitPath', (pathJson, from, to, fn) => {
         console.log(`${socket.username} in game ${socket.room} submits a path`);
 
-        console.log(activeRooms[socket.room].lineGroup.children.length);
-        console.log(activeRooms[socket.room].points.length);
-
+        let game = activeRooms[socket.room];
         let path = new paper.Path().importJSON(pathJson);
-        if (!activeRooms[socket.room].isLegal(from, to, path)) {
-            console.log("illegal");
 
-            let intersections = [];
-            for (let line of activeRooms[socket.room].lineGroup.getItems({type: 'path'})) {
-                for (let intersection of path.getIntersections(line)) {
-                    intersections.push(intersection.point);
-                }
-            }
-            console.log(intersections.length, intersections[0]);
-            if (intersections.length > 0) {
-                socket.emit('showIntersections', intersections);
-            }
-
-
+        if (!game.isLegal(from, to, path)) {
+            console.log("Illegal");
             fn(false); // Callback - path not accepted
             path.remove();
             return false;
         } else {
             fn(true); // Callback - path accepted
-            let resp = activeRooms[socket.room].addPath(from, to, path);
+            let resp = game.addPath(from, to, path);
             io.sockets.in(socket.room).emit('updateGame', from, to, resp.path, resp.pointData);
-
             path.remove();
             return true;
         }
