@@ -1,5 +1,5 @@
 import {SproutWorld} from "./modules/SproutWorld.js";
-import {getCookieValue, getResolutionFromCookie} from "./modules/Utility.js"
+import {getCookieValue, getResolutionFromCookie, worldInLocalStorage} from "./modules/Utility.js"
 import {POINT_COLOR, SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR, POINT_SIZE} from "./modules/SproutWorld.js";
 
 function getCanvas() {
@@ -33,7 +33,9 @@ $(function() {
     paper.setup(getCanvas());
 
     let world = new SproutWorld();
-    world.initializeMap(null, 10);
+
+    let map_configuration = worldInLocalStorage();
+    world.initializeMap(map_configuration, 10);
 
     let tool = new paper.Tool();
     tool.onMouseUp = function onMouseUp(e) {

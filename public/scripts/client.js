@@ -19,5 +19,6 @@ $(function () {
             $('#' + viewName).addClass('hidden').hide();
         }
         $('#' + newView).removeClass('hidden').show();
+
     };
 });
