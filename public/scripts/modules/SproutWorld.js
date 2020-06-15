@@ -379,7 +379,7 @@ export class SproutWorld {
     }
 
     suggestPath(p1, p2){
-        if (this.possibleMove(p1.center, p2.center, true)) {
+        if (this.possibleMove(p1.center, p2.center)) {
             let cellSize = this.collisionGrid.cell_size;
             let suggest = this.collisionGrid.u_Astar(p1, p2);
             while (!suggest) {
