@@ -27,6 +27,7 @@ export class SproutWorld {
         this.groups = groups;
         this.lineGroup = new paper.Group();
         this.points = [];
+        this.suggestedPath = new paper.Path();
 
         this.dragEnabled = false;
         this.dragSelection = false; // Whether or not a line is currently being drawn
@@ -62,7 +63,7 @@ export class SproutWorld {
             }
         }
         this.collisionGrid.u_initObstacles(this);
-        this.collisionGrid.v_update();
+        //this.collisionGrid.v_update();
     }
 
     select(point) {
@@ -163,7 +164,7 @@ export class SproutWorld {
         line.vertices = [source, target];
         line.addTo(this.lineGroup);
         this.collisionGrid.t_insert_line(line.curves, line);
-        this.collisionGrid.v_update();
+        //this.collisionGrid.v_update();
     }
 
     eventStatus(point) {
@@ -190,7 +191,7 @@ export class SproutWorld {
         let _this = this;
         if (this.collisionGrid != null) {
             this.collisionGrid.t_insert_rectangle(point.bounds, point);
-            this.collisionGrid.v_update();
+            //this.collisionGrid.v_update();
         }
 
         point.onMouseDrag = function (e) {
@@ -375,5 +376,29 @@ export class SproutWorld {
             //total.remove();
         }
         return true;
+    }
+
+    suggestPath(p1, p2){
+        if (this.possibleMove(p1.center, p2.center, true)) {
+            let cellSize = this.collisionGrid.cell_size;
+            let suggest = this.collisionGrid.u_Astar(p1, p2);
+            while (!suggest) {
+                console.log("Cut");
+                cellSize = cellSize / 2;
+                this.collisionGrid = new CollisionGrid(cellSize, this, paper.view.size);
+                for (let line of this.lineGroup.children) {
+                    this.collisionGrid.t_insert_line(line.curves, line);
+                }
+                for (let point of this.points) {
+                    this.collisionGrid.t_insert_rectangle(point.bounds, point);
+                }
+                //this.collisionGrid.v_update();
+                suggest = this.collisionGrid.u_Astar(p1, p2);
+            }
+            suggest.strokeColor = "red";
+            return suggest;
+        } else {
+            return new paper.Path();
+        }
     }
 }
