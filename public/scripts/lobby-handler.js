@@ -65,6 +65,7 @@ $(function () {
     });
 
     $('#settingsBtn').click(function () {
+        $.openSettingsMenu();
         $.changeView("settings");
     });
 
@@ -93,13 +94,11 @@ $(function () {
     socket.on('updateLobby', function (rooms) {
         $('#rooms>tbody').empty();
         for (let room of rooms) {
-            let capacity = `${room.currentPlayers}/${room.maxCapacity}`;
+            let capacity = `${room.playerCount}/${room.maxCapacity}`;
             let name = room.id;
             $('#rooms > tbody:last-child').append(`<tr data-href=${name} role="button" class="w3-hover-pale-green w3-hover-text-green"> <th class="w3-left-align"> ${name} </th><th class="w3-right-align"> ${capacity} </th></tr>`);
         }
     });
-
-
     //Adds a new chat message to the chatlog
     socket.on('updateChat', function (timestamp, sender, msg) {
         let time = new Date(timestamp).toTimeString().slice(0, 5);

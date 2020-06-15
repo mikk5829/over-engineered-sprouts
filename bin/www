@@ -8,6 +8,7 @@ var app = require('../app');
 var debug = require('debug')('over-engineered-sprout:server');
 var http = require('http');
 var Sentencer = require('sentencer');
+// const gameServer = require('/public/scripts/game-server.js');
 
 /**
  * Get port from environment and store in Express.
@@ -38,69 +39,102 @@ server.on('listening', onListening);
 * Socket IO stuff
 * */
 const io = require('socket.io').listen(server);
-let usernames = [];
-let rooms = [];
+let activeRooms = [];
+
+function getSockets() {
+    return Object.keys(io.sockets.sockets);
+    // io.sockets is an object where a key is a socketId and value is reference to the socket object.
+
+    // Object.keys(io.sockets).forEach((socketId) => {
+    //     const socket = io.sockets[socketId];
+    // })
+}
+
+function isValid(username) {
+
+    if (!username || !(3 <= username.length <= 15) || !(/^[a-z0-9]+$/i.test(username))) return false;
+
+    return !getSockets().some(e => io.sockets.sockets[e].username === username);
+}
 
 io.sockets.on('connect', function (socket) {
-    console.log("connect");
+
+    socket.on('path', function (data, fn) {
+        console.log(data);
+        fn("gotcha");
+        // send to room including sender:
+        // io.sockets.in(socket.room).emit('updateGame', "hej venner");
+
+        // send to room excluding sender:
+        socket.broadcast.to(socket.room).emit('updateGame', data);
+    });
 
     // TODO: Only emit to lobby socket
-    socket.emit('updateLobby', rooms);
     setInterval(function () {
-        socket.emit('updateLobby', rooms);
+        socket.emit('updateLobby', activeRooms);
     }, 1000);
 
-    // when the client emits 'adduser', this listens and executes
-    socket.on('addUser', function (fn) {
+    // when the client emits 'join', this listens and executes
+    socket.on('join', (requestedUsername, fn) => {
         String.prototype.capitalize = function () {
             return this.charAt(0).toUpperCase() + this.slice(1);
         };
 
-        let name;
-        do {
-            let randInt = Math.floor(Math.random() * 10);
-            let adjective = Sentencer.make("{{ adjective }}").capitalize();
-            name = adjective + "Guest" + randInt;
-        } while (usernames.includes(name));
+        let username;
+        console.log("Client wants to join with username", requestedUsername);
+        if (isValid(requestedUsername)) {
+            username = requestedUsername;
+        } else {
+            do {
+                let randInt = Math.floor(Math.random() * 10);
+                let adjective = Sentencer.make("{{ adjective }}").capitalize();
+                username = adjective + "Guest" + randInt;
+            } while (getSockets().some(e => e.username === username));
+        }
+        socket.username = username;
+        console.log("Added user", username);
+        fn(username);
+    });
 
-        socket.username = name;
-        usernames.push(name);
-        console.log("Added user", name);
-        fn(name);
+    socket.on('changeUsername', (requestedUsername, fn) => {
+        if (isValid(requestedUsername)) {
+            //todo update the username of the socket and in the list, fn(true)
+            console.log(`${socket.username} changed their username to ${requestedUsername}`);
+            socket.username = requestedUsername;
+            fn(true);
+        } else fn(false)
     });
 
     socket.on('joinRoom', function (id, fn) {
         console.log("joinRoom", socket.username, id);
-        if (!rooms.some(e=>e.id===id)) fn(false);
+        if (!activeRooms.some(e => e.id === id)) fn(false);
         else {
             socket.room = id;
             socket.join(id);
             fn(true);
         }
-
     });
 
     // Lets the user connect to an existing room if one exists
     // Otherwise prompts them to create their own room
     socket.on('quickplay', function (fn) {
-        if (rooms.length === 0) fn(false);
+        if (activeRooms.length === 0) fn(false);
         else {
-            fn(true, rooms[0].id);
+            fn(true, activeRooms[0].id);
         }
     });
 
     socket.on('addRoom', function (id, fn) {
-        if (rooms.some(e=>e.id===id)) fn(false);
+        if (activeRooms.some(r => r.id === id)) fn(false);
         else {
             console.log("Creating new room: " + id);
-            rooms.push({
+            activeRooms.push({
                 'id': id,
                 'maxCapacity': 2,
-                'currentPlayers': 0
+                'playerCount': 0
             });
-            // nsp.push(io.of('/' + id));
             fn(true, id);
-            io.emit('updateLobby', rooms,)
+            io.emit('updateLobby', activeRooms,)
         }
     });
 
@@ -112,9 +146,10 @@ io.sockets.on('connect', function (socket) {
 
     // when the user disconnects.. perform this
     socket.on('disconnect', function () {
-        // Remove username from list
-        const index = usernames.indexOf(socket.username);
-        if (index > -1) usernames.splice(index, 1);
+        console.log(`${socket.username} disconnected`);
+        // if (typeof connectedSockets[socket] !== 'undefined') {
+        //     // connectedSockets[socket] = undefined;
+        // }
         socket.leave(socket.room);
     });
 });

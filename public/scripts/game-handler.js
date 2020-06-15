@@ -13,6 +13,18 @@ function reset() {
 
 paper.install(window); // Make the paper scope global
 $(function() {
+    socket.on('updateGame', function(data) {
+        console.log("updateGame",data);
+        let newLine = new paper.Path(data);
+    });
+
+    //Adds a new chat message to the chatlog
+    socket.on('updateChat', function (timestamp, sender, msg) {
+        let time = new Date(timestamp).toTimeString().slice(0, 5);
+        let sent = `(${time}) ${sender}:`;
+        $('#messages > tbody:last-child').append('<tr> <th class="w3-left-align">' + sent + '</th><th class="w3-right-align">' + msg + ' </th></tr>');
+    });
+
     // FIXME
     // let game_resolution = getResolutionFromCookie("gameResolution");
     // ${'.gameContainer'}.css({"width": str(game_resolution.res_x + "px"),"height":str(game_resolution.res_y + "px")});
