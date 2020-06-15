@@ -380,10 +380,10 @@ export class SproutWorld {
 
     suggestPath(p1, p2){
         if (this.possibleMove(p1.center, p2.center)) {
-            let cellSize = this.collisionGrid.cell_size;
+            let initCellSize = this.collisionGrid.cell_size;
+            let cellSize = initCellSize
             let suggest = this.collisionGrid.u_Astar(p1, p2);
             while (!suggest) {
-                console.log("Cut");
                 cellSize = cellSize / 2;
                 this.collisionGrid = new CollisionGrid(cellSize, this, paper.view.size);
                 for (let line of this.lineGroup.children) {
@@ -392,8 +392,14 @@ export class SproutWorld {
                 for (let point of this.points) {
                     this.collisionGrid.t_insert_rectangle(point.bounds, point);
                 }
-                //this.collisionGrid.v_update();
                 suggest = this.collisionGrid.u_Astar(p1, p2);
+            }
+            this.collisionGrid = new CollisionGrid(initCellSize, this, paper.view.size);
+            for (let line of this.lineGroup.children) {
+                this.collisionGrid.t_insert_line(line.curves, line);
+            }
+            for (let point of this.points) {
+                this.collisionGrid.t_insert_rectangle(point.bounds, point);
             }
             suggest.strokeColor = "red";
             return suggest;
