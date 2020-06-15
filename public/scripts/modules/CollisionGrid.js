@@ -3,8 +3,9 @@
 import {SproutWorld} from './SproutWorld.js';
 
 export class CollisionGrid {
-    constructor(cell_size, gridSize = null) {
+    constructor(cell_size, world, gridSize) {
         console.log("CollisionGrid Created!");
+        this.world = world;
         this.cell_size = cell_size;
         this.contents = {};
         this.gridSize = gridSize;
@@ -89,8 +90,7 @@ export class CollisionGrid {
     }
 
 // Insert object at "tile from point" to dictionary
-    t_insert_point(point, object) {
-        let tile = this.t_return(point);
+    t_insert_point(tile, object) {
         if (this.contents[tile] === undefined) {
             this.contents[tile] = new Set();
         }
@@ -100,12 +100,12 @@ export class CollisionGrid {
 // Insert object from rectangle - Intended for use with hitboxes
     t_insert_rectangle(rectangle, object) {
         // Min and Max corners of rectangle
-        let min = rectangle.topLeft;
-        let max = rectangle.bottomRight;
+        let min = this.t_return(rectangle.topLeft).split(";");
+        let max = this.t_return(rectangle.bottomRight).split(";");
         // Iterate over area and add objects to tiles/buckets
-        for(let x = min.x; x < max.x; x++) {
-            for(let y = min.y; y < max.y; y++) {
-                this.t_insert_point({x: x,y: y}, object);
+        for(let x = min[0]; x <= max[0]; x++) {
+            for(let y = min[1]; y <= max[1]; y++) {
+                this.t_insert_point(x+";"+y, object);
             }
         }
     }
@@ -116,7 +116,7 @@ export class CollisionGrid {
         for (let i = 0; i < curves.length; i++) {
             for (let j = 0; j < curves[i].length; j++) {
                 let location = curves[i].getLocationAt(j);
-                this.t_insert_point(location.point, object);
+                this.t_insert_point(this.t_return(location.point), object);
             }
             //this.t_insert_point(curves[i].segment1.point, object);
             //this.t_insert_point(curves[i].segment2.point, object);
@@ -153,6 +153,76 @@ export class CollisionGrid {
 
         // Let's add them to our collisionGrid aka. spatialHash
         circle_obstacles.forEach(obst => this.t_insert_rectangle(obst.bounds, obst));
+    }
+
+    t_getNeighbours(tile){
+        tile = tile.split(";")
+        let N = [(parseInt(tile[0])+1)+";"+tile[1], (parseInt(tile[0])-1)+";"+tile[1], tile[0]+";"+(parseInt(tile[1])+1), tile[0]+";"+(parseInt(tile[1])-1)];
+        return N;
+    }
+
+    u_dist(tile_1, tile_2){
+        tile_1 = tile_1.split(";");
+        tile_2 = tile_2.split(";");
+        return Math.sqrt((tile_2[0]-tile_1[0])**2+(tile_2[1]-tile_1[1])**2)
+    }
+
+    u_object_of(key, obj){
+        for (let o of this.contents[key]){
+            if (o.object.center === obj.center)
+                return true;
+        }
+        return false;
+    }
+
+    u_middle(tile){
+        let x = tile.split(";")[0];
+        let y = tile.split(";")[1];
+        x = x*this.cell_size;
+        x += 0.5*this.cell_size;
+        y = y*this.cell_size;
+        y += 0.5*this.cell_size;
+        return new paper.Point(x, y);
+    }
+
+    u_Astar(start, goal){
+        let grid = {};
+        let goal_tile = this.t_return(goal.center);
+        let start_tile = this.t_return(start.center);
+        let horizon = [{tile: start_tile, f: this.u_dist(start_tile, goal_tile), parent: start_tile, dist: 0.0}];
+
+        while (grid[goal_tile] === undefined && horizon.length !== 0){
+            //Get closest to goal
+            let best_pick = horizon[0];
+            for (let tile of horizon){
+                if (this.u_dist(best_pick.tile, goal_tile)+best_pick.dist > this.u_dist(tile.tile, goal_tile)+tile.dist)
+                    best_pick = tile;
+            }
+            //Remove the element
+            horizon = horizon.filter(item => item.tile !== best_pick.tile);
+            //If it is already explored, ignore it
+            if (horizon[best_pick.tile] !== undefined)
+                continue;
+            //Otherwise, add it to explored
+            grid[best_pick.tile] = best_pick;
+            //For each neighbour, if it is traversible and unexplored, add it
+            for (let n of this.t_getNeighbours(best_pick.tile)){
+                if (grid[n] === undefined && (this.contents[n] === undefined || this.u_object_of(n, start) || this.u_object_of(n, goal)) && (best_pick.dist > 3 || this.world.possibleMove(this.u_middle(n), goal.center)))
+                    horizon.push({tile: n, f:this.u_dist(n, goal_tile), parent: best_pick.tile, dist: best_pick.dist + 1.0});
+            }
+
+
+        }
+        if (grid[goal_tile] !== undefined) {
+            let t = grid[goal_tile];
+            let path = new paper.Path();
+            while (t.parent !== t.tile){
+                t = grid[t.parent];
+                path.add(this.u_middle(t.tile));
+            }
+            path.strokeColor = "black";
+            path.simplify(2)
+        }
     }
 
 }
