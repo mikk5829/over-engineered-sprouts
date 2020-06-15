@@ -50,7 +50,7 @@ export class SproutWorld {
      * @memberof SproutWorld
      * */
     initializeMap(map_configuration = null, amount = null) {
-        this.collisionGrid = new CollisionGrid(8, paper.view.size);
+        this.collisionGrid = new CollisionGrid(8, this, paper.view.size);
         // Generate initial points
         if (map_configuration !== null) {
             console.log("Not done! Need to draw the paths..");
