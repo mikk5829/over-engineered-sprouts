@@ -70,6 +70,7 @@ $(function () {
     });
 
     $('#scoreboardBtn').click(function () {
+        // $.openScoreBoardMenu();
         $.changeView("scoreboard");
         // $("#scoreboardPane").fadeIn(1000);
     });

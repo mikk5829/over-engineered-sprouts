@@ -1,13 +1,16 @@
 var express = require('express');
 var router = express.Router();
+var simpleDb = require('../server/db/simple-db')
 require('dotenv').config();
 
 /**
- * @namespace routes
  * GET home page
+ * @namespace Routes
+ *
  */
 router.get('/', function (req, res, next) {
-    res.render('index', {title: 'Sprouts'});
+    var db = simpleDb.getAllScores();
+    res.render('index', {title: 'Sprouts', results: db});
 });
 
 router.get('/live', function(req, res, next) {
