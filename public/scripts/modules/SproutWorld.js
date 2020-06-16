@@ -22,12 +22,13 @@ export class SproutWorld {
      * @param sprout_configuration
      **/
 
-    constructor(groups = [], sprout_configuration = null) {
+    constructor(pointColor = 'Indigo', groups = [], sprout_configuration = null) {
         this.sprout_configuration = sprout_configuration;
         this.groups = groups;
         this.lineGroup = new paper.Group();
         this.points = [];
         this.suggestedPath = new paper.Path();
+        this.pointColor = pointColor;
 
         this.dragEnabled = false;
         this.dragSelection = false; // Whether or not a line is currently being drawn
@@ -99,7 +100,7 @@ export class SproutWorld {
         let point = new paper.Path.Circle({
             center: center,
             radius: POINT_SIZE,
-            fillColor: POINT_COLOR,
+            fillColor: this.pointColor,
         });
         point.data = {
             id: id,

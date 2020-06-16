@@ -20,12 +20,20 @@ function reset() {
 
 paper.install(window); // Make the paper scope global
 $(function () {
+    socket.on("debugPath", function (pathJson) {
+        let path = new paper.Path().importJSON(pathJson);
+        path.simplify(3);
+        path.strokeColor = 'yellow';
+        path.strokeCap = 'round';
+        path.strokeJoin = 'round';
+    });
+
     socket.on("startGame", function (initialPoints) {
         console.log(getCanvas().width, getCanvas().height);
         console.log("startGame", initialPoints);
 
         paper.setup(getCanvas());
-        world = new SproutWorld();
+        world = new SproutWorld(getCookie("dotColor"));
 
         for (let i = 0; i < initialPoints.length; i++) {
             let pos = new paper.Point(initialPoints[i][1], initialPoints[i][2]);
@@ -36,7 +44,7 @@ $(function () {
             // Update the colors of the points
 
             for (let point of world.points) {
-                point.fillColor = POINT_COLOR;
+                point.fillColor = world.pointColor;
             }
 
             if (world.hoveredPoint) world.hoveredPoint.fillColor = HOVER_POINT_COLOR;
@@ -97,7 +105,7 @@ $(function () {
 
         if (!world.clickSelection) {
             // Reset point colors
-            for (let p of world.points) p.fillColor = POINT_COLOR;
+            for (let p of world.points) p.fillColor = world.pointColor;
             if (world.points.includes(e.item)) e.item.fillColor = HOVER_POINT_COLOR;
 
             // Reset the selection
@@ -112,17 +120,16 @@ $(function () {
                 let to = world.target.data.id;
                 socket.emit('suggestPath', from, to, function (pathJson) {
                     if (pathJson) {
+                        console.log("received suggestion")
                         let path = new paper.Path().importJSON(pathJson);
                         path.strokeColor = 'red';
                         path.strokeCap = 'round';
                         path.strokeJoin = 'round';
                         world.suggestedPath = path;
-                    }
+                    } else console.log("fuk u")
 
                 });
 
-                // FIXME submit clickselection
-                // if (world.possibleMove(world.source, world.target))world.findPath(world.source, world.target);
 
                 console.log("resetselection clicksel", world.source, world.target);
                 world.resetSelection();

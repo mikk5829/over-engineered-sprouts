@@ -21,7 +21,7 @@ var paper = require('paper');
     }
 
     t_pointToTile(point) {
-        return { x: Math.floor(point.x / this.cell_size), y: Math.floor(dot.y / this.cell_size) };
+        return { x: Math.floor(point.x / this.cell_size), y: Math.floor(point.y / this.cell_size) };
     }
     t_tileToPoint(tile) {
         return { x: Math.floor(tile.x * this.cell_size), y: Math.floor(tile.y * this.cell_size) };
@@ -58,7 +58,6 @@ var paper = require('paper');
         }
 
         let updateMatrix = (index, value) => {
-            console.log(tile_matrix)
             tile_matrix = tile_matrix.set(index, value);
         }
 
@@ -116,8 +115,6 @@ var paper = require('paper');
     }
 
     t_insert_line(curves, object) {
-        console.log("curves");
-        console.log(curves);
         for (let i = 0; i < curves.length; i++) {
             for (let j = 0; j < curves[i].length; j++) {
                 let location = curves[i].getLocationAt(j);
