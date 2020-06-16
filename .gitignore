@@ -114,3 +114,5 @@ dist
 .vs/VSWorkspaceState.json
 
 server/db/database.json
+
+out/

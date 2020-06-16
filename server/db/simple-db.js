@@ -8,6 +8,7 @@ var fs = require('fs');
 
 /**
  * Returns a new instance of JSONdb.
+ * @memberOf Database
  * @returns {JSONdb}
  */
 function createInstance() {
@@ -26,13 +27,17 @@ function createInstance() {
  */
 var createUser = exports.createUser = (user_name, user_wins, user_losses) => {
     var db = createInstance();
-    const score = {
-        'wins': user_wins,
-        'losses': user_losses
-    }
+    if (!db.has(user_name)){
+        const score = {
+            'name': user_name,
+            'wins': user_wins,
+            'losses': user_losses
+        }
 
-    db.set(user_name, score);
-    return db.get(user_name);
+        db.set(user_name, score);
+        return db.get(user_name);
+    }
+    return "user exists"
 }
 
 exports.addWin = (user_name) => {
@@ -42,6 +47,7 @@ exports.addWin = (user_name) => {
     // }
     let user_score = db.get(user_name);
     const score = {
+        'name': user_name,
         'wins': user_score.wins + 1,
         'losses': user_score.losses
     }
@@ -57,10 +63,16 @@ exports.addLoss = (user_name) => {
     // }
     let user_score = db.get(user_name);
     const score = {
+        'name': user_name,
         'wins': user_score.wins,
         'losses': user_score.losses + 1
     }
 
     db.set(user_name, score);
     return db.get(user_name);
+}
+
+exports.getAllScores = () => {
+    var db = createInstance();
+    return db.JSON();
 }

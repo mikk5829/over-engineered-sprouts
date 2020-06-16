@@ -10,9 +10,9 @@ div(class="flex-container hidden")#scoreboard
                 th(style="cursor: pointer;" onclick="w3.sortHTML('#myTable','.item', 'td:nth-child(1)')") Name
                 th(style="cursor: pointer;" onclick="w3.sortHTML('#myTable','.item', 'td:nth-child(2)')") Wins
                 th(style="cursor: pointer;" onclick="w3.sortHTML('#myTable','.item', 'td:nth-child(3)')") Losses
-        //tbody
-        //    each result in results
-        //        tr(class="item")
-        //            td=result.name
-        //            td=result.wins
-        //            td=result.losses
+        tbody
+            each result in results
+                tr(class="item")
+                    td=result.name
+                    td=result.wins
+                    td=result.losses
