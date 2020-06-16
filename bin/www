@@ -10,8 +10,10 @@ var http = require('http');
 var Sentencer = require('sentencer');
 
 var paper = require('paper');
+// import {CollisionGrid} from './public/scripts/modules/CollisionGrid.js';
+var CollisionGrid = require('./CollisionGrid');
 paper.install(this);
-paper.setup([400, 200]);
+paper.setup([750, 472]);
 
 /**
  * Get port from environment and store in Express.
@@ -53,6 +55,8 @@ io.sockets.on('connect', function (socket) {
         let from = game.points[fromId];
         let to = game.points[toId];
         let path = new paper.Path().importJSON(pathJson);
+        game.collisionGrid.t_insert_line(path.curves, path);
+
 
         if (!game.isLegal(from, to, path)) {
             console.log("Illegal");
@@ -95,6 +99,13 @@ io.sockets.on('connect', function (socket) {
         socket.username = username;
         console.log("Added user", username);
         fn(username);
+    });
+
+    socket.on('suggestPath', (from, to, fn) => {
+        let game = activeRooms[socket.room];
+        let suggestedPath = game.suggestPath(game.points[from], game.points[to]);
+        console.log(suggestedPath);
+        fn(suggestedPath.exportJSON());
     });
 
     socket.on('changeUsername', (requestedUsername, fn) => {
@@ -222,7 +233,7 @@ function usernameIsValid(username) {
 }
 
 class GameRoom {
-    constructor(id, name, players = [], numPoints = 10) {
+    constructor(id, name, players = []) {
         this.id = id;
         this.name = name;
         this.players = players;
@@ -231,47 +242,86 @@ class GameRoom {
         this.project = new paper.Project([300, 150]);
         this.lineGroup = new paper.Group();
         this.points = [];
+        this.collisionGrid = null;
 
-        // Generate initial points
-        for (let i = 0; i < numPoints; i++) {
-            let center = this.randomPointPosition();
-            let point = new paper.Path.Circle({
-                center: center,
-                radius: 10,
-            });
-            point.data = {
-                id: i,
-                edges: [],
-                connections: 0,
-            }
-            this.points[i] = point;
-            console.log(this.points[i].data.connections)
+        this.init();
+    }
+
+    init(mapConfiguration = null, numPoints = 10) {
+        this.collisionGrid = new CollisionGrid(8, this, new paper.Size(750, 472));
+
+        let dotPoints = [];
+        if (!mapConfiguration) {
+            dotPoints = this.collisionGrid.g_randomPoints(numPoints, 40);
+        } else {
+            dotPoints = this.collisionGrid.g_randomPoints(mapConfiguration.dots, 40);
+        }
+
+        for (let i = 0; i < dotPoints.length; i++) {
+            let center = dotPoints[i];
+            this.points[i] = this.createPoint(center, i, 0, []);
         }
     }
 
-    addUser(user) {
-        // todo
-    }
+    createPoint(pos, id, connections, edges) {
+        let point = new paper.Path.Circle({
+            center: pos,
+            radius: 10,
+        });
+        point.data = {
+            id: id,
+            edges: edges,
+            connections: connections,
+        };
 
-    removeUser(user) {
-        // todo
+        point.commonEdges = function (p2) {
+            let inCommon = [];
+            for (let edge of point.data.edges) {
+                if (edge.data.vertices.includes(point) && edge.data.vertices.includes(p2))
+                    inCommon.push(edge);
+            }
+            return inCommon;
+        };
+
+        point.dfs = function (toFind) {
+            //Marker som søgende
+            point.data.status = "seeking";
+            //Kør dfs på alle naboer
+            for (let e of point.data.edges) {
+                let p = e.data.vertices.find(x => x !== point);
+                if (e !== point.data.rootEdge && p !== undefined) {
+                    //Er en nabo søgende eller færdig, find alle links op til nabo og tilføj liste til cycles[]
+                    if (p.data.status === "") {
+                        //Sæt parent til dette point
+                        p.data.root = point;
+                        p.data.rootEdge = e;
+                        if (!(e.data.vertices[0] === p)) {
+                            e.reverse();
+                            e.data.vertices.reverse();
+                        }
+                        p.dfs(toFind);
+                    } else if (p.data.status === "done") {
+                        toFind.push(e);
+                    }
+                }
+            }
+            point.data.status = "done";
+        };
+
+        if (this.collisionGrid != null) {
+            this.collisionGrid.t_insert_rectangle(point.bounds, point);
+        }
+
+
+        return point;
     }
 
     addPath(from, to, path) {
         let originalPath = path.clone();
-        originalPath.simplify(3);
 
         // Create new point at midpoint of path
         let pointId = this.points.length;
-        let newPoint = new paper.Path.Circle({
-            center: path.getPointAt(path.length / 2),
-            radius: 10,
-        });
-        newPoint.data = {
-            id: pointId,
-            edges: [],
-            connections: 0,
-        };
+        let newPoint = this.createPoint(path.getPointAt(path.length / 2), pointId, 0, []);
 
         function save(from, to, path) {
             from.data.connections += 1;
@@ -288,10 +338,6 @@ class GameRoom {
         let path1 = path.clone();
         path1.insert(0, from.position);
         path2.add(to.position);
-        // path1.vertices = [];
-        // path2.vertices = [];
-        // path1.simplify(3);
-        // path2.simplify(3);
 
         save(from, newPoint, path1);
         save(newPoint, to, path2);
@@ -335,12 +381,91 @@ class GameRoom {
         return path.getIntersections(path).length <= 0;
     }
 
-    randomPointPosition() {
-        this.project.activate();
-        // FIXME: Point's center needs to be at least one point's distance from the game border
-        const x = Math.floor(Math.random() * paper.view.size.width);
-        const y = Math.floor(Math.random() * paper.view.size.height);
-        const point = new paper.Point(x, y);
-        return point.round();
+    getCycles() {
+        //TODO: Sørg for at alle edges "vender" rigtigt
+        //TODO: Ikke alle kanter i et loop bliver tilføjet selv om loopet er opdaget
+        let toFind = [];
+        for (let p of this.points) {
+            p.data.root = p;
+            p.data.rootEdge = null;
+            p.data.status = "";
+        }
+        for (let p of this.points) {
+            if (p.data.status !== "done") {
+                p.data.root = p;
+                p.dfs(toFind);
+            }
+        }
+        let cycles = [];
+
+        for (let t of toFind) {
+            let paths0 = [];
+            let paths1 = [];
+            let loop = [t];
+            let p0 = t.data.vertices[0];
+            let p1 = t.data.vertices[1];
+            while (p0.data.root !== p0) {
+                paths0.push(p0.data.rootEdge);
+                p0 = p0.data.root;
+            }
+            while (p1.data.root !== p1) {
+                paths1.push(p1.data.rootEdge);
+                p1 = p1.data.root;
+            }
+            let difference = paths0.filter(x => !paths1.includes(x)).concat(paths1.filter(x => !paths0.includes(x)));
+            loop = loop.concat(difference);
+            cycles.push([...loop]);
+        }
+        return cycles;
+    }
+
+    possibleMove(p1, p2, debug = false) {
+        /*TODO: Known bugs
+        Sometimes the "parent edge" from DFS will be reversed and create an area outside the cycle. Check if direction is correct?
+        If one large cycle is also split into 2 smaller cycles, one of them will be able to access all points on the other, but not vice versa.
+         */
+        let cycles = this.getCycles();
+        for (let c of cycles) {
+            let total = new paper.Path();
+            for (let p of c) {
+                for (let s of p.segments)
+                    total.add(s);
+            }
+            if (((total.contains(p1) && total.getLocationOf(p1) === null) && !total.contains(p2)) || ((total.contains(p2) && total.getLocationOf(p2) === null) && !total.contains(p1)))
+                return false;
+            //total.remove();
+        }
+        return true;
+    }
+
+    suggestPath(p1, p2) {
+        if (this.possibleMove(p1.center, p2.center)) {
+            let initCellSize = this.collisionGrid.cell_size;
+            let cellSize = initCellSize
+            let suggest = this.collisionGrid.u_Astar(p1, p2);
+            while (!suggest) {
+                cellSize = cellSize / 2;
+                this.collisionGrid = new CollisionGrid(cellSize, this, paper.view.size);
+                for (let line of this.lineGroup.children) {
+                    this.collisionGrid.t_insert_line(line.curves, line);
+                }
+                for (let point of this.points) {
+                    this.collisionGrid.t_insert_rectangle(point.bounds, point);
+                }
+                suggest = this.collisionGrid.u_Astar(p1, p2);
+            }
+            this.collisionGrid = new CollisionGrid(initCellSize, this, paper.view.size);
+            for (let line of this.lineGroup.children) {
+                this.collisionGrid.t_insert_line(line.curves, line);
+            }
+
+            for (let point of this.points) {
+                this.collisionGrid.t_insert_rectangle(point.bounds, point);
+            }
+            suggest.strokeColor = "red";
+            return suggest;
+        } else {
+            return new paper.Path();
+        }
     }
 }

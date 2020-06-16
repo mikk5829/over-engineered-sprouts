@@ -1,5 +1,5 @@
 import {SproutWorld} from "./modules/SproutWorld.js";
-import {getCookieValue, getResolutionFromCookie} from "./modules/Utility.js"
+import {getCookieValue, getResolutionFromCookie, worldInLocalStorage} from "./modules/Utility.js"
 import {POINT_COLOR, SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR, POINT_SIZE} from "./modules/SproutWorld.js";
 
 function openGame() {
@@ -66,12 +66,14 @@ $(function () {
     /*  paper.setup(getCanvas());
 
       let world = new SproutWorld();
-      world.initializeMap(null, 10);
+  let map_configuration = worldInLocalStorage();
+    world.initializeMap(map_configuration, 10);
   */
     socket.on('updateGame', function (fromId, toId, pathJson, pointData) {
         console.log("Received game update from server");
 
         let path = new paper.Path().importJSON(pathJson);
+        path.simplify(3);
         path.strokeColor = STROKE_COLOR;
         path.strokeCap = 'round';
         path.strokeJoin = 'round';
@@ -85,6 +87,11 @@ $(function () {
     });
 
     let tool = new paper.Tool();
+
+    tool.onMouseDown = function onMouseDown() {
+        world.suggestedPath.remove();
+    };
+
     tool.onMouseUp = function onMouseUp(e) {
         console.log(`tool.onMouseUp, source ${world.source}, target ${world.target}\n`);
 
@@ -101,6 +108,18 @@ $(function () {
         } else if (world.clickSelection) {
             if (world.source && world.target) {
                 console.log(`Clickselection: source ${world.source.data.id}, target ${world.target.data.id}`);
+                let from = world.source.data.id;
+                let to = world.target.data.id;
+                socket.emit('suggestPath', from, to, function (pathJson) {
+                    if (pathJson) {
+                        let path = new paper.Path().importJSON(pathJson);
+                        path.strokeColor = 'red';
+                        path.strokeCap = 'round';
+                        path.strokeJoin = 'round';
+                        world.suggestedPath = path;
+                    }
+
+                });
 
                 // FIXME submit clickselection
                 // if (world.possibleMove(world.source, world.target))world.findPath(world.source, world.target);

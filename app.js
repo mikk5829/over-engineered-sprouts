@@ -10,6 +10,8 @@ var bodyParser = require('body-parser');
 var indexRouter = require('./routes/index');
 var databaseRouter = require('./routes/database');
 
+// import {CollisionGrid} from './public/scripts/modules/CollisionGrid.js';
+
 var app = express();
 
 // view engine setup
