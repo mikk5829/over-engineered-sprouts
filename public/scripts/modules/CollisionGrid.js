@@ -220,9 +220,10 @@ export class CollisionGrid {
                 t = grid[t.parent];
                 path.add(this.u_middle(t.tile));
             }
-            path.strokeColor = "black";
-            path.simplify(2)
+            return path;
         }
+
+        return false;
     }
 
 }
