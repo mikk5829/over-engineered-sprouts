@@ -186,3 +186,26 @@ td {
 .transform-active {
     display: inline-grid;
 }
+
+/************ InfoBox ************/
+.infoBox {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    -webkit-animation-name: fadeIn; /* Fade in the background */
+    -webkit-animation-duration: 4s;
+    animation-name: fadeIn;
+    animation-duration: 4s
+}
+.infoBox-content {
+    position: fixed;
+    bottom: 0;
+    background-color: #fefefe;
+    -webkit-animation-name: slideIn;
+    -webkit-animation-duration: 4s;
+    animation-name: slideIn;
+    animation-duration: 4s
+}

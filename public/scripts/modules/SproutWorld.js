@@ -2,13 +2,14 @@
  * Generates the world
  * @namespace SproutWorld
  * */
+import {CollisionGrid} from './CollisionGrid.js';
+
 const POINT_COLOR = 'Indigo';
 const SEL_POINT_COLOR = 'Yellow';
 const HOVER_POINT_COLOR = 'CornflowerBlue';
 const STROKE_COLOR = 'Indigo';
 
 const POINT_SIZE = 10;
-
 export {POINT_COLOR, SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR, POINT_SIZE}
 
 export class SproutWorld {
@@ -37,6 +38,8 @@ export class SproutWorld {
         this.hoveredPoint = null; // A legal point that the mouse hovers on
         this.selectedPoints = []; // The points which are currently selected/pressed
         this.currentLine = null; // The line currently being drawn by the player
+
+        this.collisionGrid = null; // Holds an instance of an collisionGrid object
     }
 
     /**
@@ -44,10 +47,22 @@ export class SproutWorld {
      * @memberof SproutWorld
      * */
     initializeMap(map_configuration = null, amount = null) {
+        this.collisionGrid = new CollisionGrid(8, this, paper.view.size);
         // Generate initial points
-        for (let i = 0; i < amount; i++) {
-            this.addPoint(this.randomPointPosition())
+        if (map_configuration !== null) {
+            console.log("Not done! Need to draw the paths..");
+            let dot_points = this.collisionGrid.g_randomPoints(map_configuration.dots, 40);
+            for (var i = 0; i < dot_points.length; i++) {
+                this.addPoint(dot_points[i]);
+            }
+        } else {
+            let dot_points = this.collisionGrid.g_randomPoints(amount, 40);
+            for (var i = 0; i < dot_points.length; i++) {
+                this.addPoint(dot_points[i]);
+            }
         }
+        this.collisionGrid.u_initObstacles(this);
+        this.collisionGrid.v_update();
     }
 
     select(point) {
@@ -93,6 +108,12 @@ export class SproutWorld {
     }
 
     submitSelection() {
+        // fixme: dette er clientside!
+
+        socket.emit('path',this.currentLine, function (response) {
+            console.log(response);
+        });
+
         if (this.currentLine.segments.length <= 2) {
             this.resetSelection();
             return false;
@@ -141,6 +162,8 @@ export class SproutWorld {
         target.neighbours.push(source);
         line.vertices = [source, target];
         line.addTo(this.lineGroup);
+        this.collisionGrid.t_insert_line(line.curves, line);
+        this.collisionGrid.v_update();
     }
 
     eventStatus(point) {
@@ -165,6 +188,10 @@ export class SproutWorld {
         point.rootEdge = null;
         this.points.push(point);
         let _this = this;
+        if (this.collisionGrid != null) {
+            this.collisionGrid.t_insert_rectangle(point.bounds, point);
+            this.collisionGrid.v_update();
+        }
 
         point.onMouseDrag = function (e) {
             // When first starting to draw a line, reset the current selection
@@ -343,92 +370,10 @@ export class SproutWorld {
                 total.fillColor = "green";
                 total.opacity = 0.1;
             }
-            if (((total.contains(p1.center) && total.getLocationOf(p1.center) === null) && !total.contains(p2.center)) || ((total.contains(p2.center) && total.getLocationOf(p2.center) === null) && !total.contains(p1.center)))
+            if (((total.contains(p1) && total.getLocationOf(p1) === null) && !total.contains(p2)) || ((total.contains(p2) && total.getLocationOf(p2) === null) && !total.contains(p1)))
                 return false;
             //total.remove();
         }
         return true;
-    }
-
-    findPath(p1, p2, debug = false) {
-        let nodes = [p1.center, p2.center];
-        //Opdel alle streger efter segment-punkter og halvvejs mellem hver 2 segment-punkter
-        //Sæt punkter på hver side af hver  streg vinkelret ift. stregen
-        //10px væk hvis der er plads. Ellers halvdelen af afstanden til første kollision
-        for (let line of this.lineGroup.children){
-            for (let segment of line.segments){
-                let tangent = new paper.Point(segment.handleOut.x-segment.handleIn.x, segment.handleOut.y-segment.handleIn.y);
-                let normal = new paper.Point(-tangent.y, tangent.x);
-                normal.x = normal.x / (Math.sqrt(normal.x**2 + normal.y**2));
-                normal.y = normal.y / (Math.sqrt(normal.x**2 + normal.y**2));
-                let s1 = new paper.Point(segment.point.x + (normal.x*10.0), segment.point.y + (normal.y*20.0));
-
-                let s2 = new paper.Point(segment.point.x - (normal.x*10.0), segment.point.y - (normal.y*20.0));
-                nodes.push(s1);
-                nodes.push(s2);
-                if (debug) {
-                    let c1 = new paper.Path.Circle(s1, 2);
-                    let c2 = new paper.Path.Circle(s2, 2);
-                    c1.fillColor = "red";
-                    c2.fillColor = "red";
-                }
-            }
-        }
-        //TODO: Sæt punkter langs kanten af spil-området. 1 pr. 100 pixels
-        //Alle punkter, inklusiv p1 og p2, får explored = false
-        for (let p of nodes)
-            p.explored = false;
-
-        let horizon = [p1.center];
-        p1.explored = true;
-        while (!p2.center.explored) {
-            if (horizon.length === 0) {
-                console.log("No path found");
-                return
-            }
-            let newHorizon = [];
-            //  for hvert element i horizon, find alle punkter hvor der kan gå en lige streg uden intersections og som ikke er explored
-            for (let n of horizon){
-                for (let n1 of nodes) {
-                    let ray = new paper.Path();
-                    ray.add(n);
-                    ray.add(n1);
-                    ray.legal = true;
-                    for (let p of this.lineGroup.children){
-                        if (n !== n1 && !n1.explored && p.getCrossings(ray).length === 0){
-                            for(let v of this.points) {
-                                if ((v === p1 || v === p2)  || v.getIntersections(ray).length === 0) {
-                                    if (debug) {
-                                        ray.strokeColor = "red";
-                                        ray.opacity = 0.1;
-                                    }
-                                } else {
-                                    ray.legal = false;
-                                    ray.remove();
-                                }
-                            }
-                        } else {
-                            ray.remove();
-                            ray.legal = false;
-                        }
-                    }
-                    if (ray.legal){
-                        n1.explored = true;
-                        n1.parentRay = n;
-                        newHorizon.push(n1)
-                    }
-                }
-            }
-            horizon = [...newHorizon];
-        }
-        console.log("GOT IT");
-        let suggestion = new paper.Path();
-        let v = p2.center;
-        suggestion.add(p2.center);
-        while (v !== p1.center) {
-            suggestion.add(v.parentRay);
-            v = v.parentRay
-        }
-        suggestion.strokeColor = "black";
     }
 }

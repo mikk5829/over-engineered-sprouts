@@ -1,5 +1,5 @@
 import {SproutWorld} from "./modules/SproutWorld.js";
-import {getCookieValue, getResolutionFromCookie} from "./modules/Utility.js"
+import {getCookieValue, getResolutionFromCookie, worldInLocalStorage} from "./modules/Utility.js"
 import {POINT_COLOR, SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR, POINT_SIZE} from "./modules/SproutWorld.js";
 
 function getCanvas() {
@@ -13,6 +13,18 @@ function reset() {
 
 paper.install(window); // Make the paper scope global
 $(function() {
+    socket.on('updateGame', function(data) {
+        console.log("updateGame",data);
+        let newLine = new paper.Path(data);
+    });
+
+    //Adds a new chat message to the chatlog
+    socket.on('updateChat', function (timestamp, sender, msg) {
+        let time = new Date(timestamp).toTimeString().slice(0, 5);
+        let sent = `(${time}) ${sender}:`;
+        $('#messages > tbody:last-child').append('<tr> <th class="w3-left-align">' + sent + '</th><th class="w3-right-align">' + msg + ' </th></tr>');
+    });
+
     // FIXME
     // let game_resolution = getResolutionFromCookie("gameResolution");
     // ${'.gameContainer'}.css({"width": str(game_resolution.res_x + "px"),"height":str(game_resolution.res_y + "px")});
@@ -21,7 +33,9 @@ $(function() {
     paper.setup(getCanvas());
 
     let world = new SproutWorld();
-    world.initializeMap(null, 10);
+
+    let map_configuration = worldInLocalStorage();
+    world.initializeMap(map_configuration, 10);
 
     let tool = new paper.Tool();
     tool.onMouseUp = function onMouseUp(e) {

@@ -105,4 +105,12 @@ dist
 
 .DS_Store
 
+.vs/over-engineered-sprouts/v16/.suo
+
+.vs/ProjectSettings.json
+
+.vs/slnx.sqlite
+
+.vs/VSWorkspaceState.json
+
 server/db/database.json

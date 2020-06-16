@@ -3,9 +3,12 @@ let username;
 const viewIDs = ['main_menu', 'game', 'settings','scoreboard'];
 
 socket.on('connect', function () {
-    // TODO: get username from cookies
-    socket.emit('addUser', function (response) {
+    let savedUsername = getCookie("playerName");
+    console.log("name from cookie:",savedUsername);
+
+    socket.emit('join', savedUsername, function (response) {
         username = response;
+        setCookie("playerName", username);
         console.log("Joined as", username);
     });
 });
@@ -16,5 +19,6 @@ $(function () {
             $('#' + viewName).addClass('hidden').hide();
         }
         $('#' + newView).removeClass('hidden').show();
+
     };
 });

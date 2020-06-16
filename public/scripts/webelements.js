@@ -1,17 +1,4 @@
 $(function () {
-    let dotColor = getCookie("dotColor");
-    let playerName = getCookie("playerName");
-    // let gameResolution = getCookie("gameResolution");
-
-    if (playerName) {
-        $('form[name="playerName"]').val(playerName);
-        username = playerName;
-    }
-    if (dotColor) {
-        $('form[name="dotColor"]').val(dotColor);
-    }
-    // if (gameResolution) $('form[name="dotColor"]').val(dotColor);
-
 
     $.changeView = function (newView) {
         $('#' + newView).removeClass('hidden').show();
@@ -19,28 +6,6 @@ $(function () {
             if (viewName !== newView) $('#' + viewName).addClass('hidden').hide();
         }
     };
-
-    $.fillForm = function () {
-        console.log(getCookie("playerName"));
-    };
-
-    $("#customization").submit(function (e) {
-        console.log("submit");
-        e.preventDefault();
-        setCookie("dotColor", $("input[name=dotColor]").val());
-        setCookie("playerName", $("input[name=playerName]").val());
-        setCookie("gameResolution", $("input[name=gameResolution]").val());
-        $.changeView('main_menu');
-
-        // LAURA TODO: Fortæl serveren at brugeren vil ændre navn, ændr navnet som hører til brugerens socket
-
-        let playerName = getCookie("playerName");
-        if (playerName) {
-            console.log(username)
-            username = playerName;
-            console.log(playerName, username)
-        }
-    })
 });
 
 /**
