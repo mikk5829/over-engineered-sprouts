@@ -8,7 +8,12 @@ var app = require('../app');
 var debug = require('debug')('over-engineered-sprout:server');
 var http = require('http');
 var Sentencer = require('sentencer');
-// const gameServer = require('/public/scripts/game-server.js');
+
+var paper = require('paper');
+// import {CollisionGrid} from './public/scripts/modules/CollisionGrid.js';
+var CollisionGrid = require('./CollisionGrid');
+paper.install(this);
+paper.setup([750, 472]);
 
 /**
  * Get port from environment and store in Express.
@@ -36,53 +41,53 @@ server.on('listening', onListening);
 
 
 /*
-* Socket IO stuff
+* Socket IO
 * */
 const io = require('socket.io').listen(server);
 let activeRooms = [];
 
-function getSockets() {
-    return Object.keys(io.sockets.sockets);
-    // io.sockets is an object where a key is a socketId and value is reference to the socket object.
-
-    // Object.keys(io.sockets).forEach((socketId) => {
-    //     const socket = io.sockets[socketId];
-    // })
-}
-
-function isValid(username) {
-
-    if (!username || !(3 <= username.length <= 15) || !(/^[a-z0-9]+$/i.test(username))) return false;
-
-    return !getSockets().some(e => io.sockets.sockets[e].username === username);
-}
-
 io.sockets.on('connect', function (socket) {
 
-    socket.on('path', function (data, fn) {
-        console.log(data);
-        fn("gotcha");
-        // send to room including sender:
-        // io.sockets.in(socket.room).emit('updateGame', "hej venner");
+    // Client has submitted a path -> server will validate the path
+    socket.on('submitPath', (pathJson, fromId, toId, fn) => {
+        console.log(`${socket.username} in game ${socket.room} submits a path`);
+        let game = activeRooms[socket.room];
+        let from = game.points[fromId];
+        let to = game.points[toId];
+        let path = new paper.Path().importJSON(pathJson);
+        game.collisionGrid.t_insert_line(path.curves, path);
 
-        // send to room excluding sender:
-        socket.broadcast.to(socket.room).emit('updateGame', data);
+
+        if (!game.isLegal(from, to, path)) {
+            console.log("Illegal");
+            fn(false); // Callback - path not accepted
+            path.remove();
+            return false;
+        } else {
+            fn(true); // Callback - path accepted
+            let resp = game.addPath(from, to, path);
+            io.sockets.in(socket.room).emit('updateGame', from.data.id, to.data.id, resp.path, resp.pointData);
+            path.remove();
+            return true;
+        }
     });
 
     // TODO: Only emit to lobby socket
     setInterval(function () {
-        socket.emit('updateLobby', activeRooms);
+        let roomList = activeRooms.map(a => a.lobbyRepresentation());
+        socket.emit('updateLobby', roomList);
     }, 1000);
 
     // when the client emits 'join', this listens and executes
     socket.on('join', (requestedUsername, fn) => {
+        console.log("Client wants to join with username", requestedUsername);
+
         String.prototype.capitalize = function () {
             return this.charAt(0).toUpperCase() + this.slice(1);
         };
 
         let username;
-        console.log("Client wants to join with username", requestedUsername);
-        if (isValid(requestedUsername)) {
+        if (usernameIsValid(requestedUsername)) {
             username = requestedUsername;
         } else {
             do {
@@ -96,9 +101,15 @@ io.sockets.on('connect', function (socket) {
         fn(username);
     });
 
+    socket.on('suggestPath', (from, to, fn) => {
+        let game = activeRooms[socket.room];
+        let suggestedPath = game.suggestPath(game.points[from], game.points[to]);
+        console.log(suggestedPath);
+        fn(suggestedPath.exportJSON());
+    });
+
     socket.on('changeUsername', (requestedUsername, fn) => {
-        if (isValid(requestedUsername)) {
-            //todo update the username of the socket and in the list, fn(true)
+        if (usernameIsValid(requestedUsername)) {
             console.log(`${socket.username} changed their username to ${requestedUsername}`);
             socket.username = requestedUsername;
             fn(true);
@@ -107,49 +118,59 @@ io.sockets.on('connect', function (socket) {
 
     socket.on('joinRoom', function (id, fn) {
         console.log("joinRoom", socket.username, id);
-        if (!activeRooms.some(e => e.id === id)) fn(false);
+        if (activeRooms[id] === undefined) fn(false);
         else {
             socket.room = id;
-            socket.join(id);
+            socket.join(id); // fixme: .room necessary?
+            activeRooms[id].playerCount++;
             fn(true);
+
+            if (activeRooms[id].playerCount === 2) {
+                let game = activeRooms[id]
+                console.log(`2 players connected to game ${id}`);
+                let points = [];
+                for (let i = 0; i < game.points.length; i++) {
+                    points[i] = game.points[i].position;
+                }
+                io.sockets.in(socket.room).emit('startGame', points);
+            }
         }
     });
 
     // Lets the user connect to an existing room if one exists
     // Otherwise prompts them to create their own room
     socket.on('quickplay', function (fn) {
-        if (activeRooms.length === 0) fn(false);
+        if (Object.keys(activeRooms).length === 0) fn(false);
         else {
-            fn(true, activeRooms[0].id);
+            Object.keys(activeRooms).forEach((roomId) => {
+                let room = activeRooms[roomId];
+                if (room.playerCount < 2) {
+                    fn(true, roomId);
+                }
+            })
         }
+        fn(false);
     });
 
-    socket.on('addRoom', function (id, fn) {
-        if (activeRooms.some(r => r.id === id)) fn(false);
+    // Client wants to create a new room => server validates room name, creates new room
+    socket.on('addRoom', (roomName, fn) => {
+        if (activeRooms[roomName] !== undefined) fn(false);
         else {
-            console.log("Creating new room: " + id);
-            activeRooms.push({
-                'id': id,
-                'maxCapacity': 2,
-                'playerCount': 0
-            });
+            console.log("Creating new room: " + roomName);
+            let id = activeRooms.length;
+            activeRooms[id] = new GameRoom(id, roomName);
             fn(true, id);
-            io.emit('updateLobby', activeRooms,)
         }
     });
 
-    socket.on('sendChat', function (msg) {
+    socket.on('sendChatMsg', function (msg) {
         console.log("received sendChat from " + socket.username + ": " + msg);
         let timestamp = +new Date();
         io.sockets.in(socket.room).emit('updateChat', timestamp, socket.username, msg);
     });
 
-    // when the user disconnects.. perform this
     socket.on('disconnect', function () {
         console.log(`${socket.username} disconnected`);
-        // if (typeof connectedSockets[socket] !== 'undefined') {
-        //     // connectedSockets[socket] = undefined;
-        // }
         socket.leave(socket.room);
     });
 });
@@ -202,4 +223,249 @@ function onListening() {
     debug('Listening on ' + bind);
 }
 
+function getSockets() {
+    return Object.keys(io.sockets.sockets);
+}
 
+function usernameIsValid(username) {
+    if (!username || !(3 <= username.length <= 15) || !(/^[a-z0-9]+$/i.test(username))) return false;
+    return !getSockets().some(e => io.sockets.sockets[e].username === username);
+}
+
+class GameRoom {
+    constructor(id, name, players = []) {
+        this.id = id;
+        this.name = name;
+        this.players = players;
+        this.playerCount = 0;
+        this.maxCapacity = 2;
+        this.project = new paper.Project([300, 150]);
+        this.lineGroup = new paper.Group();
+        this.points = [];
+        this.collisionGrid = null;
+
+        this.init();
+    }
+
+    init(mapConfiguration = null, numPoints = 10) {
+        this.collisionGrid = new CollisionGrid(8, this, new paper.Size(750, 472));
+
+        let dotPoints = [];
+        if (!mapConfiguration) {
+            dotPoints = this.collisionGrid.g_randomPoints(numPoints, 40);
+        } else {
+            dotPoints = this.collisionGrid.g_randomPoints(mapConfiguration.dots, 40);
+        }
+
+        for (let i = 0; i < dotPoints.length; i++) {
+            let center = dotPoints[i];
+            this.points[i] = this.createPoint(center, i, 0, []);
+        }
+    }
+
+    createPoint(pos, id, connections, edges) {
+        let point = new paper.Path.Circle({
+            center: pos,
+            radius: 10,
+        });
+        point.data = {
+            id: id,
+            edges: edges,
+            connections: connections,
+        };
+
+        point.commonEdges = function (p2) {
+            let inCommon = [];
+            for (let edge of point.data.edges) {
+                if (edge.data.vertices.includes(point) && edge.data.vertices.includes(p2))
+                    inCommon.push(edge);
+            }
+            return inCommon;
+        };
+
+        point.dfs = function (toFind) {
+            //Marker som søgende
+            point.data.status = "seeking";
+            //Kør dfs på alle naboer
+            for (let e of point.data.edges) {
+                let p = e.data.vertices.find(x => x !== point);
+                if (e !== point.data.rootEdge && p !== undefined) {
+                    //Er en nabo søgende eller færdig, find alle links op til nabo og tilføj liste til cycles[]
+                    if (p.data.status === "") {
+                        //Sæt parent til dette point
+                        p.data.root = point;
+                        p.data.rootEdge = e;
+                        if (!(e.data.vertices[0] === p)) {
+                            e.reverse();
+                            e.data.vertices.reverse();
+                        }
+                        p.dfs(toFind);
+                    } else if (p.data.status === "done") {
+                        toFind.push(e);
+                    }
+                }
+            }
+            point.data.status = "done";
+        };
+
+        if (this.collisionGrid != null) {
+            this.collisionGrid.t_insert_rectangle(point.bounds, point);
+        }
+
+
+        return point;
+    }
+
+    addPath(from, to, path) {
+        let originalPath = path.clone();
+
+        // Create new point at midpoint of path
+        let pointId = this.points.length;
+        let newPoint = this.createPoint(path.getPointAt(path.length / 2), pointId, 0, []);
+
+        function save(from, to, path) {
+            from.data.connections += 1;
+            from.data.edges.push(path);
+            to.data.connections += 1;
+            to.data.edges.push(path);
+            path.data.vertices = [from, to];
+            path.simplify(3);
+            return path;
+        }
+
+        // Separate into 2 subpaths - used for pathfinding
+        let path2 = path.splitAt(path.length / 2);
+        let path1 = path.clone();
+        path1.insert(0, from.position);
+        path2.add(to.position);
+
+        save(from, newPoint, path1);
+        save(newPoint, to, path2);
+
+        path1.addTo(this.lineGroup);
+        path2.addTo(this.lineGroup);
+        this.points[pointId] = newPoint;
+
+        // Return the unsplit path and the new poin
+        let pointData = {
+            // x: newPoint.
+            center: newPoint.position,
+            id: pointId,
+            connections: 2
+        };
+        //todo: send newPoint.data instead
+
+        return {path: originalPath.exportJSON(), pointData: pointData};
+    }
+
+    lobbyRepresentation() {
+        // Returns a representation of this gameroom for the game lobby
+        return {
+            capacity: `${this.playerCount}/${this.maxCapacity}`,
+            id: '' + this.id,
+            name: this.name
+        }
+    }
+
+    isLegal(from, to, path) {
+        this.project.activate();
+
+        if (!(from || to)) return false;
+        else if (from === to && from.data.connections >= 2) return false;
+        else if (from.data.connections >= 3 || to.data.connections >= 3) return false;
+
+        // Check for intersections w. existing paths
+        for (let line of this.lineGroup.getItems({type: 'path'})) {
+            if (path.getIntersections(line).length > 0) return false;
+        }
+        return path.getIntersections(path).length <= 0;
+    }
+
+    getCycles() {
+        //TODO: Sørg for at alle edges "vender" rigtigt
+        //TODO: Ikke alle kanter i et loop bliver tilføjet selv om loopet er opdaget
+        let toFind = [];
+        for (let p of this.points) {
+            p.data.root = p;
+            p.data.rootEdge = null;
+            p.data.status = "";
+        }
+        for (let p of this.points) {
+            if (p.data.status !== "done") {
+                p.data.root = p;
+                p.dfs(toFind);
+            }
+        }
+        let cycles = [];
+
+        for (let t of toFind) {
+            let paths0 = [];
+            let paths1 = [];
+            let loop = [t];
+            let p0 = t.data.vertices[0];
+            let p1 = t.data.vertices[1];
+            while (p0.data.root !== p0) {
+                paths0.push(p0.data.rootEdge);
+                p0 = p0.data.root;
+            }
+            while (p1.data.root !== p1) {
+                paths1.push(p1.data.rootEdge);
+                p1 = p1.data.root;
+            }
+            let difference = paths0.filter(x => !paths1.includes(x)).concat(paths1.filter(x => !paths0.includes(x)));
+            loop = loop.concat(difference);
+            cycles.push([...loop]);
+        }
+        return cycles;
+    }
+
+    possibleMove(p1, p2, debug = false) {
+        /*TODO: Known bugs
+        Sometimes the "parent edge" from DFS will be reversed and create an area outside the cycle. Check if direction is correct?
+        If one large cycle is also split into 2 smaller cycles, one of them will be able to access all points on the other, but not vice versa.
+         */
+        let cycles = this.getCycles();
+        for (let c of cycles) {
+            let total = new paper.Path();
+            for (let p of c) {
+                for (let s of p.segments)
+                    total.add(s);
+            }
+            if (((total.contains(p1) && total.getLocationOf(p1) === null) && !total.contains(p2)) || ((total.contains(p2) && total.getLocationOf(p2) === null) && !total.contains(p1)))
+                return false;
+            //total.remove();
+        }
+        return true;
+    }
+
+    suggestPath(p1, p2) {
+        if (this.possibleMove(p1.center, p2.center)) {
+            let initCellSize = this.collisionGrid.cell_size;
+            let cellSize = initCellSize
+            let suggest = this.collisionGrid.u_Astar(p1, p2);
+            while (!suggest) {
+                cellSize = cellSize / 2;
+                this.collisionGrid = new CollisionGrid(cellSize, this, paper.view.size);
+                for (let line of this.lineGroup.children) {
+                    this.collisionGrid.t_insert_line(line.curves, line);
+                }
+                for (let point of this.points) {
+                    this.collisionGrid.t_insert_rectangle(point.bounds, point);
+                }
+                suggest = this.collisionGrid.u_Astar(p1, p2);
+            }
+            this.collisionGrid = new CollisionGrid(initCellSize, this, paper.view.size);
+            for (let line of this.lineGroup.children) {
+                this.collisionGrid.t_insert_line(line.curves, line);
+            }
+
+            for (let point of this.points) {
+                this.collisionGrid.t_insert_rectangle(point.bounds, point);
+            }
+            suggest.strokeColor = "red";
+            return suggest;
+        } else {
+            return new paper.Path();
+        }
+    }
+}
