@@ -3,25 +3,28 @@
 $(function () {
     let $msgField = $('#chatMsgField');
 
-    $.joinRoom = function(room) {
-        socket.emit('joinRoom', room, function (success) {
-            if (success) $.changeView("game");
-            else alert("Failed to join room " + room);
+    $.joinRoom = function(roomId) {
+        console.log(roomId)
+        socket.emit('joinRoom', roomId, function (success) {
+            if (success) {
+                $.changeView("game");
+            }
+            else alert("Failed to join room " + roomId);
         });
     };
 
     function createRoom(join = false) {
-        socket.emit('addRoom', prompt("Name of new room"), function (success, room = "") {
+        socket.emit('addRoom', prompt("Name of new room"), function (success, id) {
             if (success) {
-                console.log("Added new room" + room);
-                if (join) $.joinRoom(room);
+                console.log("Added new room" + id);
+                if (join) $.joinRoom(id);
             } else alert("Failed to add room");
         });
     }
 
     $("#chatMsgForm").submit(function(e) {
         e.preventDefault();
-        socket.emit('sendChat', $msgField.val());
+        socket.emit('sendChatMsg', $msgField.val());
         $msgField.val('');
     });
 
@@ -76,10 +79,10 @@ $(function () {
 
 
     $('#quickplayBtn').click(function () {
-        socket.emit('quickplay', function (success, room) {
+        socket.emit('quickplay', function (success, id) {
             if (success) {
-                console.log("Joining room " + room);
-                $.joinRoom(room);
+                console.log("Joining room " + id);
+                $.joinRoom(id);
             } else {
                 createRoom(true);
             }
@@ -94,9 +97,9 @@ $(function () {
     socket.on('updateLobby', function (rooms) {
         $('#rooms>tbody').empty();
         for (let room of rooms) {
-            let capacity = `${room.playerCount}/${room.maxCapacity}`;
-            let name = room.id;
-            $('#rooms > tbody:last-child').append(`<tr data-href=${name} role="button" class="w3-hover-pale-green w3-hover-text-green"> <th class="w3-left-align"> ${name} </th><th class="w3-right-align"> ${capacity} </th></tr>`);
+            let capacity = room.capacity;
+            let name = room.name;
+            $('#rooms > tbody:last-child').append(`<tr data-href=${room.id} role="button" class="w3-hover-pale-green w3-hover-text-green"> <th class="w3-left-align"> ${name} </th><th class="w3-right-align"> ${capacity} </th></tr>`);
         }
     });
     //Adds a new chat message to the chatlog

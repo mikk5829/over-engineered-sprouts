@@ -1,8 +1,12 @@
 // The idea is that tiles are like buckets. Buc7kets are associated with keys and/or several keys
 // connects with a set of objects.
-import {SproutWorld} from './SproutWorld.js';
+// import {SproutWorld} from '../public/scripts/modules/SproutWorld.js';
 
-export class CollisionGrid {
+var math = require('mathjs');
+var paper = require('paper');
+
+
+ class CollisionGrid {
     constructor(cell_size, world, gridSize) {
         console.log("CollisionGrid Created!");
         this.world = world;
@@ -29,8 +33,8 @@ export class CollisionGrid {
 
     g_randomPoints(dot_count, tile_size) {
         let totalTiles = Math.floor(this.gridSize.width / tile_size) * Math.floor(this.gridSize.height / tile_size);
-        let tile_matrix = math.zeros(Math.floor(this.gridSize.width / tile_size), Math.floor(this.gridSize.height / tile_size));
-        
+        let tile_matrix = math.zeros(Math.floor(this.gridSize.width / tile_size), Math.floor(this.gridSize.height / tile_size), 'sparse');
+
         // Set edge tiles to 1 to prevent dots being placed partially outside game canvas
         let tile_matrix_width = Math.floor(this.gridSize.width / tile_size);
         let tile_matrix_height = Math.floor(this.gridSize.height / tile_size);
@@ -54,6 +58,7 @@ export class CollisionGrid {
         }
 
         let updateMatrix = (index, value) => {
+            console.log(tile_matrix)
             tile_matrix = tile_matrix.set(index, value);
         }
 
@@ -67,7 +72,7 @@ export class CollisionGrid {
         let permuted = [];
         for (var i = 0; i < dot_count; i++) {
             let random_index = getRandomIndex(0);
-            var dot_point = new Point(random_index[0] * tile_size, random_index[1] * tile_size);
+            var dot_point = new paper.Point(random_index[0] * tile_size, random_index[1] * tile_size);
             permuted.push(dot_point);
         }
         return permuted;
@@ -187,8 +192,8 @@ export class CollisionGrid {
 
     u_Astar(start, goal){
         let grid = {};
-        let goal_tile = this.t_return(goal.center);
-        let start_tile = this.t_return(start.center);
+        let goal_tile = this.t_return(goal.position);
+        let start_tile = this.t_return(start.position);
         let horizon = [{tile: start_tile, f: this.u_dist(start_tile, goal_tile), parent: start_tile, dist: 0.0}];
 
         while (grid[goal_tile] === undefined && horizon.length !== 0){
@@ -210,8 +215,6 @@ export class CollisionGrid {
                 if (grid[n] === undefined && (this.contents[n] === undefined || this.u_object_of(n, start) || this.u_object_of(n, goal)) && (best_pick.dist > 3 || this.world.possibleMove(this.u_middle(n), goal.center)))
                     horizon.push({tile: n, f:this.u_dist(n, goal_tile), parent: best_pick.tile, dist: best_pick.dist + 1.0});
             }
-
-
         }
         if (grid[goal_tile] !== undefined) {
             let t = grid[goal_tile];
@@ -300,3 +303,5 @@ let randomFromMatrix = () => {
  
  
  */
+
+module.exports=CollisionGrid;
