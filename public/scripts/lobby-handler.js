@@ -4,14 +4,18 @@ $(function () {
     let $msgField = $('#chatMsgField');
 
     $.joinRoom = function(roomId) {
-        console.log(roomId)
-        socket.emit('joinRoom', roomId, function (success) {
-            if (success) {
-                $.changeView("game");
-            }
-            else alert("Failed to join room " + roomId);
+        socket.emit('joinRoom', roomId, function (err, result) {
+            if (err) console.log(err);
+            console.log(result);
         });
     };
+
+    // Listening for events telling if the player is allowed to join the game or not!
+    socket.on('lobby join', function(msg, join_bool){
+        if (join_bool) {
+            $.changeView("game");
+        }
+    });
 
     function createRoom(join = false) {
         socket.emit('addRoom', prompt("Name of new room"), function (success, id) {

@@ -126,22 +126,41 @@ io.sockets.on('connect', function (socket) {
 
     socket.on('joinRoom', function (id, fn) {
         console.log("joinRoom", socket.username, id);
+
+        // Helper function: emitting gameworld for sockets/players in the given room from its id
+        function spawnWorldForPlayer(id) {
+            let game = activeRooms[id];
+            console.log(`2 players connected to game ${id}`);
+            let points = [];
+            for (let i = 0; i < game.points.length; i++) {
+                points[i] = game.points[i].position;
+            }
+            io.sockets.in(id).emit('startGame', points);
+        }
+
         if (activeRooms[id] === undefined) fn(false);
         else {
-            socket.room = id;
-            socket.join(id); // fixme: .room necessary?
-            activeRooms[id].playerCount++;
-            fn(true);
-
-            if (activeRooms[id].playerCount === 2) {
-                let game = activeRooms[id];
-                console.log(`2 players connected to game ${id}`);
-                let points = [];
-                for (let i = 0; i < game.points.length; i++) {
-                    points[i] = game.points[i].position;
+            io.of('/').in(id).clients((err, clients) => { // deals with callback function
+                if (err) throw err;
+                socket.room = id;
+                if (clients.length === 0) { // Zero players in game
+                    socket.join(id.toString(), () => {
+                        activeRooms[id].playerCount++;
+                        spawnWorldForPlayer(id);
+                        // World generated but player not allowed to see it yet
+                        socket.emit('lobby join', 'Please wait for the second player to join...', false);
+                    }); // fixme: .room necessary?
+                } else if (clients.length === 1) { // If this is the second and last player to join -> start the game!
+                    socket.join(id.toString(), () => {
+                        activeRooms[id].playerCount++;
+                        spawnWorldForPlayer(id);
+                        // Responds to clients and display lobby/world to them
+                        io.in(id).emit('lobby join', 'You may now enter the game.. Enjoy!', true);
+                    }); // fixme: .room necessary?
+                } else {
+                    io.in(id).emit('lobby join', 'Something went wrong.. Sorry', false);
                 }
-                io.sockets.in(socket.room).emit('startGame', points);
-            }
+            });
         }
     });
 
