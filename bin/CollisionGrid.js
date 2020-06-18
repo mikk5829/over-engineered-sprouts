@@ -171,7 +171,7 @@ var paper = require('paper');
 
     u_object_of(key, obj){
         for (let o of this.contents[key]){
-            if (o.object.center === obj.center)
+            if (o.object === obj)
                 return true;
         }
         return false;
@@ -209,8 +209,14 @@ var paper = require('paper');
             grid[best_pick.tile] = best_pick;
             //For each neighbour, if it is traversible and unexplored, add it
             for (let n of this.t_getNeighbours(best_pick.tile)){
-                if (grid[n] === undefined && (this.contents[n] === undefined || this.u_object_of(n, start) || this.u_object_of(n, goal)) && (best_pick.dist > 3 || this.world.possibleMove(this.u_middle(n), goal.center)))
-                    horizon.push({tile: n, f:this.u_dist(n, goal_tile), parent: best_pick.tile, dist: best_pick.dist + 1.0});
+                if (grid[n] === undefined && (this.contents[n] === undefined || this.u_object_of(n, start) || this.u_object_of(n, goal)) && (best_pick.dist > 3 || this.world.possibleMove(this.u_middle(n), goal.center))) {
+                    horizon.push({
+                        tile: n,
+                        f: this.u_dist(n, goal_tile),
+                        parent: best_pick.tile,
+                        dist: best_pick.dist + 1.0
+                    });
+                }
             }
         }
         if (grid[goal_tile] !== undefined) {

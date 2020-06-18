@@ -55,7 +55,6 @@ io.sockets.on('connect', function (socket) {
         let from = game.points[fromId];
         let to = game.points[toId];
         let path = new paper.Path().importJSON(pathJson);
-        game.collisionGrid.t_insert_line(path.curves, path);
 
 
         if (!game.isLegal(from, to, path)) {
@@ -275,7 +274,7 @@ class GameRoom {
     }
 
     init(mapConfiguration = null, numPoints = 10) {
-        this.collisionGrid = new CollisionGrid(8, this, new paper.Size(750, 472));
+        this.collisionGrid = new CollisionGrid(10, this, new paper.Size(750, 472));
 
         let dotPoints = [];
         if (!mapConfiguration) {
@@ -370,8 +369,10 @@ class GameRoom {
         save(newPoint, to, path2);
 
         path1.addTo(this.lineGroup);
+        this.collisionGrid.t_insert_line(path1.curves, path1);
         path2.addTo(this.lineGroup);
-        path.addTo(this.lineGroup);
+        this.collisionGrid.t_insert_line(path2.curves, path2);
+        //path.addTo(this.lineGroup);
         this.points[pointId] = newPoint;
 
         // Return the unsplit path and the new poin
@@ -448,20 +449,17 @@ class GameRoom {
     }
 
     possibleMove(p1, p2, debug = false) {
-        console.log(p1,p2);
         /*TODO: Known bugs
         Sometimes the "parent edge" from DFS will be reversed and create an area outside the cycle. Check if direction is correct?
         If one large cycle is also split into 2 smaller cycles, one of them will be able to access all points on the other, but not vice versa.
          */
         let cycles = this.getCycles();
-        console.log(cycles.length);
         for (let c of cycles) {
             let total = new paper.Path();
             for (let p of c) {
                 for (let s of p.segments)
                     total.add(s);
             }
-            console.log("total: " + total.segments.length);
             // total.fillColor = "blue"
             // total.opacity = 0.1;
             // return total;
@@ -485,6 +483,7 @@ class GameRoom {
                 cellSize = cellSize / 2;
                 this.collisionGrid = new CollisionGrid(cellSize, this, new paper.Size(750, 472));
                 for (let line of this.lineGroup.children) {
+                    console.log(line);
                     this.collisionGrid.t_insert_line(line.curves, line);
                 }
                 for (let point of this.points) {
