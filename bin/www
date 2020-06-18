@@ -48,6 +48,13 @@ let activeRooms = [];
 
 io.sockets.on('connect', function (socket) {
 
+    // Check upon connect if socket.id is in a room and if so show the game canvas for the player
+    activeRooms.forEach(room => {
+       if (room.players.contains(socket.id)) {
+           socket.emit('lobby join', 'Welcome back...', true);
+       }
+    });
+
     // Client has submitted a path -> server will validate the path
     socket.on('submitPath', (pathJson, fromId, toId, fn) => {
         console.log(`${socket.username} in game ${socket.room} submits a path`);
