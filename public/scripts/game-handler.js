@@ -107,16 +107,11 @@ $(function () {
                 let to = world.target.data.id;
 
                 // Ask server to suggest a valid path between the selected points
-                socket.emit('suggestPath', from, to, function (pathJson) {
+                socket.emit('suggestPath', from, to, function (possible) {
 
-                    if (pathJson) {
-                        let path = new paper.Path().importJSON(pathJson);
-                        path.strokeColor = 'red';
-                        path.strokeCap = 'round';
-                        path.strokeJoin = 'round';
-                        // world.suggestedPath = path;
-
-                    } else console.log("No valid path found");
+                    if (possible) {
+                        console.log("Possible");
+                    } else console.log("Impossible");
 
                 });
                 world.resetSelection();

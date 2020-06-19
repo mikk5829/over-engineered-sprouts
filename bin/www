@@ -125,19 +125,11 @@ io.sockets.on('connect', function (socket) {
 
     socket.on('suggestPath', (from, to, fn) => {
         let game = activeRooms.get(socket.room);
-        console.log("IDs:", game.points[from].data.id, game.points[to].data.id)
-        console.log("Positions:", game.points[from].position, game.points[to].position)
+        console.log("IDs:", game.points[from].data.id, game.points[to].data.id);
+        console.log("Positions:", game.points[from].position, game.points[to].position);
         let pos1 = game.points[from].position;
         let pos2 = game.points[to].position;
-        let total = game.possibleMove(pos1, pos2);
-        if (total === false) {
-            fn(false);
-        } else {
-            console.log("321",total.exportJSON())
-            fn(total.exportJSON());
-        }
-
-
+        fn(game.possibleMove(pos1, pos2));
         // let suggestedPath = game.suggestPath(game.points[from], game.points[to]);
         // fn(suggestedPath.exportJSON());
     });
@@ -529,10 +521,10 @@ class GameRoom {
             if (((total.contains(p1) && total.getLocationOf(p1) === null) && !total.contains(p2)) || ((total.contains(p2) && total.getLocationOf(p2) === null) && !total.contains(p1)))
                 return false;
             //total.remove();
-            tot.addSegments(total.segments);
+            // tot.addSegments(total.segments);
 
         }
-        return tot;
+        return true;
     }
 
     suggestPath(p1, p2) {
