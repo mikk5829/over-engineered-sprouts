@@ -3,33 +3,54 @@
 $(function () {
     let $msgField = $('#chatMsgField');
 
-    $.joinRoom = function(roomId) {
-        console.log(roomId)
-        socket.emit('joinRoom', roomId, function (success) {
+    $.joinRoom = function (roomId) {
+        socket.emit('joinRoom', roomId, function (success, num) {
             if (success) {
                 $.changeView("game");
-            }
-            else alert("Failed to join room " + roomId);
+                playerNum = num;
+            } else alert("Failed to join room " + roomId);
         });
     };
 
-    function createRoom(join = false) {
-        socket.emit('addRoom', prompt("Name of new room"), function (success, id) {
+    $.createRoom = function () {
+        let roomName = prompt("Name of new room");
+
+        // Check room name requirements
+        while (roomName.length < 1 || roomName.length > 20) {
+            alert("Room name illegal, try again");
+            roomName = prompt("Name of new room");
+        }
+
+        socket.emit('addRoom', roomName, function (success, id) {
             if (success) {
-                console.log("Added new room" + id);
-                if (join) $.joinRoom(id);
+                console.log("Added new room " + id);
+                $.joinRoom(id);
             } else alert("Failed to add room");
         });
-    }
+    };
 
-    $("#chatMsgForm").submit(function(e) {
+    $('#quickplayBtn').click(function () {
+        socket.emit('quickPlay', function (success, id) {
+            if (success) {
+                console.log("Joining room " + id);
+                $.joinRoom(id);
+            } else {
+                $.createRoom();
+            }
+        });
+    });
+
+    $('#newGameBtn').click(function () {
+        $.createRoom();
+    });
+
+    $("#chatMsgForm").submit(function (e) {
         e.preventDefault();
         socket.emit('sendChatMsg', $msgField.val());
         $msgField.val('');
     });
 
-    $('div.back-btn').click(function() {
-        console.log("click")
+    $('div.back-btn').click(function () {
         $.changeView("main_menu");
     });
 
@@ -40,7 +61,7 @@ $(function () {
     $('#importBtn').click(function () {
         $('#fileInput')[0].click();
     });
-    
+
     // Handles the import button (game world from file) - Vanilla not jQuery
     document.getElementById('fileInput').addEventListener('change', () => {
         const file = document.getElementById('fileInput').files[0];
@@ -48,11 +69,11 @@ $(function () {
         reader.onload = event => {
             const result = event.target.result;
             const split = result.split('\n');
-            const totalDots = split.length-1;
+            const totalDots = split.length - 1;
             let paths = [];
-            for (let i = 1; i<split.length; i++) {
+            for (let i = 1; i < split.length; i++) {
                 const dots = split[i].split(' ');
-                paths.push( {dot1: dots[0], dot2: dots[1]} );
+                paths.push({dot1: dots[0], dot2: dots[1]});
             }
             // ToDo validate it is a valid world
             localStorage.setItem("FileResultDotTotal", String(totalDots));
@@ -79,21 +100,6 @@ $(function () {
     });
 
 
-    $('#quickplayBtn').click(function () {
-        socket.emit('quickplay', function (success, id) {
-            if (success) {
-                console.log("Joining room " + id);
-                $.joinRoom(id);
-            } else {
-                createRoom(true);
-            }
-        });
-    });
-
-    $('#newGameBtn').click(function () {
-        createRoom();
-    });
-
     // Updates the list of rooms in the lobby
     socket.on('updateLobby', function (rooms) {
         $('#rooms>tbody').empty();
@@ -103,10 +109,5 @@ $(function () {
             $('#rooms > tbody:last-child').append(`<tr data-href=${room.id} role="button" class="w3-hover-pale-green w3-hover-text-green"> <th class="w3-left-align"> ${name} </th><th class="w3-right-align"> ${capacity} </th></tr>`);
         }
     });
-    //Adds a new chat message to the chatlog
-    socket.on('updateChat', function (timestamp, sender, msg) {
-        let time = new Date(timestamp).toTimeString().slice(0, 5);
-        let sent = `(${time}) ${sender}:`;
-        $('#messages > tbody:last-child').append('<tr> <th class="w3-left-align">' + sent + '</th><th class="w3-right-align">' + msg + ' </th></tr>');
-    });
+
 });

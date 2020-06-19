@@ -20,11 +20,12 @@ function reset() {
 
 paper.install(window); // Make the paper scope global
 $(function () {
-    socket.on("startGame", function (initialPoints) {
+    socket.on("startGame", function (initialPoints, status) {
         console.log(getCanvas().width, getCanvas().height);
-        console.log("startGame", initialPoints);
+        console.log("startGame", initialPoints, status, playerNum);
 
         paper.setup(getCanvas());
+        paper.project.activeLayer.locked = status !== playerNum;
         world = new SproutWorld();
 
         for (let i = 0; i < initialPoints.length; i++) {
@@ -46,30 +47,12 @@ $(function () {
             }
 
             if (world.source) world.source.fillColor = SEL_POINT_COLOR;
-        }
-
-
+        };
     });
 
-    //Adds a new chat message to the chatlog
-    socket.on('updateChat', function (timestamp, sender, msg) {
-        let time = new Date(timestamp).toTimeString().slice(0, 5);
-        let sent = `(${time}) ${sender}:`;
-        $('#messages > tbody:last-child').append('<tr> <th class="w3-left-align">' + sent + '</th><th class="w3-right-align">' + msg + ' </th></tr>');
-    });
+    socket.on('updateGame', function (fromId, toId, pathJson, pointData, status) {
+        paper.project.activeLayer.locked = status !== playerNum;
 
-    // FIXME
-    // let game_resolution = getResolutionFromCookie("gameResolution");
-    // ${'.gameContainer'}.css({"width": str(game_resolution.res_x + "px"),"height":str(game_resolution.res_y + "px")});
-    // $gameDiv.style.width = game_resolution.res_x + "px"; $gameDiv.style.height = game_resolution.res_y + "px";
-
-    /*  paper.setup(getCanvas());
-
-      let world = new SproutWorld();
-  let map_configuration = worldInLocalStorage();
-    world.initializeMap(map_configuration, 10);
-  */
-    socket.on('updateGame', function (fromId, toId, pathJson, pointData) {
         console.log("Received game update from server");
 
         let path = new paper.Path().importJSON(pathJson);
@@ -77,7 +60,7 @@ $(function () {
         path.strokeColor = STROKE_COLOR;
         path.strokeCap = 'round';
         path.strokeJoin = 'round';
-        path.addTo(world.lineGroup);
+        path.addTo(world.pathGroup);
 
         world.points[fromId].data.connections++;
         world.points[toId].data.connections++;
@@ -86,14 +69,28 @@ $(function () {
         world.addPoint(pointData.id, pos, 2)
     });
 
+    socket.on('gameOver', function(winner, loser) {
+       if (playerNum===winner) alert('You won!');
+       else alert('You lost...');
+        $.changeView("main_menu");
+       world = undefined;
+    });
+
+    //Adds a new chat message to the chatlog
+    socket.on('updateChat', function (timestamp, sender, msg) {
+        let time = new Date(timestamp).toTimeString().slice(0, 5);
+        let sent = `(${time}) ${sender}:`;
+        console.log(`Received chat message: ${sent} ${msg}`);
+        $('#messages > tbody:last-child').append('<tr> <th class="w3-left-align">' + sent + '</th><th class="w3-right-align">' + msg + ' </th></tr>');
+    });
+
     let tool = new paper.Tool();
 
     tool.onMouseDown = function onMouseDown() {
-        world.suggestedPath.remove();
+        if (world.suggestedPath) world.suggestedPath.remove();
     };
 
     tool.onMouseUp = function onMouseUp(e) {
-        console.log(`tool.onMouseUp, source ${world.source}, target ${world.target}\n`);
 
         if (!world.clickSelection) {
             // Reset point colors
@@ -104,12 +101,13 @@ $(function () {
             if (world.target) world.submitSelection();
             else if (world.source) world.resetSelection();
 
-            // TODO move to serverside, fix ids
         } else if (world.clickSelection) {
+
             if (world.source && world.target) {
-                console.log(`Clickselection: source ${world.source.data.id}, target ${world.target.data.id}`);
                 let from = world.source.data.id;
                 let to = world.target.data.id;
+
+                // Ask server to suggest a valid path between the selected points
                 socket.emit('suggestPath', from, to, function (pathJson) {
                     if (pathJson) {
                         let path = new paper.Path().importJSON(pathJson);
@@ -117,16 +115,10 @@ $(function () {
                         path.strokeCap = 'round';
                         path.strokeJoin = 'round';
                         world.suggestedPath = path;
-                    }
+                    } else console.log("No valid path found");
 
                 });
-
-                // FIXME submit clickselection
-                // if (world.possibleMove(world.source, world.target))world.findPath(world.source, world.target);
-
-                console.log("resetselection clicksel", world.source, world.target);
                 world.resetSelection();
-
             } else if (!world.points.includes(e.item)) world.resetSelection(); // Cancel click-selection
         }
     };
