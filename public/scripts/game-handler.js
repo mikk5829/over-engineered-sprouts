@@ -56,7 +56,6 @@ $(function () {
         console.log("Received game update from server");
 
         let path = new paper.Path().importJSON(pathJson);
-        path.simplify(3);
         path.strokeColor = STROKE_COLOR;
         path.strokeCap = 'round';
         path.strokeJoin = 'round';
@@ -109,13 +108,15 @@ $(function () {
 
                 // Ask server to suggest a valid path between the selected points
                 socket.emit('suggestPath', from, to, function (pathJson) {
-                    if (pathJson) {
+                    console.log(pathJson);
+                    // FIXME
+                    /*if (pathJson) {
                         let path = new paper.Path().importJSON(pathJson);
                         path.strokeColor = 'red';
                         path.strokeCap = 'round';
                         path.strokeJoin = 'round';
                         world.suggestedPath = path;
-                    } else console.log("No valid path found");
+                    } else console.log("No valid path found");*/
 
                 });
                 world.resetSelection();

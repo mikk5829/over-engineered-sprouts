@@ -8,10 +8,11 @@ var app = require('../app');
 var debug = require('debug')('over-engineered-sprout:server');
 var http = require('http');
 var Sentencer = require('sentencer');
+var math = require('mathjs');
+
 
 var paper = require('paper');
-// import {CollisionGrid} from './public/scripts/modules/CollisionGrid.js';
-var CollisionGrid = require('./CollisionGrid');
+// var CollisionGrid = require('./CollisionGrid');
 paper.install(this);
 paper.setup([750, 472]);
 
@@ -65,19 +66,19 @@ io.sockets.on('connect', function (socket) {
         let from = game.points[fromId];
         let to = game.points[toId];
         let path = new paper.Path().importJSON(pathJson);
-        game.collisionGrid.t_insert_line(path.curves, path);
+        // game.collisionGrid.t_insert_line(path.curves, path);
 
 
         if (!game.isLegal(from, to, path)) {
             fn(false); // Callback - path not accepted
-            path.remove();
+            // path.remove();
             return false;
         } else {
             fn(true); // Callback - path accepted
 
             let resp = game.addPath(from, to, path);
             io.sockets.in(socket.room).emit('updateGame', from.data.id, to.data.id, resp.path, resp.pointData, game.nextTurn());
-            path.remove();
+            //path.remove();
 
             // TODO - check for gameover
             let gameover = false;
@@ -92,8 +93,6 @@ io.sockets.on('connect', function (socket) {
 
     // TODO: Only emit to lobby socket
     setInterval(function () {
-        //fixme
-        // let roomList = activeRooms.map(a => a.lobbyRepresentation());
         let roomList = [];
         for (let room of activeRooms.values()) {
             roomList.push(room.lobbyRepresentation());
@@ -126,8 +125,11 @@ io.sockets.on('connect', function (socket) {
 
     socket.on('suggestPath', (from, to, fn) => {
         let game = activeRooms.get(socket.room);
-        let suggestedPath = game.suggestPath(game.points[from], game.points[to]);
-        fn(suggestedPath.exportJSON());
+        console.log(from, to)
+        console.log(game.points[from].data.id, game.points[to].data.id)
+        fn(game.possibleMove(game.points[from], game.points[to]));
+        // let suggestedPath = game.suggestPath(game.points[from], game.points[to]);
+        // fn(suggestedPath.exportJSON());
     });
 
     socket.on('changeUsername', (requestedUsername, fn) => {
@@ -260,6 +262,57 @@ function usernameIsValid(username) {
 
 const Status = Object.freeze({"player1": 1, "player2": 2, "waiting": 3, "gameover": 4});
 
+function randomPoints(amount) {
+    let tileSize = 40;
+    let cellSize = 8;
+    let width = 750;
+    let height = 472;
+
+    let totalTiles = Math.floor(width / tileSize) * Math.floor(height / tileSize);
+    let tileMatrix = math.zeros(Math.floor(width / tileSize), Math.floor(height / tileSize), 'sparse');
+
+    // Set edge tiles to 1 to prevent dots being placed partially outside game canvas
+    let tileMatrixWidth = Math.floor(width / tileSize);
+    let tileMatrixHeight = Math.floor(height / tileSize);
+    tileMatrix.subset(math.index(0, math.range(0, tileMatrixHeight)), math.ones(tileMatrixHeight));
+    tileMatrix.subset(math.index(tileMatrixWidth - 1, math.range(0, tileMatrixHeight)), math.ones(tileMatrixHeight));
+    tileMatrix.subset(math.index(math.range(0, tileMatrixWidth), 0), math.ones(tileMatrixWidth));
+    tileMatrix.subset(math.index(math.range(0, tileMatrixWidth), tileMatrixHeight - 1), math.ones(tileMatrixWidth));
+
+    if (amount > totalTiles) {
+        console.log("dot_count > totalTiles... t_random won't be able to find enough random tiles!");
+    }
+
+    let getIndices = (value) => {
+        let indices = [];
+        tileMatrix.forEach((val, index, matrix) => {
+            if (val === value) {
+                indices.push(index);
+            }
+        });
+        return indices;
+    };
+
+    let updateMatrix = (index, value) => {
+        tileMatrix = tileMatrix.set(index, value);
+    };
+
+    let getRandomIndex = (value) => {
+        let indices = getIndices(value);
+        let randomIndex = Math.floor(Math.random() * indices.length);
+        updateMatrix(indices[randomIndex], 1);
+        return indices[randomIndex];
+    };
+
+    let permuted = [];
+    for (let i = 0; i < amount; i++) {
+        let randIndex = getRandomIndex(0);
+        permuted.push(new paper.Point(randIndex[0] * tileSize, randIndex[1] * tileSize));
+    }
+    return permuted;
+
+}
+
 class GameRoom {
     constructor(id, name, player1 = null, player2 = null) {
         this.id = id;
@@ -268,22 +321,22 @@ class GameRoom {
         this.player2 = player2;
         this.playerCount = 0;
         this.maxCapacity = 2;
-        this.project = new paper.Project([300, 150]);
+        this.project = new paper.Project([750, 472]);
         this.lineGroup = new paper.Group();
         this.points = [];
-        this.collisionGrid = null;
+        // this.collisionGrid = null;
         this.gameStarted = false;
         this.status = Status.waiting;
     }
 
     init(mapConfiguration = null, numPoints = 10) {
-        this.collisionGrid = new CollisionGrid(8, this, new paper.Size(750, 472));
+        // this.collisionGrid = new CollisionGrid(8, this, new paper.Size(750, 472));
 
         let dotPoints = [];
         if (!mapConfiguration) {
-            dotPoints = this.collisionGrid.g_randomPoints(numPoints, 40);
+            dotPoints = randomPoints(numPoints);
         } else {
-            dotPoints = this.collisionGrid.g_randomPoints(mapConfiguration.dots, 40);
+            dotPoints = randomPoints(mapConfiguration.dots);
         }
 
         for (let i = 0; i < dotPoints.length; i++) {
@@ -318,6 +371,7 @@ class GameRoom {
         };
 
         point.dfs = function (toFind) {
+            console.log("dfs on point",point.data.id)
             //Marker som søgende
             point.data.status = "seeking";
             //Kør dfs på alle naboer
@@ -342,28 +396,28 @@ class GameRoom {
             point.data.status = "done";
         };
 
-        if (this.collisionGrid != null) {
-            this.collisionGrid.t_insert_rectangle(point.bounds, point);
-        }
+        // if (this.collisionGrid != null) {
+        //     this.collisionGrid.t_insert_rectangle(point.bounds, point);
+        // }
 
 
         return point;
     }
 
     addPath(from, to, path) {
+        path.simplify(3);
         let originalPath = path.clone();
 
         // Create new point at midpoint of path
         let pointId = this.points.length;
         let newPoint = this.createPoint(path.getPointAt(path.length / 2), pointId, 0, []);
 
-        function save(from, to, path) {
-            from.data.connections += 1;
-            from.data.edges.push(path);
-            to.data.connections += 1;
-            to.data.edges.push(path);
-            path.data.vertices = [from, to];
-            path.simplify(3);
+        function save(_from, _to, path) {
+            _from.data.connections += 1;
+            _from.data.edges.push(path);
+            _to.data.connections += 1;
+            _to.data.edges.push(path);
+            path.data.vertices = [_from, _to];
             return path;
         }
 
@@ -378,6 +432,7 @@ class GameRoom {
 
         path1.addTo(this.lineGroup);
         path2.addTo(this.lineGroup);
+        path.addTo(this.lineGroup); // FIXME?
         this.points[pointId] = newPoint;
 
         // Return the unsplit path and the new poin
@@ -421,6 +476,7 @@ class GameRoom {
                 p.dfs(toFind);
             }
         }
+        console.log("tofind length:",toFind.length)
         let cycles = [];
 
         for (let t of toFind) {
@@ -429,6 +485,7 @@ class GameRoom {
             let loop = [t];
             let p0 = t.data.vertices[0];
             let p1 = t.data.vertices[1];
+            console.log(p0.data.id, p1.data.id)
             while (p0.data.root !== p0) {
                 paths0.push(p0.data.rootEdge);
                 p0 = p0.data.root;
@@ -453,9 +510,9 @@ class GameRoom {
         for (let c of cycles) {
             let total = new paper.Path();
             for (let p of c) {
-                for (let s of p.segments)
-                    total.add(s);
+                total.add(p.segments);
             }
+
             if (((total.contains(p1) && total.getLocationOf(p1) === null) && !total.contains(p2)) || ((total.contains(p2) && total.getLocationOf(p2) === null) && !total.contains(p1)))
                 return false;
             //total.remove();
@@ -466,11 +523,11 @@ class GameRoom {
     suggestPath(p1, p2) {
         if (this.possibleMove(p1.center, p2.center)) {
             let initCellSize = this.collisionGrid.cell_size;
-            let cellSize = initCellSize
+            let cellSize = initCellSize;
             let suggest = this.collisionGrid.u_Astar(p1, p2);
             while (!suggest) {
                 cellSize = cellSize / 2;
-                this.collisionGrid = new CollisionGrid(cellSize, this, paper.view.size);
+                this.collisionGrid = new CollisionGrid(cellSize, this, new paper.Size(750, 472));
                 for (let line of this.lineGroup.children) {
                     this.collisionGrid.t_insert_line(line.curves, line);
                 }
@@ -479,7 +536,7 @@ class GameRoom {
                 }
                 suggest = this.collisionGrid.u_Astar(p1, p2);
             }
-            this.collisionGrid = new CollisionGrid(initCellSize, this, paper.view.size);
+            this.collisionGrid = new CollisionGrid(initCellSize, this, new paper.Size(750, 472));
             for (let line of this.lineGroup.children) {
                 this.collisionGrid.t_insert_line(line.curves, line);
             }
@@ -556,3 +613,4 @@ class GameRoom {
         // addLoss(...)
     }
 }
+
