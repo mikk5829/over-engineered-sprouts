@@ -125,9 +125,19 @@ io.sockets.on('connect', function (socket) {
 
     socket.on('suggestPath', (from, to, fn) => {
         let game = activeRooms.get(socket.room);
-        console.log(from, to)
-        console.log(game.points[from].data.id, game.points[to].data.id)
-        fn(game.possibleMove(game.points[from], game.points[to]));
+        console.log("IDs:", game.points[from].data.id, game.points[to].data.id)
+        console.log("Positions:", game.points[from].position, game.points[to].position)
+        let pos1 = game.points[from].position;
+        let pos2 = game.points[to].position;
+        let total = game.possibleMove(pos1, pos2);
+        if (total === false) {
+            fn(false);
+        } else {
+            console.log("321",total.exportJSON())
+            fn(total.exportJSON());
+        }
+
+
         // let suggestedPath = game.suggestPath(game.points[from], game.points[to]);
         // fn(suggestedPath.exportJSON());
     });
@@ -371,7 +381,7 @@ class GameRoom {
         };
 
         point.dfs = function (toFind) {
-            console.log("dfs on point",point.data.id)
+            console.log("dfs on point", point.data.id)
             //Marker som søgende
             point.data.status = "seeking";
             //Kør dfs på alle naboer
@@ -476,7 +486,7 @@ class GameRoom {
                 p.dfs(toFind);
             }
         }
-        console.log("tofind length:",toFind.length)
+        console.log("tofind length:", toFind.length)
         let cycles = [];
 
         for (let t of toFind) {
@@ -506,18 +516,23 @@ class GameRoom {
         Sometimes the "parent edge" from DFS will be reversed and create an area outside the cycle. Check if direction is correct?
         If one large cycle is also split into 2 smaller cycles, one of them will be able to access all points on the other, but not vice versa.
          */
+        let tot = new paper.Path();
+
         let cycles = this.getCycles();
         for (let c of cycles) {
             let total = new paper.Path();
             for (let p of c) {
-                total.add(p.segments);
+                for (let s of p.segments)
+                    total.add(s);
             }
 
             if (((total.contains(p1) && total.getLocationOf(p1) === null) && !total.contains(p2)) || ((total.contains(p2) && total.getLocationOf(p2) === null) && !total.contains(p1)))
                 return false;
             //total.remove();
+            tot.addSegments(total.segments);
+
         }
-        return true;
+        return tot;
     }
 
     suggestPath(p1, p2) {

@@ -68,11 +68,11 @@ $(function () {
         world.addPoint(pointData.id, pos, 2)
     });
 
-    socket.on('gameOver', function(winner, loser) {
-       if (playerNum===winner) alert('You won!');
-       else alert('You lost...');
+    socket.on('gameOver', function (winner, loser) {
+        if (playerNum === winner) alert('You won!');
+        else alert('You lost...');
         $.changeView("main_menu");
-       world = undefined;
+        world = undefined;
     });
 
     //Adds a new chat message to the chatlog
@@ -108,15 +108,15 @@ $(function () {
 
                 // Ask server to suggest a valid path between the selected points
                 socket.emit('suggestPath', from, to, function (pathJson) {
-                    console.log(pathJson);
-                    // FIXME
-                    /*if (pathJson) {
+
+                    if (pathJson) {
                         let path = new paper.Path().importJSON(pathJson);
                         path.strokeColor = 'red';
                         path.strokeCap = 'round';
                         path.strokeJoin = 'round';
-                        world.suggestedPath = path;
-                    } else console.log("No valid path found");*/
+                        // world.suggestedPath = path;
+
+                    } else console.log("No valid path found");
 
                 });
                 world.resetSelection();
