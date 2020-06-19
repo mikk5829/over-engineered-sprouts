@@ -1,5 +1,13 @@
 //const cookieParser = require("cookie-parser");
 
+import {worldInLocalStorage} from "./modules/Utility.js";
+
+let originalSetItemFunc = localStorage.setItem;
+localStorage.setItem = function () {
+    document.createEvent('Event').initEvent('updatedLocalStorage', true, true);
+    originalSetItemFunc.apply(this, arguments);
+};
+
 $(function () {
     let $msgField = $('#chatMsgField');
 
@@ -18,7 +26,8 @@ $(function () {
     });
 
     function createRoom(join = false) {
-        socket.emit('addRoom', prompt("Name of new room"), function (success, id) {
+        let game_config = worldInLocalStorage();
+        socket.emit('addRoom', prompt("Name of new room"), game_config, function (success, id) {
             if (success) {
                 console.log("Added new room" + id);
                 if (join) $.joinRoom(id);
@@ -63,9 +72,13 @@ $(function () {
             localStorage.setItem("FileResultPaths", JSON.stringify(paths));
         }
         reader.readAsText(file);
-        document.getElementById('infoBoxP').innerText = "Loaded new map. Click generate!";
-        document.getElementById('infoBox').style.display = "inline"
+        document.getElementById('loadedGameConfiguration').textContent = "Map configuration loaded";
     });
+
+    if (worldInLocalStorage() !== null) {
+        document.getElementById('loadedGameConfiguration').textContent = "Map configuration loaded";
+    }
+
 
     $('#generateBtn').click(function () {
         console.log("click");

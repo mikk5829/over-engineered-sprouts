@@ -209,12 +209,15 @@ io.sockets.on('connect', function (socket) {
     });
 
     // Client wants to create a new room => server validates room name, creates new room
-    socket.on('addRoom', (roomName, fn) => {
+    socket.on('addRoom', (roomName, map_configuration, fn) => {
+        console.log("Map configuration: ");
+        console.log(map_configuration);
         if (activeRooms[roomName] !== undefined) fn(false);
         else {
             console.log("Creating new room: " + roomName);
             let id = activeRooms.length;
             activeRooms[id] = new GameRoom(id, roomName);
+            activeRooms[id].init(map_configuration);
             fn(true, id);
         }
     });
@@ -301,8 +304,6 @@ class GameRoom {
         this.lineGroup = new paper.Group();
         this.points = [];
         this.collisionGrid = null;
-
-        this.init();
     }
 
     init(mapConfiguration = null, numPoints = 10) {
@@ -313,6 +314,7 @@ class GameRoom {
             dotPoints = this.collisionGrid.g_randomPoints(numPoints, 40);
         } else {
             dotPoints = this.collisionGrid.g_randomPoints(mapConfiguration.dots, 40);
+            //ToDo generate paths between points here using mapConfiguration.paths
         }
 
         for (let i = 0; i < dotPoints.length; i++) {
