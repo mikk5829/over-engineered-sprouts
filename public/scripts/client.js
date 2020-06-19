@@ -12,6 +12,11 @@ socket.on('connect', function () {
         console.log("Joined as", username);
     });
 
+    // display the users name in lobby if he is connected correctly
+    if (!$('#main_menu').is(':hidden')){
+        $('#welcomeUser').text("Welcome " + getCookie("playerName"));
+    }
+
 });
 
 $(function () {

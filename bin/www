@@ -48,12 +48,16 @@ let activeRooms = [];
 
 io.sockets.on('connect', function (socket) {
 
-    // Check upon connect if socket.id is in a room and if so show the game canvas for the player
-    activeRooms.forEach(room => {
-       if (room.players.contains(socket.id)) {
-           socket.emit('lobby join', 'Welcome back...', true);
-       }
-    });
+    // Check upon connect if socket.username is in a room and if so show the game canvas for the player
+    if (socket.username !== undefined) {
+        activeRooms.forEach(room => {
+            if (room.players.includes(socket.username)) {
+                console.log("Joining ongoing game!");
+                socket.emit('lobby join', 'Welcome back...', true);
+            }
+        });
+    }
+
 
     // Client has submitted a path -> server will validate the path
     socket.on('submitPath', (pathJson, fromId, toId, fn) => {
@@ -95,6 +99,7 @@ io.sockets.on('connect', function (socket) {
             return this.charAt(0).toUpperCase() + this.slice(1);
         };
 
+        // don't give new username unless username cookie is clean
         let username;
         if (usernameIsValid(requestedUsername)) {
             username = requestedUsername;
@@ -144,17 +149,19 @@ io.sockets.on('connect', function (socket) {
         }
 
         // Helper function: check if player is allowed to be assigned and join a game room
-        function canJoin(socket_id){
+        function canJoin(socket_username){
             console.log(activeRooms[id].players);
             // Only if you are one of the original players you may join the room!
             // We could submit a emit event to let socket.client know whether or not he is allowed access.
             if (activeRooms[id].players.length === 2) {
-                if (activeRooms[id].players.includes(socket_id)) return true;
+                if (activeRooms[id].players.includes(socket_username)) return true;
             }
             // First players to join are linked to game room
             else if (activeRooms[id].players.length < 2) {
-                activeRooms[id].players.push(socket_id);
-                return true;
+                if (!activeRooms[id].players.includes(socket_username)) {
+                    activeRooms[id].players.push(socket_username);
+                    return true;
+                }
             }
             return false;
         }
@@ -165,14 +172,14 @@ io.sockets.on('connect', function (socket) {
             io.of('/').in(id).clients((err, clients) => { // deals with callback function
                 if (err) throw err;
                 socket.room = id;
-                if (clients.length === 0 && canJoin(socket.id)) { // Zero players in game
+                if (clients.length === 0 && canJoin(socket.username)) { // Zero players in game
                     socket.join(id.toString(), () => {
                         activeRooms[id].playerCount++;
                         spawnWorldForPlayer(id);
                         // World generated but player not allowed to see it yet
                         socket.emit('lobby join', 'Please wait for the second player to join...', false);
                     }); // fixme: .room necessary?
-                } else if (clients.length === 1 && canJoin(socket.id)) { // If this is the second and last player to join -> start the game!
+                } else if (clients.length === 1 && canJoin(socket.username)) { // If this is the second and last player to join -> start the game!
                     socket.join(id.toString(), () => {
                         activeRooms[id].playerCount++;
                         spawnWorldForPlayer(id);
@@ -218,8 +225,10 @@ io.sockets.on('connect', function (socket) {
         io.sockets.in(socket.room).emit('updateChat', timestamp, socket.username, msg);
     });
 
-    socket.on('disconnect', function () {
+    socket.on('disconnect', function (reason) {
         console.log(`${socket.username} disconnected`);
+        console.log(socket.username + " leaving room: " + socket.room + "...");
+        console.log("reason: " + reason);
         socket.leave(socket.room);
     });
 });
