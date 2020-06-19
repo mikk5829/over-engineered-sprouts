@@ -11,6 +11,7 @@ socket.on('connect', function () {
         setCookie("playerName", username);
         console.log("Joined as", username);
     });
+
 });
 
 $(function () {

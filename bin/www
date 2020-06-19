@@ -126,11 +126,9 @@ io.sockets.on('connect', function (socket) {
 
     socket.on('joinRoom', function (id, fn) {
         console.log("joinRoom", socket.username, id);
-
         // Helper function: emitting gameworld for sockets/players in the given room from its id
         function spawnWorldForPlayer(id) {
             let game = activeRooms[id];
-            console.log(`2 players connected to game ${id}`);
             let points = [];
             for (let i = 0; i < game.points.length; i++) {
                 points[i] = game.points[i].position;
@@ -138,19 +136,36 @@ io.sockets.on('connect', function (socket) {
             io.sockets.in(id).emit('startGame', points);
         }
 
+        // Helper function: check if player is allowed to be assigned and join a game room
+        function canJoin(socket_id){
+            console.log(activeRooms[id].players);
+            // Only if you are one of the original players you may join the room!
+            // We could submit a emit event to let socket.client know whether or not he is allowed access.
+            if (activeRooms[id].players.length === 2) {
+                if (activeRooms[id].players.includes(socket_id)) return true;
+            }
+            // First players to join are linked to game room
+            else if (activeRooms[id].players.length < 2) {
+                activeRooms[id].players.push(socket_id);
+                return true;
+            }
+            return false;
+        }
+
+
         if (activeRooms[id] === undefined) fn(false);
         else {
             io.of('/').in(id).clients((err, clients) => { // deals with callback function
                 if (err) throw err;
                 socket.room = id;
-                if (clients.length === 0) { // Zero players in game
+                if (clients.length === 0 && canJoin(socket.id)) { // Zero players in game
                     socket.join(id.toString(), () => {
                         activeRooms[id].playerCount++;
                         spawnWorldForPlayer(id);
                         // World generated but player not allowed to see it yet
                         socket.emit('lobby join', 'Please wait for the second player to join...', false);
                     }); // fixme: .room necessary?
-                } else if (clients.length === 1) { // If this is the second and last player to join -> start the game!
+                } else if (clients.length === 1 && canJoin(socket.id)) { // If this is the second and last player to join -> start the game!
                     socket.join(id.toString(), () => {
                         activeRooms[id].playerCount++;
                         spawnWorldForPlayer(id);
