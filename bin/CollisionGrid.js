@@ -58,7 +58,7 @@ var paper = require('paper');
         }
 
         let updateMatrix = (index, value) => {
-            console.log(tile_matrix)
+            // console.log(tile_matrix)
             tile_matrix = tile_matrix.set(index, value);
         }
 
@@ -116,8 +116,6 @@ var paper = require('paper');
     }
 
     t_insert_line(curves, object) {
-        console.log("curves");
-        console.log(curves);
         for (let i = 0; i < curves.length; i++) {
             for (let j = 0; j < curves[i].length; j++) {
                 let location = curves[i].getLocationAt(j);

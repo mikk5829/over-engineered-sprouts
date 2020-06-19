@@ -33,7 +33,7 @@ var server = http.createServer(app);
  */
 
 server.listen(port, function () {
-    console.log("listening on *:3000")
+    console.log(`Listening on port ${port.valueOf()}`)
 });
 
 server.on('error', onError);
@@ -44,14 +44,24 @@ server.on('listening', onListening);
 * Socket IO
 * */
 const io = require('socket.io').listen(server);
-let activeRooms = [];
+let activeRooms = new Map();
+
+function makeid(length) {
+    var result = '';
+    var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var charactersLength = characters.length;
+    for (var i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
+}
 
 io.sockets.on('connect', function (socket) {
 
     // Client has submitted a path -> server will validate the path
     socket.on('submitPath', (pathJson, fromId, toId, fn) => {
         console.log(`${socket.username} in game ${socket.room} submits a path`);
-        let game = activeRooms[socket.room];
+        let game = activeRooms.get(socket.room);
         let from = game.points[fromId];
         let to = game.points[toId];
         let path = new paper.Path().importJSON(pathJson);
@@ -59,22 +69,35 @@ io.sockets.on('connect', function (socket) {
 
 
         if (!game.isLegal(from, to, path)) {
-            console.log("Illegal");
             fn(false); // Callback - path not accepted
             path.remove();
             return false;
         } else {
             fn(true); // Callback - path accepted
+
             let resp = game.addPath(from, to, path);
-            io.sockets.in(socket.room).emit('updateGame', from.data.id, to.data.id, resp.path, resp.pointData);
+            io.sockets.in(socket.room).emit('updateGame', from.data.id, to.data.id, resp.path, resp.pointData, game.nextTurn());
             path.remove();
+
+            // TODO - check for gameover
+            let gameover = false;
+            if (gameover) {
+                game.gameOver(socket.playerNum);
+                io.sockets.in(socket.room).emit('gameOver', winner, loser);
+            }
+
             return true;
         }
     });
 
     // TODO: Only emit to lobby socket
     setInterval(function () {
-        let roomList = activeRooms.map(a => a.lobbyRepresentation());
+        //fixme
+        // let roomList = activeRooms.map(a => a.lobbyRepresentation());
+        let roomList = [];
+        for (let room of activeRooms.values()) {
+            roomList.push(room.lobbyRepresentation());
+        }
         socket.emit('updateLobby', roomList);
     }, 1000);
 
@@ -102,9 +125,8 @@ io.sockets.on('connect', function (socket) {
     });
 
     socket.on('suggestPath', (from, to, fn) => {
-        let game = activeRooms[socket.room];
+        let game = activeRooms.get(socket.room);
         let suggestedPath = game.suggestPath(game.points[from], game.points[to]);
-        console.log(suggestedPath);
         fn(suggestedPath.exportJSON());
     });
 
@@ -117,60 +139,63 @@ io.sockets.on('connect', function (socket) {
     });
 
     socket.on('joinRoom', function (id, fn) {
-        console.log("joinRoom", socket.username, id);
-        if (activeRooms[id] === undefined) fn(false);
+        console.log(`${socket.username} wants to join room with id ${id}`);
+        let game = activeRooms.has(id) ? activeRooms.get(id) : null;
+        if (!game || game.playerCount >= 2) fn(false);
         else {
-            socket.room = id;
-            socket.join(id); // fixme: .room necessary?
-            activeRooms[id].playerCount++;
-            fn(true);
+            let playerNum = game.userJoin(socket);
+            fn(true, playerNum);
 
-            if (activeRooms[id].playerCount === 2) {
-                let game = activeRooms[id]
+            if (game.playerCount === 2) {
                 console.log(`2 players connected to game ${id}`);
-                let points = [];
-                for (let i = 0; i < game.points.length; i++) {
-                    points[i] = game.points[i].position;
+
+                // Packs the positions of the points into a list for the clients to read
+                let pointPositions = [];
+                for (let point of game.init()) {
+                    pointPositions.push(point.position);
                 }
-                io.sockets.in(socket.room).emit('startGame', points);
+                io.sockets.in(socket.room).emit('startGame', pointPositions, game.status);
             }
         }
     });
 
     // Lets the user connect to an existing room if one exists
     // Otherwise prompts them to create their own room
-    socket.on('quickplay', function (fn) {
-        if (Object.keys(activeRooms).length === 0) fn(false);
-        else {
-            Object.keys(activeRooms).forEach((roomId) => {
-                let room = activeRooms[roomId];
-                if (room.playerCount < 2) {
-                    fn(true, roomId);
-                }
-            })
+    socket.on('quickPlay', function (fn) {
+        // fixme
+        for (let room of activeRooms.values()) {
+            if (room.playerCount < 2) fn(true, room.id);
         }
+
         fn(false);
+        return false;
     });
 
     // Client wants to create a new room => server validates room name, creates new room
     socket.on('addRoom', (roomName, fn) => {
-        if (activeRooms[roomName] !== undefined) fn(false);
+        if (activeRooms[roomName] !== undefined) fn(false); // FIXME can't check roomname like this
+
+        if (roomName.length < 1 || roomName.length > 20) fn(false);
+
         else {
             console.log("Creating new room: " + roomName);
-            let id = activeRooms.length;
-            activeRooms[id] = new GameRoom(id, roomName);
+            let id = makeid(6);
+            activeRooms.set(id, new GameRoom(id, roomName));
             fn(true, id);
         }
     });
 
     socket.on('sendChatMsg', function (msg) {
-        console.log("received sendChat from " + socket.username + ": " + msg);
+        console.log("Received sendChatMsg from " + socket.username + ": " + msg);
         let timestamp = +new Date();
         io.sockets.in(socket.room).emit('updateChat', timestamp, socket.username, msg);
     });
 
     socket.on('disconnect', function () {
         console.log(`${socket.username} disconnected`);
+        if (activeRooms.has(socket.room)) {
+            activeRooms.get(socket.room).userLeave(socket);
+        }
         socket.leave(socket.room);
     });
 });
@@ -232,19 +257,23 @@ function usernameIsValid(username) {
     return !getSockets().some(e => io.sockets.sockets[e].username === username);
 }
 
+
+const Status = Object.freeze({"player1": 1, "player2": 2, "waiting": 3, "gameover": 4});
+
 class GameRoom {
-    constructor(id, name, players = []) {
+    constructor(id, name, player1 = null, player2 = null) {
         this.id = id;
         this.name = name;
-        this.players = players;
+        this.player1 = player1;
+        this.player2 = player2;
         this.playerCount = 0;
         this.maxCapacity = 2;
         this.project = new paper.Project([300, 150]);
         this.lineGroup = new paper.Group();
         this.points = [];
         this.collisionGrid = null;
-
-        this.init();
+        this.gameStarted = false;
+        this.status = Status.waiting;
     }
 
     init(mapConfiguration = null, numPoints = 10) {
@@ -261,6 +290,11 @@ class GameRoom {
             let center = dotPoints[i];
             this.points[i] = this.createPoint(center, i, 0, []);
         }
+
+        let rand = Math.floor(Math.random() * 2);
+        this.status = rand === 1 ? Status.player1 : Status.player2;
+        this.gameStarted = true;
+        return this.points;
     }
 
     createPoint(pos, id, connections, edges) {
@@ -356,15 +390,6 @@ class GameRoom {
         //todo: send newPoint.data instead
 
         return {path: originalPath.exportJSON(), pointData: pointData};
-    }
-
-    lobbyRepresentation() {
-        // Returns a representation of this gameroom for the game lobby
-        return {
-            capacity: `${this.playerCount}/${this.maxCapacity}`,
-            id: '' + this.id,
-            name: this.name
-        }
     }
 
     isLegal(from, to, path) {
@@ -467,5 +492,67 @@ class GameRoom {
         } else {
             return new paper.Path();
         }
+    }
+
+    lobbyRepresentation() {
+        // Returns a representation of this gameroom for the game lobby
+        return {
+            capacity: `${this.playerCount}/${this.maxCapacity}`,
+            id: this.id,
+            name: this.name
+        }
+    }
+
+    userJoin(user) {
+        if (this.playerCount < 2) {
+            console.log(`User ${user.username} joined game ${this.name}`);
+
+            user.join(this.id);
+            user.room = this.id;
+            this.playerCount++;
+
+            if ((!this.player1 && !this.player2) || (!this.player1)) {
+                this.player1 = user;
+                user.playerNum = Status.player1;
+                return Status.player1;
+            } else if (!this.player2) {
+                this.player2 = user;
+                user.playerNum = Status.player2;
+                return Status.player2;
+            }
+        }
+    }
+
+    nextTurn() {
+        this.status = this.status === Status.player1 ? Status.player2 : Status.player1;
+        return this.status;
+    }
+
+    userLeave(user) {
+        console.log(`User ${user.username} left game ${this.name}`);
+        this.playerCount--;
+        user.room = null;
+        if (this.player1 === user) this.player1 = null;
+        else if (this.player2 === user) this.player2 = null;
+
+        if (this.gameStarted) {
+            // End game prematurely
+            let winner = user.playerNum === Status.player1 ? Status.player2 : Status.player1;
+
+            this.gameStarted = false;
+            this.gameOver(winner);
+            activeRooms.delete(this.id);
+        } else if (this.playerCount < 1) {
+            activeRooms.delete(this.id);
+        }
+    }
+
+    gameOver(winner) {
+        let loser = this.player1 === winner ? Status.player2 : Status.player1;
+        // TODO: add win and loss to databsae
+        // createUser(winner,...)
+        // createUser(loser, ...)
+        // addWin(...)
+        // addLoss(...)
     }
 }

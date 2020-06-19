@@ -25,9 +25,9 @@ export class SproutWorld {
     constructor(groups = [], sprout_configuration = null) {
         this.sprout_configuration = sprout_configuration;
         this.groups = groups;
-        this.lineGroup = new paper.Group();
+
+        this.pathGroup = new paper.Group(); // The paths that have been drawn so far
         this.points = [];
-        this.suggestedPath = new paper.Path();
 
         this.dragEnabled = false;
         this.dragSelection = false; // Whether or not a line is currently being drawn
@@ -35,27 +35,29 @@ export class SproutWorld {
         this.source = null; // Source node of the current line
         this.target = null; // Target node of the current line
 
-
         this.hoveredPoint = null; // A legal point that the mouse hovers on
         this.selectedPoints = []; // The points which are currently selected/pressed
-        this.currentLine = null; // The line currently being drawn by the player
+        this.currentPath = null; // The path currently being drawn by the player
+        this.suggestedPath = null; // Path that has been suggested by the server
+
     }
 
+    /*
+    * A point can be selected either by clicking on it or drawing a path over it.
+    * */
     select(point) {
-        console.log("select", point.data.id);
-        if (point.data.connections >= 3) return;
-        if (!this.source) {
-            this.source = point;
 
+        if (point.data.connections >= 3) return;
+        if (!this.source) { // New selection - start drawing path
+            this.source = point;
             if (!this.clickSelection) {
-                // Start drawing a path
-                this.currentLine = new paper.Path({
+                this.currentPath = new paper.Path({
                     segments: [point.position],
                     strokeColor: STROKE_COLOR,
                     strokeCap: 'round',
                     strokeJoin: 'round'
                 });
-                this.currentLine.sendToBack();
+                this.currentPath.sendToBack();
             }
         } else if (!this.target) this.target = point;
     }
@@ -68,26 +70,26 @@ export class SproutWorld {
         this.dragEnabled = false;
         this.clickSelection = false;
         this.selectedPoints = [];
-        if (this.currentLine) this.currentLine.remove();
+        if (this.currentPath) this.currentPath.remove();
     }
 
     submitSelection() {
-        if (this.currentLine.segments.length <= 2 && (!this.source || !this.target)) {
+        if (this.currentPath.segments.length <= 2 && (!this.source || !this.target)) {
+            console.log("diddly")
             this.resetSelection();
             return false;
         }
 
-        let line = this.currentLine;
-
         // Trim the path underneath the points
-        let sourcePoint = line.getCrossings(this.source)[0];
+        let path = this.currentPath;
+        let sourcePoint = path.getCrossings(this.source)[0];
         let i = this.source === this.target ? 1 : 0;
-        let targetPoint = line.getCrossings(this.target)[i];
-        line.curves[0].point1 = sourcePoint.point;
-        line.curves[line.curves.length - 1].point2 = targetPoint.point;
+        let targetPoint = path.getCrossings(this.target)[i];
+        path.curves[0].point1 = sourcePoint.point;
+        path.curves[path.curves.length - 1].point2 = targetPoint.point;
 
         // Send to server for validation
-        socket.emit('submitPath', line.exportJSON(), this.source.data.id, this.target.data.id, function (pathIsLegal, intersections = []) {
+        socket.emit('submitPath', path.exportJSON(), this.source.data.id, this.target.data.id, function (pathIsLegal, intersections = []) {
             if (pathIsLegal) console.log("Path legal");
             else console.log("Path illegal");
         });
@@ -128,7 +130,7 @@ export class SproutWorld {
                 _this.select(point);
                 _this.dragSelection = true;
             }
-            if (_this.dragEnabled) _this.currentLine.add(e.point);
+            if (_this.dragEnabled) _this.currentPath.add(e.point);
         };
 
         point.onMouseDown = function () {
@@ -163,7 +165,7 @@ export class SproutWorld {
                     _this.dragEnabled = false;
                 } else { // Select the point
                     _this.dragEnabled = false;
-                    _this.currentLine.add(point.position);
+                    _this.currentPath.add(point.position);
                     _this.select(point);
                     _this.selectedPoints.push(point);
                 }
@@ -188,20 +190,5 @@ export class SproutWorld {
             }
         };
         return point;
-    }
-
-
-    exportWorld() {
-        //alert("Exporting feature not done");
-        for (const group of this.groups) {
-            console.log(group.exportJSON());
-        }
-    }
-
-    importWorld() {
-        alert("Importing feature not done");
-        for (const group of this.groups) {
-            alert("NOT DONE");
-        }
     }
 }

@@ -1,5 +1,6 @@
 let socket = io(window.location.href);
 let username;
+let playerNum = null;
 const viewIDs = ['main_menu', 'game', 'settings','scoreboard'];
 
 socket.on('connect', function () {
