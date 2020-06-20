@@ -89,6 +89,8 @@ io.sockets.on('connect', function (socket) {
 
             return true;
         }
+
+
     });
 
     // TODO: Only emit to lobby socket
@@ -332,7 +334,7 @@ class GameRoom {
     }
 
     init(mapConfiguration = null, numPoints = 10) {
-        // this.collisionGrid = new CollisionGrid(8, this, new paper.Size(750, 472));
+        // this.collisionGrid = new CollisionGrid(10, this, new paper.Size(750, 472));
 
         let dotPoints = [];
         if (!mapConfiguration) {
@@ -434,7 +436,6 @@ class GameRoom {
 
         path1.addTo(this.lineGroup);
         path2.addTo(this.lineGroup);
-        path.addTo(this.lineGroup); // FIXME?
         this.points[pointId] = newPoint;
 
         // Return the unsplit path and the new poin
@@ -525,37 +526,6 @@ class GameRoom {
 
         }
         return true;
-    }
-
-    suggestPath(p1, p2) {
-        if (this.possibleMove(p1.center, p2.center)) {
-            let initCellSize = this.collisionGrid.cell_size;
-            let cellSize = initCellSize;
-            let suggest = this.collisionGrid.u_Astar(p1, p2);
-            while (!suggest) {
-                cellSize = cellSize / 2;
-                this.collisionGrid = new CollisionGrid(cellSize, this, new paper.Size(750, 472));
-                for (let line of this.lineGroup.children) {
-                    this.collisionGrid.t_insert_line(line.curves, line);
-                }
-                for (let point of this.points) {
-                    this.collisionGrid.t_insert_rectangle(point.bounds, point);
-                }
-                suggest = this.collisionGrid.u_Astar(p1, p2);
-            }
-            this.collisionGrid = new CollisionGrid(initCellSize, this, new paper.Size(750, 472));
-            for (let line of this.lineGroup.children) {
-                this.collisionGrid.t_insert_line(line.curves, line);
-            }
-
-            for (let point of this.points) {
-                this.collisionGrid.t_insert_rectangle(point.bounds, point);
-            }
-            suggest.strokeColor = "red";
-            return suggest;
-        } else {
-            return new paper.Path();
-        }
     }
 
     lobbyRepresentation() {

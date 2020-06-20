@@ -30,8 +30,10 @@ $(function () {
 
         for (let i = 0; i < initialPoints.length; i++) {
             let pos = new paper.Point(initialPoints[i][1], initialPoints[i][2]);
-            world.addPoint(i, pos, 0)
+            let p = world.addPoint(i, pos, 0);
+            world.collisionGrid.t_insert_rectangle(p.bounds, p);
         }
+        world.collisionGrid.v_update();
 
         paper.view.onFrame = function () {
             // Update the colors of the points
@@ -103,14 +105,16 @@ $(function () {
         } else if (world.clickSelection) {
 
             if (world.source && world.target) {
-                let from = world.source.data.id;
-                let to = world.target.data.id;
+                let p1 = world.source;
+                let p2 = world.target;
+                let from = p1.data.id;
+                let to = p2.data.id;
 
                 // Ask server to suggest a valid path between the selected points
                 socket.emit('suggestPath', from, to, function (possible) {
 
                     if (possible) {
-                        console.log("Possible");
+                        world.suggestPath(p1, p2);
                     } else console.log("Impossible");
 
                 });
