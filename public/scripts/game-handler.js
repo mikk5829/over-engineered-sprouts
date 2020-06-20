@@ -33,7 +33,6 @@ $(function () {
             let p = world.addPoint(i, pos, 0);
             world.collisionGrid.t_insert_rectangle(p.bounds, p);
         }
-        world.collisionGrid.v_update();
 
         paper.view.onFrame = function () {
             // Update the colors of the points
@@ -62,12 +61,14 @@ $(function () {
         path.strokeCap = 'round';
         path.strokeJoin = 'round';
         path.addTo(world.pathGroup);
+        world.collisionGrid.t_insert_line(path.curves, path);
 
         world.points[fromId].data.connections++;
         world.points[toId].data.connections++;
 
         let pos = new paper.Point(pointData.center[1], pointData.center[2]);
-        world.addPoint(pointData.id, pos, 2)
+        let p = world.addPoint(pointData.id, pos, 2)
+        world.collisionGrid.t_insert_rectangle(p.bounds, p);
     });
 
     socket.on('gameOver', function (winner, loser) {

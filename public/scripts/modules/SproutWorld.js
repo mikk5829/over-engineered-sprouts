@@ -287,7 +287,6 @@ export class SproutWorld {
 
     suggestPath(p1, p2) {
         // return this.possibleMove(p1.position, p2.position);
-        //TODO: Known bug: Første path tager ikke altid hensyn til nye streger. Streger er nok bare ikke tilføjet til CG. Evt. bare generer et nyt ved første forsøg
         if (this.suggestedPath)
             this.suggestedPath.remove();
         let initCellSize = this.collisionGrid.cell_size;
