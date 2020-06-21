@@ -8,8 +8,8 @@ require('dotenv').config();
  * @namespace Routes
  *
  */
-router.get('/', function (req, res, next) {
-    var db = simpleDb.getAllScores();
+router.get('/', async(req, res, next) => {
+    var db = await simpleDb.getAllScores();
     res.render('index', {title: 'Sprouts', results: db});
 });
 
