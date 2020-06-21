@@ -183,6 +183,8 @@ io.sockets.on('connect', function (socket) {
                     socket.join(id.toString(), () => {
                         activeRooms[id].playerCount++;
                         spawnWorldForPlayer(id);
+                        // remove pause overlay from game
+                        io.sockets.in(socket.room).emit('game status', {pause:false});
                         // Responds to clients and display lobby/world to them
                         io.in(id).emit('lobby join', 'You may now enter the game.. Enjoy!', true);
                     }); // fixme: .room necessary?

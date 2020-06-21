@@ -1,12 +1,20 @@
 //const cookieParser = require("cookie-parser");
 
-import {worldInLocalStorage} from "./modules/Utility.js";
+import {worldInLocalStorage,disableOverlay,enableOverlay} from "./modules/Utility.js";
 $(function () {
     let $msgField = $('#chatMsgField');
 
     socket.on('lobby join', function(msg, join_bool) {
         if (join_bool) {
             $.changeView("game");
+        }
+    });
+
+    socket.on('game status', function(status_object) {
+        if(status_object.pause) {
+            enableOverlay("Game paused");
+        } else {
+            disableOverlay();
         }
     });
 

@@ -1,5 +1,3 @@
-import {disableOverlay} from "./modules/Utility.js";
-
 let socket = io(window.location.href);
 let username;
 const viewIDs = ['main_menu', 'game', 'settings','scoreboard'];
@@ -12,7 +10,8 @@ socket.on('connect', function () {
         username = response;
         setCookie("playerName", username);
         console.log("Joined as", username);
-        disableOverlay(); // Hide overlay when player is connected correctly
+        $('#overlay').hide();// Hide overlay when player is connected correctly
+        $('#overlay-text').text('');
     });
 
     // Stuff to do when main menu is visible and socket is connected:
