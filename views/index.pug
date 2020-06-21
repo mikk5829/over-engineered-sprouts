@@ -3,10 +3,10 @@ extends layout
 block append scripts
     script(src='/socket.io/socket.io.js')
     script(type='text/javascript' src='scripts/webelements.js')
-    script(type="text/javascript" src="scripts/lobby-handler.js")
+    script(type='module' src="scripts/lobby-handler.js")
     script(type='module' src='scripts/game-handler.js')
     script(type='module' src='scripts/customize-menu.js')
-    script(type="text/javascript" src="scripts/client.js")
+    script(type='text/javascript' src="scripts/client.js")
 
 
 block content

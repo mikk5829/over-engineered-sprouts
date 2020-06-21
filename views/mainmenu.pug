@@ -1,6 +1,5 @@
 // The main content of the page
 div(class="flex-container")#main_menu
-
    // Buttons on left side
    div(style="position:relative;bottom:5%;")
        a(class='button')#importBtn Import
@@ -8,9 +7,12 @@ div(class="flex-container")#main_menu
        a(class='button')#generateBtn Generate
        a(class='button')#settingsBtn Settings
        a(class='button')#scoreboardBtn Scoreboard
-        a(class='button', href="/doc") Documentation
+       a(class='button', href="/doc") Documentation
+       a(class='button' hidden=true)#unloadGameConfiguration Unload map
    div
        // Table containing a list of games
+       p#welcomeUser
+       p#loadedGameConfiguration
        table(class="w3-table w3-hoverable")#rooms
            thead
                tr
@@ -20,9 +22,3 @@ div(class="flex-container")#main_menu
        div(class="flex-container" style="display:inline-flex; width:70%")
            a(class='button')#quickplayBtn Quickplay
            a(class='button')#newGameBtn New Game
-   div(title="dialogBox")#dialog
-       p
-   div(class="infoBox")#infoBox
-        div(class="infoBox-content")#infoBoxContent
-            p#infoBoxP
-            button(onclick='document.getElementById("infoBox").style.display="none"')#infoBoxOkay okay
