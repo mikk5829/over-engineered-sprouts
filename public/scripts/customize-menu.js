@@ -47,6 +47,7 @@ $(function () {
                 console.log(playerName,username,response);
                 username = response ? playerName : username;
                 setCookie("playerName", username);
+                $('#welcomeUser').text("Welcome " + getCookie("playerName"));
             });
         }
     })
