@@ -71,7 +71,7 @@ $(function () {
         world.collisionGrid.t_insert_rectangle(p.bounds, p);
     });
 
-    socket.on('gameOver', function (winner, loser) {
+    socket.on('gameOver', function (winner) {
         if (playerNum === winner) alert('You won!');
         else alert('You lost...');
         $.changeView("main_menu");

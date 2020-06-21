@@ -10,7 +10,7 @@ const SEL_POINT_COLOR = 'Yellow';
 const HOVER_POINT_COLOR = 'CornflowerBlue';
 const STROKE_COLOR = 'Indigo';
 
-const POINT_SIZE = 10;
+const POINT_SIZE = 5;
 export {POINT_COLOR, SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR, POINT_SIZE}
 
 
@@ -41,7 +41,7 @@ export class SproutWorld {
         this.selectedPoints = []; // The points which are currently selected/pressed
         this.currentPath = null; // The path currently being drawn by the player
         this.suggestedPath = null; // Path that has been suggested by the server
-        this.collisionGrid = new CollisionGrid(10, this, new paper.Size(750, 472))
+        this.collisionGrid = new CollisionGrid(POINT_SIZE, this, new paper.Size(750, 472))
 
     }
 
@@ -77,7 +77,7 @@ export class SproutWorld {
     }
 
     submitSelection() {
-        if (this.currentPath.segments.length <= 2 && (!this.source || !this.target)) {
+        if (this.currentPath.segments.length <= 2 || (!this.source || !this.target)) {
             console.log("diddly")
             this.resetSelection();
             return false;

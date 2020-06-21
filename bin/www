@@ -61,33 +61,30 @@ io.sockets.on('connect', function (socket) {
 
     // Client has submitted a path -> server will validate the path
     socket.on('submitPath', (pathJson, fromId, toId, fn) => {
-        console.log(`${socket.username} in game ${socket.room} submits a path`);
-        let game = activeRooms.get(socket.room);
-        let from = game.points[fromId];
-        let to = game.points[toId];
+        let gameRoom = activeRooms.get(socket.room);
+        console.log(`${socket.username} in game ${gameRoom.name} submits a path`);
+
+
+        let from = gameRoom.points[fromId];
+        let to = gameRoom.points[toId];
         let path = new paper.Path().importJSON(pathJson);
-        // game.collisionGrid.t_insert_line(path.curves, path);
 
+        // Check if the move is legal
+        if (!gameRoom.isLegal(from, to, path)) fn(false); // Callback - path not accepted
 
-        if (!game.isLegal(from, to, path)) {
-            fn(false); // Callback - path not accepted
-            // path.remove();
-            return false;
-        } else {
+        else {
             fn(true); // Callback - path accepted
 
-            let resp = game.addPath(from, to, path);
-            io.sockets.in(socket.room).emit('updateGame', from.data.id, to.data.id, resp.path, resp.pointData, game.nextTurn());
-            //path.remove();
+            let resp = gameRoom.addPath(from, to, path);
+            io.sockets.in(socket.room).emit('updateGame', from.data.id, to.data.id, resp.path, resp.pointData, gameRoom.nextTurn());
 
-            // TODO - check for gameover
-            let gameover = false;
+
+            let gameover = gameRoom.isGameOver();
+            console.log(gameover, socket.playerNum);
             if (gameover) {
-                game.gameOver(socket.playerNum);
-                io.sockets.in(socket.room).emit('gameOver', winner, loser);
+                gameRoom.gameOver(socket.playerNum);
+                io.sockets.in(socket.room).emit('gameOver', socket.playerNum);
             }
-
-            return true;
         }
 
 
@@ -127,13 +124,9 @@ io.sockets.on('connect', function (socket) {
 
     socket.on('suggestPath', (from, to, fn) => {
         let game = activeRooms.get(socket.room);
-        console.log("IDs:", game.points[from].data.id, game.points[to].data.id);
-        console.log("Positions:", game.points[from].position, game.points[to].position);
         let pos1 = game.points[from].position;
         let pos2 = game.points[to].position;
         fn(game.possibleMove(pos1, pos2));
-        // let suggestedPath = game.suggestPath(game.points[from], game.points[to]);
-        // fn(suggestedPath.exportJSON());
     });
 
     socket.on('changeUsername', (requestedUsername, fn) => {
@@ -357,7 +350,7 @@ class GameRoom {
     createPoint(pos, id, connections, edges) {
         let point = new paper.Path.Circle({
             center: pos,
-            radius: 10,
+            radius: 5,
         });
         point.data = {
             id: id,
@@ -375,7 +368,6 @@ class GameRoom {
         };
 
         point.dfs = function (toFind) {
-            console.log("dfs on point", point.data.id)
             //Marker som søgende
             point.data.status = "seeking";
             //Kør dfs på alle naboer
@@ -479,7 +471,6 @@ class GameRoom {
                 p.dfs(toFind);
             }
         }
-        console.log("tofind length:", toFind.length)
         let cycles = [];
 
         for (let t of toFind) {
@@ -488,7 +479,6 @@ class GameRoom {
             let loop = [t];
             let p0 = t.data.vertices[0];
             let p1 = t.data.vertices[1];
-            console.log(p0.data.id, p1.data.id)
             while (p0.data.root !== p0) {
                 paths0.push(p0.data.rootEdge);
                 p0 = p0.data.root;
@@ -579,6 +569,36 @@ class GameRoom {
         } else if (this.playerCount < 1) {
             activeRooms.delete(this.id);
         }
+    }
+
+    isGameOver() {
+        /*
+        * Gameover unless:
+        * - A point with <2 connections can loop to itself
+        * - A point with <3 connections has a possibleMove to another point with <3 connections (not itself)
+        * */
+
+        /*
+       * If there is a point with zero or one connections, it can loop back to itself.
+       * EDGE CASE: If paths have been drawn very close to the point so a legal loop cannot be drawn.
+       * */
+        if (this.points.some(p => p.data.connections < 2)) return false;
+
+        let twoConnections = this.points.filter(p => p.data.connections === 2);
+
+        /*
+        * If there is 0 or 1 point with 2 connections, and 0 points with <2 connections,
+        * no legal paths can be drawn --> game is over.
+        * */
+        if (twoConnections.length <= 1) return true;
+
+        /*
+        * Check if a path can be drawn between any of the points with two connections.
+        * */
+        for (let point of twoConnections) {
+            if (twoConnections.some(p => p !== point && this.possibleMove(point.position, p.position))) return false;
+        }
+        return true;
     }
 
     gameOver(winner) {
