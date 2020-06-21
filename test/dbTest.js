@@ -55,7 +55,7 @@ describe('database testing', async function() {
     context('Get users', function() {
         it('should have at least one user', async function() {
             let scores = await db.getAllScores()
-            expect(Object.keys(scores).length).to.be.above(1)
+            expect(Object.keys(scores).length).to.be.at.least(1)
         })
     })
 
