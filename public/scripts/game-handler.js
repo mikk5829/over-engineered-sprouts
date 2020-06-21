@@ -10,7 +10,6 @@ let world;
 
 function getCanvas() {
     return document.getElementById("sproutGameCanvas");
-    // return $('#sproutGameCanvas'); //fixme virker ikke?
 }
 
 function reset() {
@@ -20,18 +19,16 @@ function reset() {
 
 paper.install(window); // Make the paper scope global
 $(function () {
-    socket.on("startGame", function (initialPoints) {
-        console.log(getCanvas().width, getCanvas().height);
-        console.log("startGame", initialPoints);
-
+    socket.on("startGame", function (initialPoints, status) {
         paper.setup(getCanvas());
+        paper.project.activeLayer.locked = status !== playerNum;
         world = new SproutWorld();
 
         for (let i = 0; i < initialPoints.length; i++) {
             let pos = new paper.Point(initialPoints[i][1], initialPoints[i][2]);
-            world.addPoint(i, pos, 0)
+            let p = world.addPoint(i, pos, 0);
+            world.collisionGrid.t_insert_rectangle(p.bounds, p);
         }
-
         paper.view.onFrame = function () {
             // Update the colors of the points
 
@@ -46,54 +43,53 @@ $(function () {
             }
 
             if (world.source) world.source.fillColor = SEL_POINT_COLOR;
-        }
+        };
+    });
 
+    socket.on('updateGame', function (fromId, toId, pathJson, pointData, status) {
+        paper.project.activeLayer.locked = status !== playerNum;
 
+        console.log("Received game update from server");
+
+        let path = new paper.Path().importJSON(pathJson);
+        path.strokeColor = STROKE_COLOR;
+        path.strokeCap = 'round';
+        path.strokeJoin = 'round';
+        path.addTo(world.pathGroup);
+        world.collisionGrid.t_insert_line(path.curves, path);
+
+        world.points[fromId].data.connections++;
+        world.points[toId].data.connections++;
+
+        let pos = new paper.Point(pointData.center[1], pointData.center[2]);
+        let p = world.addPoint(pointData.id, pos, 2)
+        world.collisionGrid.t_insert_rectangle(p.bounds, p);
+    });
+
+    socket.on('gameOver', function (winner){
+        if (playerNum === winner) alert('You won!');
+        else alert('You lost...');
+        paper.project.activeLayer.removeChildren();
+        paper.view.remove();
+        $.changeView("main_menu");
+        world = undefined;
     });
 
     //Adds a new chat message to the chatlog
     socket.on('updateChat', function (timestamp, sender, msg) {
         let time = new Date(timestamp).toTimeString().slice(0, 5);
         let sent = `(${time}) ${sender}:`;
+        console.log(`Received chat message: ${sent} ${msg}`);
         $('#messages > tbody:last-child').append('<tr> <th class="w3-left-align">' + sent + '</th><th class="w3-right-align">' + msg + ' </th></tr>');
-    });
-
-    // FIXME
-    // let game_resolution = getResolutionFromCookie("gameResolution");
-    // ${'.gameContainer'}.css({"width": str(game_resolution.res_x + "px"),"height":str(game_resolution.res_y + "px")});
-    // $gameDiv.style.width = game_resolution.res_x + "px"; $gameDiv.style.height = game_resolution.res_y + "px";
-
-    /*  paper.setup(getCanvas());
-
-      let world = new SproutWorld();
-  let map_configuration = worldInLocalStorage();
-    world.initializeMap(map_configuration, 10);
-  */
-    socket.on('updateGame', function (fromId, toId, pathJson, pointData) {
-        console.log("Received game update from server");
-
-        let path = new paper.Path().importJSON(pathJson);
-        path.simplify(3);
-        path.strokeColor = STROKE_COLOR;
-        path.strokeCap = 'round';
-        path.strokeJoin = 'round';
-        path.addTo(world.lineGroup);
-
-        world.points[fromId].data.connections++;
-        world.points[toId].data.connections++;
-
-        let pos = new paper.Point(pointData.center[1], pointData.center[2]);
-        world.addPoint(pointData.id, pos, 2)
     });
 
     let tool = new paper.Tool();
 
     tool.onMouseDown = function onMouseDown() {
-        world.suggestedPath.remove();
+        if (world.suggestedPath) world.suggestedPath.remove();
     };
 
     tool.onMouseUp = function onMouseUp(e) {
-        console.log(`tool.onMouseUp, source ${world.source}, target ${world.target}\n`);
 
         if (!world.clickSelection) {
             // Reset point colors
@@ -104,29 +100,23 @@ $(function () {
             if (world.target) world.submitSelection();
             else if (world.source) world.resetSelection();
 
-            // TODO move to serverside, fix ids
         } else if (world.clickSelection) {
+
             if (world.source && world.target) {
-                console.log(`Clickselection: source ${world.source.data.id}, target ${world.target.data.id}`);
-                let from = world.source.data.id;
-                let to = world.target.data.id;
-                socket.emit('suggestPath', from, to, function (pathJson) {
-                    if (pathJson) {
-                        let path = new paper.Path().importJSON(pathJson);
-                        path.strokeColor = 'red';
-                        path.strokeCap = 'round';
-                        path.strokeJoin = 'round';
-                        world.suggestedPath = path;
-                    }
+                let p1 = world.source;
+                let p2 = world.target;
+                let from = p1.data.id;
+                let to = p2.data.id;
+
+                // Ask server to suggest a valid path between the selected points
+                socket.emit('suggestPath', from, to, function (possible) {
+
+                    if (possible) {
+                        world.suggestPath(p1, p2);
+                    } else console.log("Impossible");
 
                 });
-
-                // FIXME submit clickselection
-                // if (world.possibleMove(world.source, world.target))world.findPath(world.source, world.target);
-
-                console.log("resetselection clicksel", world.source, world.target);
                 world.resetSelection();
-
             } else if (!world.points.includes(e.item)) world.resetSelection(); // Cancel click-selection
         }
     };

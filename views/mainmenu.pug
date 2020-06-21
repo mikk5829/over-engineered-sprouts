@@ -8,7 +8,7 @@ div(class="flex-container")#main_menu
        a(class='button')#generateBtn Generate
        a(class='button')#settingsBtn Settings
        a(class='button')#scoreboardBtn Scoreboard
-        a(class='button', href="/doc") Documentation
+       a(class='button', href="/doc") Documentation
    div
        // Table containing a list of games
        table(class="w3-table w3-hoverable")#rooms
@@ -20,6 +20,8 @@ div(class="flex-container")#main_menu
        div(class="flex-container" style="display:inline-flex; width:70%")
            a(class='button')#quickplayBtn Quickplay
            a(class='button')#newGameBtn New Game
+   div(title="dialogBox")#dialog
+       p
    div(class="infoBox")#infoBox
         div(class="infoBox-content")#infoBoxContent
             p#infoBoxP

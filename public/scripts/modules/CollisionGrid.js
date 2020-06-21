@@ -2,13 +2,8 @@
 // connects with a set of objects.
 // import {SproutWorld} from '../public/scripts/modules/SproutWorld.js';
 
-var math = require('mathjs');
-var paper = require('paper');
-
-
- class CollisionGrid {
+export class CollisionGrid {
     constructor(cell_size, world, gridSize) {
-        console.log("CollisionGrid Created!");
         this.world = world;
         this.cell_size = cell_size;
         this.contents = {};
@@ -21,7 +16,7 @@ var paper = require('paper');
     }
 
     t_pointToTile(point) {
-        return { x: Math.floor(point.x / this.cell_size), y: Math.floor(dot.y / this.cell_size) };
+        return { x: Math.floor(point.x / this.cell_size), y: Math.floor(point.y / this.cell_size) };
     }
     t_tileToPoint(tile) {
         return { x: Math.floor(tile.x * this.cell_size), y: Math.floor(tile.y * this.cell_size) };
@@ -29,53 +24,6 @@ var paper = require('paper');
 
     randomIntFromInterval(min, max) {
         return Math.floor(Math.random() * (max - min + 1) + min);
-    }
-
-    g_randomPoints(dot_count, tile_size) {
-        let totalTiles = Math.floor(this.gridSize.width / tile_size) * Math.floor(this.gridSize.height / tile_size);
-        let tile_matrix = math.zeros(Math.floor(this.gridSize.width / tile_size), Math.floor(this.gridSize.height / tile_size), 'sparse');
-
-        // Set edge tiles to 1 to prevent dots being placed partially outside game canvas
-        let tile_matrix_width = Math.floor(this.gridSize.width / tile_size);
-        let tile_matrix_height = Math.floor(this.gridSize.height / tile_size);
-        tile_matrix.subset(math.index(0,math.range(0,tile_matrix_height)),math.ones(tile_matrix_height));
-        tile_matrix.subset(math.index(tile_matrix_width-1,math.range(0,tile_matrix_height)),math.ones(tile_matrix_height));
-        tile_matrix.subset(math.index(math.range(0,tile_matrix_width),0),math.ones(tile_matrix_width));
-        tile_matrix.subset(math.index(math.range(0,tile_matrix_width),tile_matrix_height-1),math.ones(tile_matrix_width));
-
-        if (dot_count > totalTiles) {
-            console.log("dot_count > totalTiles... t_random won't be able to find enough random tiles!");
-        }
-
-        let getIndices = (value) => {
-            var indices = [];
-            tile_matrix.forEach( (val, index, matrix) => {
-                if (val === value) {
-                    indices.push(index);
-                }
-            });
-            return indices;
-        }
-
-        let updateMatrix = (index, value) => {
-            console.log(tile_matrix)
-            tile_matrix = tile_matrix.set(index, value);
-        }
-
-        let getRandomIndex = (value) => {
-            var indices = getIndices(value);
-            var randomIndex = Math.floor(Math.random() * indices.length);
-            updateMatrix(indices[randomIndex], 1);
-            return indices[randomIndex];
-        }
-
-        let permuted = [];
-        for (var i = 0; i < dot_count; i++) {
-            let random_index = getRandomIndex(0);
-            var dot_point = new paper.Point(random_index[0] * tile_size, random_index[1] * tile_size);
-            permuted.push(dot_point);
-        }
-        return permuted;
     }
 
 // Return tile indices overlapping hitbox (Hash function)
@@ -116,8 +64,6 @@ var paper = require('paper');
     }
 
     t_insert_line(curves, object) {
-        console.log("curves");
-        console.log(curves);
         for (let i = 0; i < curves.length; i++) {
             for (let j = 0; j < curves[i].length; j++) {
                 let location = curves[i].getLocationAt(j);
@@ -174,7 +120,7 @@ var paper = require('paper');
 
     u_object_of(key, obj){
         for (let o of this.contents[key]){
-            if (o.object.center === obj.center)
+            if (o.object === obj)
                 return true;
         }
         return false;
@@ -188,6 +134,14 @@ var paper = require('paper');
         y = y*this.cell_size;
         y += 0.5*this.cell_size;
         return new paper.Point(x, y);
+    }
+
+    u_valid_point(n, start, goal, best_pick, grid){
+        let unexplored = grid[n] === undefined;
+        let legal = (this.contents[n] === undefined || this.u_object_of(n, start) || this.u_object_of(n, goal));
+        let inside = ((best_pick.dist > 3) || this.world.possibleMove(this.u_middle(n), goal.center));
+        let in_map = this.u_middle(n).x < this.gridSize.width && this.u_middle(n).x > 0 && this.u_middle(n).y < this.gridSize.height && this.u_middle(n).y > 0;
+        return unexplored && in_map && inside && legal;
     }
 
     u_Astar(start, goal){
@@ -212,8 +166,14 @@ var paper = require('paper');
             grid[best_pick.tile] = best_pick;
             //For each neighbour, if it is traversible and unexplored, add it
             for (let n of this.t_getNeighbours(best_pick.tile)){
-                if (grid[n] === undefined && (this.contents[n] === undefined || this.u_object_of(n, start) || this.u_object_of(n, goal)) && (best_pick.dist > 3 || this.world.possibleMove(this.u_middle(n), goal.center)))
-                    horizon.push({tile: n, f:this.u_dist(n, goal_tile), parent: best_pick.tile, dist: best_pick.dist + 1.0});
+                if (this.u_valid_point(n, start, goal, best_pick, grid)) {
+                    horizon.push({
+                        tile: n,
+                        f: this.u_dist(n, goal_tile),
+                        parent: best_pick.tile,
+                        dist: best_pick.dist + 1.0
+                    });
+                }
             }
         }
         if (grid[goal_tile] !== undefined) {
@@ -230,78 +190,3 @@ var paper = require('paper');
     }
 
 }
-
-/*
- 
-         let randomFromAllowedRange = () => {
-            let possible = [];
-            allowedRanges.forEach((range) => {
-                let random_x = this.randomIntFromInterval(range.x_range.from, range.x_range.to);
-                let random_y = this.randomIntFromInterval(range.y_range.from, range.y_range.to);
-                possible.push({ x: random_x, y: random_y });
-            });
-            let randomIndex = Math.floor(Math.random() * possible.length);
-            return possible[randomIndex];
-        }
-
-        let occupyRange = (tile_coord) => {
-            let x_range = {
-                from: (tile_coord.x - safeSpace),
-                to: (tile_coord.x + safeSpace)
-            };
-            let x_range = {
-                from: (tile_coord.y - safeSpace),
-                to: (tile_coord.y + safeSpace)
-            };
-            return { x_range: x_range, y_range: y_range};
-        }
-
-
-        let notInUsedRanges = (occ_range) => {
-            if (occRanges.includes(occ_range)) {
-                return false;
-            } else {
-                return true;
-            }
-        }
-
-
-let randomFromMatrix = () => {
-            tile_matrix.forEach(function (value, index, matrix) {
-                console.log(index);
-                if (math.isZero(value)) {
-                    indices.push(index);
-                    console.log(indices);
-                }
-            });
-            if (indices.length === 0) console.log("No available places to put new dot..");
-            return indices[Math.floor(Math.random() * indices.length)];
-        }
-
-        let updateMatrix = (tile_coord) => {
-            let x_range = math.range(tile_coord.x - safeSpace, tile_coord.x + safeSpace);
-            let y_range = math.range(tile_coord.y - safeSpace, tile_coord.y + safeSpace);
-
-            let inRange = (range, check) => {
-                range.forEach(val => {
-                    if (val === check) {
-                        return true;
-                    }
-                });
-                return false;
-            }
-
-            tile_matrix.forEach(function (value, index, matrix) {
-                indices = [];
-                if (inRange(x_range, index[0]) && inRange(y_range, index[1])) {
-                    value = 1;
-                }
-            });
-            //matrix = matrix.set(math.index(math.range(tile_coord.x - safeSpace, tile_coord.x + safeSpace), math.range(tile_coord.y - safeSpace, tile_coord.y + safeSpace)), 1);
-        }
- 
- 
- 
- */
-
-module.exports=CollisionGrid;

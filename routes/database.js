@@ -1,6 +1,6 @@
 var express = require('express')
 var router = express.Router()
-const db = require('../server/db/simple-db')
+const db = require('../server/db/simple-db');
 
 /**
  * API for manipulating db using http-requests

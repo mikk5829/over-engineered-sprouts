@@ -4,6 +4,7 @@ var expect = require('chai').expect;
 
 describe('User', async function() {
     let user_name = "testNormalUser"
+    let new_user_name = "testNormalUser2"
 
     context('Normal user', function() {
         it('should exist', async function() {
@@ -58,9 +59,20 @@ describe('User', async function() {
         })
     })
 
+    context('Change name', function() {
+        it('should change name in db and have same score', async function() {
+            let user = await db.getUser(user_name)
+            await db.changeUsername(user_name,new_user_name)
+            let new_user = await db.getUser(new_user_name)
+            expect(user.losses).to.equal(new_user.losses)
+            expect(user.wins).to.equal(new_user.wins)
+            expect(user.name).to.not.equal(new_user.name)
+        })
+    })
+
     context('Remove test user', function() {
         it('should be undefined', async function() {
-            let user = await db.removeUser(user_name)
+            let user = await db.removeUser(new_user_name)
             expect(user.name).to.be.undefined
             expect(user.wins).to.be.undefined
             expect(user.losses).to.be.undefined
