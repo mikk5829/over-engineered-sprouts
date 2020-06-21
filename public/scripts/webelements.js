@@ -6,6 +6,16 @@ $(function () {
             if (viewName !== newView) $('#' + viewName).addClass('hidden').hide();
         }
     };
+
+    $.enableOverlay = function (msg = "Paused") {
+        $('#overlay').show();
+        $('#overlay-text').text(msg);
+    };
+
+    $.disableOverlay = function () {
+        $('#overlay').hide();
+        $('#overlay-text').text('');
+    };
 });
 
 /**

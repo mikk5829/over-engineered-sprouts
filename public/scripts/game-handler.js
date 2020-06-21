@@ -29,6 +29,18 @@ paper.install(window);
  * @memberOf Game Handler
  */
 $(function () {
+
+    $.startSimulation = function(initialPoints) {
+        paper.setup(getCanvas());
+        paper.project.activeLayer.locked = status !== playerNum;
+        world = new SproutWorld();
+        for (let i = 0; i < initialPoints.length; i++) {
+            let pos = new paper.Point(initialPoints[i][1], initialPoints[i][2]);
+            let p = world.addPoint(i, pos, 0);
+            world.collisionGrid.t_insert_rectangle(p.bounds, p);
+        }
+    };
+
     socket.on("startGame", function (initialPoints, status) {
         paper.setup(getCanvas());
         paper.project.activeLayer.locked = status !== playerNum;
@@ -39,6 +51,8 @@ $(function () {
             let p = world.addPoint(i, pos, 0);
             world.collisionGrid.t_insert_rectangle(p.bounds, p);
         }
+
+        $.disableOverlay();
         paper.view.onFrame = function () {
             // Update the colors of the points
 
@@ -123,10 +137,15 @@ $(function () {
 
                 // Ask server to suggest a valid path between the selected points
                 socket.emit('suggestPath', from, to, function (possible) {
-
                     if (possible) {
                         world.suggestPath(p1, p2);
                     } else console.log("Impossible");
+                    /*for (let c of response.cycles) {
+                        let p = new paper.Path().importJSON(c);
+                        p.fillColor = "green";
+                        p.opacity = 0.1;
+                        p.sendToBack();
+                    }*/
 
                 });
                 world.resetSelection();

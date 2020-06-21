@@ -194,6 +194,19 @@ io.sockets.on('connect', function (socket) {
         io.sockets.in(socket.room).emit('updateChat', timestamp, socket.username, msg);
     });
 
+    socket.on("joinSimulation", function (totalDots, fn) {
+        console.log(totalDots)
+        let id = makeid(6);
+        let game = new GameRoom(id, String(id));
+        activeRooms.set(id, game);
+
+        let pointPositions = [];
+        for (let point of game.init(null, totalDots)) {
+            pointPositions.push(point.position);
+        }
+        fn(true, pointPositions);
+    });
+
     socket.on('disconnect', function () {
         console.log(`${socket.username} disconnected`);
         if (activeRooms.has(socket.room)) {
@@ -490,7 +503,7 @@ class GameRoom {
         for (let t of toFind) {
             let paths0 = [];
             let paths1 = [];
-            let loop = [t];
+            let loop = [t.clone()];
             let p0 = t.data.vertices[0];
             let p1 = t.data.vertices[1];
             while (p0.data.root !== p0) {
@@ -513,11 +526,14 @@ class GameRoom {
         Sometimes the "parent edge" from DFS will be reversed and create an area outside the cycle. Check if direction is correct?
         If one large cycle is also split into 2 smaller cycles, one of them will be able to access all points on the other, but not vice versa.
          */
-        let tot = new paper.Path();
+        let total = new paper.Path();
+
 
         let cycles = this.getCycles();
         for (let c of cycles) {
-            let total = new paper.Path();
+            total = new paper.Path();
+            c[0].reverse();
+
             for (let p of c) {
                 for (let s of p.segments)
                     total.add(s);
@@ -529,7 +545,7 @@ class GameRoom {
             // tot.addSegments(total.segments);
 
         }
-        return true;
+        return true
     }
 
     lobbyRepresentation() {
