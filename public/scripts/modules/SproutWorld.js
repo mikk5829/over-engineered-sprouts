@@ -220,6 +220,12 @@ export class SproutWorld {
         return point;
     }
 
+    /**
+     * Get all cycles as array of Path objects
+     * @memberof SproutWorld
+     * @returns {Array} All cycles gathered into singular Path objects
+     **/
+
     getCycles() {
         //TODO: Sørg for at alle edges "vender" rigtigt
         //TODO: Ikke alle kanter i et loop bliver tilføjet selv om loopet er opdaget
@@ -235,6 +241,7 @@ export class SproutWorld {
                 p.dfs(toFind);
             }
         }
+        console.log("tofind length:", toFind.length);
         let cycles = [];
 
         for (let t of toFind) {
@@ -258,12 +265,20 @@ export class SproutWorld {
         return cycles;
     }
 
-    possibleMove(p1, p2, debug = false) {
+
+    /**
+     * Determines if a move between p1 and p2 is possible
+     * @param p1 First point to check
+     * @param p2 Second point to check
+     * @memberof SproutWorld
+     * @returns {boolean} Determines whether there can be a path between the two points
+     **/
+
+    possibleMove(p1, p2) {
         /*TODO: Known bugs
         Sometimes the "parent edge" from DFS will be reversed and create an area outside the cycle. Check if direction is correct?
         If one large cycle is also split into 2 smaller cycles, one of them will be able to access all points on the other, but not vice versa.
          */
-        let tot = new paper.Path();
 
         let cycles = this.getCycles();
         for (let c of cycles) {
@@ -281,6 +296,14 @@ export class SproutWorld {
         }
         return true;
     }
+
+    /**
+     * Suggests a path between the given points
+     * @param p1 Starting point of the suggested path
+     * @param p2 Goal point of the suggested path
+     * @memberof SproutWorld
+     * @returns {Object} A path between p1 and p2
+     **/
 
     suggestPath(p1, p2) {
         // return this.possibleMove(p1.position, p2.position);

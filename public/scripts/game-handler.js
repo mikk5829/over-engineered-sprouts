@@ -124,10 +124,15 @@ $(function () {
 
                 // Ask server to suggest a valid path between the selected points
                 socket.emit('suggestPath', from, to, function (possible) {
-
                     if (possible) {
                         world.suggestPath(p1, p2);
                     } else console.log("Impossible");
+                    /*for (let c of response.cycles) {
+                        let p = new paper.Path().importJSON(c);
+                        p.fillColor = "green";
+                        p.opacity = 0.1;
+                        p.sendToBack();
+                    }*/
 
                 });
                 world.resetSelection();
