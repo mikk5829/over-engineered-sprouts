@@ -41,7 +41,7 @@ out/index.html
 To generate documentation for public folder, run this command:
 
 ```
- ./node_modules/.bin/jsdoc public routes server -r -c ./documentation/configuration.json
+./node_modules/.bin/jsdoc public routes server -r -c ./documentation/configuration.json
 ```
 
 For help see:
