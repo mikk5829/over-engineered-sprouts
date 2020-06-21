@@ -30,7 +30,8 @@ $(function () {
 
         for (let i = 0; i < initialPoints.length; i++) {
             let pos = new paper.Point(initialPoints[i][1], initialPoints[i][2]);
-            world.addPoint(i, pos, 0)
+            let p = world.addPoint(i, pos, 0);
+            world.collisionGrid.t_insert_rectangle(p.bounds, p);
         }
 
         paper.view.onFrame = function () {
@@ -56,24 +57,25 @@ $(function () {
         console.log("Received game update from server");
 
         let path = new paper.Path().importJSON(pathJson);
-        path.simplify(3);
         path.strokeColor = STROKE_COLOR;
         path.strokeCap = 'round';
         path.strokeJoin = 'round';
         path.addTo(world.pathGroup);
+        world.collisionGrid.t_insert_line(path.curves, path);
 
         world.points[fromId].data.connections++;
         world.points[toId].data.connections++;
 
         let pos = new paper.Point(pointData.center[1], pointData.center[2]);
-        world.addPoint(pointData.id, pos, 2)
+        let p = world.addPoint(pointData.id, pos, 2)
+        world.collisionGrid.t_insert_rectangle(p.bounds, p);
     });
 
-    socket.on('gameOver', function(winner, loser) {
-       if (playerNum===winner) alert('You won!');
-       else alert('You lost...');
+    socket.on('gameOver', function (winner, loser) {
+        if (playerNum === winner) alert('You won!');
+        else alert('You lost...');
         $.changeView("main_menu");
-       world = undefined;
+        world = undefined;
     });
 
     //Adds a new chat message to the chatlog
@@ -104,18 +106,17 @@ $(function () {
         } else if (world.clickSelection) {
 
             if (world.source && world.target) {
-                let from = world.source.data.id;
-                let to = world.target.data.id;
+                let p1 = world.source;
+                let p2 = world.target;
+                let from = p1.data.id;
+                let to = p2.data.id;
 
                 // Ask server to suggest a valid path between the selected points
-                socket.emit('suggestPath', from, to, function (pathJson) {
-                    if (pathJson) {
-                        let path = new paper.Path().importJSON(pathJson);
-                        path.strokeColor = 'red';
-                        path.strokeCap = 'round';
-                        path.strokeJoin = 'round';
-                        world.suggestedPath = path;
-                    } else console.log("No valid path found");
+                socket.emit('suggestPath', from, to, function (possible) {
+
+                    if (possible) {
+                        world.suggestPath(p1, p2);
+                    } else console.log("Impossible");
 
                 });
                 world.resetSelection();

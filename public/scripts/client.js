@@ -5,7 +5,7 @@ const viewIDs = ['main_menu', 'game', 'settings','scoreboard'];
 
 socket.on('connect', function () {
     let savedUsername = getCookie("playerName");
-    console.log("name from cookie:",savedUsername);
+    console.log("Name from cookie:",savedUsername);
 
     socket.emit('join', savedUsername, function (response) {
         username = response;
