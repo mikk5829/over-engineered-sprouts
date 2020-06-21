@@ -58,12 +58,36 @@ function makeid(length) {
 
 io.sockets.on('connect', function (socket) {
 
+    socket.on('submitSimPath', (pathJson, fromId, toId, fn) => {
+        if (!activeRooms.has(socket.room)) return false;
+        let gameRoom = activeRooms.get(socket.room);
+        if (socket.playerNum !== gameRoom) fn(false);
+        let from = gameRoom.points[fromId];
+        let to = gameRoom.points[toId];
+        let path = new paper.Path().importJSON(pathJson);
+        // Check if the move is legal
+        if (!gameRoom.isLegal(from, to, path)) {
+            console.log("simulated path illegal!")
+            fn(false);
+        } // Callback - path not accepted
+        else {
+            console.log("simulated path legal!")
+            // fn(true); // Callback - path accepted
+
+            let resp = gameRoom.addPath(from, to, path);
+            socket.emit('updateGame', from.data.id, to.data.id, resp.path, resp.pointData, null);
+        }
+    });
+
     // Client has submitted a path -> server will validate the path
     socket.on('submitPath', (pathJson, fromId, toId, fn) => {
         if (!activeRooms.has(socket.room)) return false;
 
         let gameRoom = activeRooms.get(socket.room);
-        if (socket.playerNum !== gameRoom) fn(false);
+        if (socket.playerNum !== gameRoom) {
+            console.log("bliver dette kaldt???")
+            fn(false);
+        }
         console.log(`${socket.username} in game ${gameRoom.name} submits a path`);
 
 
@@ -72,9 +96,13 @@ io.sockets.on('connect', function (socket) {
         let path = new paper.Path().importJSON(pathJson);
 
         // Check if the move is legal
-        if (!gameRoom.isLegal(from, to, path)) fn(false); // Callback - path not accepted
+        if (!gameRoom.isLegal(from, to, path)) {
+            console.log("eller dette???")
+            fn(false);
+        } // Callback - path not accepted
 
         else {
+            console.log("callback true")
             fn(true); // Callback - path accepted
 
             let resp = gameRoom.addPath(from, to, path);
@@ -123,8 +151,9 @@ io.sockets.on('connect', function (socket) {
         fn(username);
     });
 
-    socket.on('suggestPath', (from, to, fn) => {
+    socket.on('possiblePath', (from, to, fn) => {
         if (!activeRooms.has(socket.room)) return false;
+
         let game = activeRooms.get(socket.room);
         let pos1 = game.points[from].position;
         let pos2 = game.points[to].position;
@@ -198,6 +227,7 @@ io.sockets.on('connect', function (socket) {
         console.log(totalDots)
         let id = makeid(6);
         let game = new GameRoom(id, String(id));
+        socket.room = id;
         activeRooms.set(id, game);
 
         let pointPositions = [];
@@ -478,7 +508,10 @@ class GameRoom {
 
         // Check for intersections w. existing paths
         for (let line of this.lineGroup.getItems({type: 'path'})) {
-            if (path.getIntersections(line).length > 0) return false;
+            if (path.getIntersections(line).length > 0) {
+                console.log("intersect")
+                return false;
+            }
         }
         return path.getIntersections(path).length <= 0;
     }
@@ -522,6 +555,8 @@ class GameRoom {
     }
 
     possibleMove(p1, p2, debug = false) {
+        this.project.activate();
+
         /*TODO: Known bugs
         Sometimes the "parent edge" from DFS will be reversed and create an area outside the cycle. Check if direction is correct?
         If one large cycle is also split into 2 smaller cycles, one of them will be able to access all points on the other, but not vice versa.

@@ -65,13 +65,13 @@ $(function () {
 
     $('#importBtn').click(function () {
         $('#fileInput')[0].click();
-        let tDots = localStorage.getItem("FileResultDotTotal");
+        /*let tDots = localStorage.getItem("FileResultDotTotal");
         let tPaths = localStorage.getItem("FileResultPaths");
         if (tDots !== null && tPaths !== null) {
             return {dots: JSON.parse(tDots), paths: JSON.parse(tPaths)};
         } else {
             return null;
-        }
+        }*/
     });
 
     // Handles the import button (game world from file) - Vanilla not jQuery
@@ -85,7 +85,7 @@ $(function () {
             const split = result.split('\n');
             const totalDots = Number(split[0]);
             let paths = [];
-            for (let i = 1; i < split.length-1; i++) {
+            for (let i = 1; i < split.length - 1; i++) {
                 const dots = split[i].split(' ');
                 paths.push({dot1: Number(dots[0]), dot2: Number(dots[1])});
             }
@@ -103,16 +103,10 @@ $(function () {
             // socket.emit("drawpath",move.dot1,move.dot2) (user has to draw it with A*)
             // else: socket.emit("pathfailed"
 
-            socket.emit("joinSimulation", totalDots, function(success, initialPoints) {
+            socket.emit("joinSimulation", totalDots, function (success, initialPoints) {
                 if (success) {
                     $.changeView("game");
-                    $.startSimulation(initialPoints);
-                    // changeview to game
-                    // draw the points
-                    // then submit one move at a time from the paths list above
-                    // and if server says (y) then draw it automatically using A*
-                    // If server says nope then show an alert saying it wasn't possible
-                    // Or alert that the file is invalid or something
+                    $.startSimulation(initialPoints, paths);
                 }
             })
         };
@@ -129,37 +123,6 @@ $(function () {
     });
 
     $('#scoreboardBtn').click(function () {
-        // $.openScoreBoardMenu();
-
-        /*$('#scores>tbody').empty();
-        let results = [{name: 'Laura', wins: '3', losses: '1'},
-            {name: 'Laura1', wins: '3', losses: '1'},
-            {name: 'Laura2', wins: '3', losses: '1'},
-            {name: 'Laura3', wins: '3', losses: '1'},
-            {name: 'Laura4', wins: '3', losses: '1'},
-            {name: 'Laura5', wins: '3', losses: '1'},
-            {name: 'Laura6', wins: '3', losses: '1'},
-            {name: 'Laura7', wins: '3', losses: '1'},
-            {name: 'Laura8', wins: '3', losses: '1'},
-            {name: 'Laura9', wins: '3', losses: '1'},
-            {name: 'Laura10', wins: '3', losses: '1'},
-            {name: 'Laura11', wins: '3', losses: '1'},
-            {name: 'Laura12', wins: '3', losses: '1'},
-            {name: 'Laura13', wins: '3', losses: '1'},
-            {name: 'Laura14', wins: '3', losses: '1'},
-            {name: 'Laura15', wins: '3', losses: '1'},
-            {name: 'Laura16', wins: '3', losses: '1'},
-            {name: 'Laura17', wins: '3', losses: '1'},
-            {name: 'Laura18', wins: '3', losses: '1'},
-            {name: 'Laura19', wins: '3', losses: '1'}];
-
-        for (let result of results) {
-            let name = result.name;
-            let wins = result.wins;
-            let losses = result.losses;
-            $('#scores > tbody:last-child').append(`<tr class="w3-hover-pale-green w3-hover-text-green"> <th class="w3-left-align"> ${name} </th> <th class="w3-center-align"> ${wins} </th> <th class="w3-center-align"> ${losses} </th></tr>`);
-        }*/
-
         $.changeView("scoreboard");
         // $("#scoreboardPane").fadeIn(1000);
     });
