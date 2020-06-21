@@ -58,17 +58,6 @@ function makeid(length) {
 
 io.sockets.on('connect', function (socket) {
 
-    // Check upon connect if socket.username is in a room and if so show the game canvas for the player
-    if (socket.username !== undefined) {
-        activeRooms.forEach(room => {
-            if (room.players.includes(socket.username)) {
-                console.log("Joining ongoing game!");
-                socket.emit('lobby join', 'Welcome back...', true);
-            }
-        });
-    }
-
-
     // Client has submitted a path -> server will validate the path
     socket.on('submitPath', (pathJson, fromId, toId, fn) => {
         if (!activeRooms.has(socket.room)) return false;
@@ -118,7 +107,6 @@ io.sockets.on('connect', function (socket) {
             return this.charAt(0).toUpperCase() + this.slice(1);
         };
 
-        // don't give new username unless username cookie is clean
         let username;
         if (usernameIsValid(requestedUsername)) {
             username = requestedUsername;
@@ -156,61 +144,21 @@ io.sockets.on('connect', function (socket) {
     socket.on('joinRoom', function (id, fn) {
         console.log(`${socket.username} wants to join room with id ${id}`);
         let game = activeRooms.has(id) ? activeRooms.get(id) : null;
-        console.log(game);
-
-        // Helper function: emitting gameworld for sockets/players in the given room from its id
-        function spawnWorldForPlayer(id) {
-            // Packs the positions of the points into a list for the clients to read
-            let pointPositions = [];
-            for (let point of game.init()) {
-                pointPositions.push(point.position);
-            }
-            io.sockets.in(id).emit('startGame', pointPositions, game.status);
-        }
-
-        // Helper function: check if player is allowed to be assigned and join a game room
-        function canJoin(socket_username){
-            console.log(game.players);
-            // Only if you are one of the original players you may join the room!
-            // We could submit a emit event to let socket.client know whether or not he is allowed access.
-            if (game.players.length === 2) {
-                if (game.players.includes(socket_username)) return true;
-            }
-            // First players to join are linked to game room
-            else if (game.players.length < 2) {
-                if (!game.players.includes(socket_username)) {
-                    game.players.push(socket_username);
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        if (!game) fn(false);
+        if (!game || game.playerCount >= 2) fn(false);
         else {
-            io.of('/').in(id).clients((err, clients) => { // deals with callback function
-                if (err) throw err;
-                socket.room = id;
-                if (clients.length === 0 && canJoin(socket.username)) { // Zero players in game
-                    socket.join(id.toString(), () => {
-                        game.playerCount++;
-                        spawnWorldForPlayer(id);
-                        // World generated but player not allowed to see it yet
-                        socket.emit('lobby join', 'Please wait for the second player to join...', false);
-                    }); // fixme: .room necessary?
-                } else if (clients.length === 1 && canJoin(socket.username)) { // If this is the second and last player to join -> start the game!
-                    socket.join(id.toString(), () => {
-                        game.playerCount++;
-                        spawnWorldForPlayer(id);
-                        // remove pause overlay from game
-                        io.sockets.in(socket.room).emit('game status', {pause:false});
-                        // Responds to clients and display lobby/world to them
-                        io.in(id).emit('lobby join', 'You may now enter the game.. Enjoy!', true);
-                    }); // fixme: .room necessary?
-                } else {
-                    io.in(id).emit('lobby join', 'Something went wrong.. Sorry', false);
+            let playerNum = game.userJoin(socket);
+            fn(true, playerNum);
+
+            if (game.playerCount === 2) {
+                console.log(`2 players connected to game ${id}`);
+
+                // Packs the positions of the points into a list for the clients to read
+                let pointPositions = [];
+                for (let point of game.init()) {
+                    pointPositions.push(point.position);
                 }
-            });
+                io.sockets.in(socket.room).emit('startGame', pointPositions, game.status);
+            }
         }
     });
 
@@ -227,14 +175,17 @@ io.sockets.on('connect', function (socket) {
     });
 
     // Client wants to create a new room => server validates room name, creates new room
-    socket.on('addRoom', (roomName, map_configuration, fn) => {
-        console.log("room info");
-        //if (activeRooms[roomName] !== undefined) fn(false);
-        console.log("Creating new room: " + roomName);
-        let id = makeid(6);
-        activeRooms.set(id, new GameRoom(id, roomName));
-        activeRooms.get(id).init(map_configuration);
-        fn(true, id);
+    socket.on('addRoom', (roomName, fn) => {
+        if (activeRooms[roomName] !== undefined) fn(false); // FIXME can't check roomname like this
+
+        if (roomName.length < 1 || roomName.length > 20) fn(false);
+
+        else {
+            console.log("Creating new room: " + roomName);
+            let id = makeid(6);
+            activeRooms.set(id, new GameRoom(id, roomName));
+            fn(true, id);
+        }
     });
 
     socket.on('sendChatMsg', function (msg) {
@@ -243,17 +194,9 @@ io.sockets.on('connect', function (socket) {
         io.sockets.in(socket.room).emit('updateChat', timestamp, socket.username, msg);
     });
 
-    socket.on('disconnect', function (reason) {
+    socket.on('disconnect', function () {
         console.log(`${socket.username} disconnected`);
-        console.log(socket.username + " leaving room: " + socket.room + "...");
-        console.log("reason: " + reason);
-        // Pause game when a player quits game
-        console.log("socket details!");
-        console.log(socket);
-        io.sockets.in(socket.room).emit('game status', {pause:true});
-
-        // Lauras end game implementation. Included as comment as assistance
-        /*if (activeRooms.has(socket.room)) {
+        if (activeRooms.has(socket.room)) {
             let game = activeRooms.get(socket.room);
             console.log("has socket.room");
             let response = game.userLeave(socket);
@@ -265,7 +208,7 @@ io.sockets.on('connect', function (socket) {
                 console.log("Deleting room", socket.room);
                 game.endGame();
             }
-        }*/
+        }
         socket.leave(socket.room);
     });
 });
@@ -387,7 +330,6 @@ class GameRoom {
         this.name = name;
         this.player1 = player1;
         this.player2 = player2;
-        this.players = [];
         this.playerCount = 0;
         this.maxCapacity = 2;
         this.project = new paper.Project([750, 472]);
@@ -406,11 +348,6 @@ class GameRoom {
             dotPoints = randomPoints(numPoints);
         } else {
             dotPoints = randomPoints(mapConfiguration.dots);
-            /*mapConfiguration.paths.forEach(dotPair => {
-                let points = //select points from dotPair ids
-                let suggested_path = suggestPath(points[0], points[1]);
-                // add the suggested path to game
-            });*/
         }
 
         for (let i = 0; i < dotPoints.length; i++) {

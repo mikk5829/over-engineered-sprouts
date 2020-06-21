@@ -11,17 +11,7 @@ socket.on('connect', function () {
         username = response;
         setCookie("playerName", username);
         console.log("Joined as", username);
-        $('#overlay').hide();// Hide overlay when player is connected correctly
-        $('#overlay-text').text('');
     });
-
-    // Stuff to do when main menu is visible and socket is connected:
-    // - display the player's name in lobby if he is connected correctly
-    // - Let the player know if he/she has a game configuration loaded in localstorage
-    if (!$('#main_menu').is(':hidden')){
-        if(getCookie("playerName") !== undefined) $('#welcomeUser').text("Welcome " + getCookie("playerName")); // display username
-    }
-
 });
 
 $(function () {
