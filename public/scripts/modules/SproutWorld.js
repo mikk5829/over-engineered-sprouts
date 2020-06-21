@@ -5,7 +5,7 @@
 
 import {CollisionGrid} from "./CollisionGrid.js";
 
-const POINT_COLOR = 'Indigo';
+const POINT_COLOR = getCookie('dotColor');
 const SEL_POINT_COLOR = 'Yellow';
 const HOVER_POINT_COLOR = 'CornflowerBlue';
 const STROKE_COLOR = 'Indigo';
