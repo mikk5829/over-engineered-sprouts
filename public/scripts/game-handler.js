@@ -21,6 +21,8 @@ paper.install(window); // Make the paper scope global
 $(function () {
     socket.on("startGame", function (initialPoints, status) {
         paper.setup(getCanvas());
+        console.log("status");
+        console.log(playerNum);
         paper.project.activeLayer.locked = status !== playerNum;
         world = new SproutWorld();
 

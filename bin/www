@@ -194,21 +194,23 @@ io.sockets.on('connect', function (socket) {
                 if (clients.length === 0 && canJoin(socket.username)) { // Zero players in game
                     socket.join(id.toString(), () => {
                         //game.playerCount++;
-                        game.userJoin(socket);
+                        let playerNum = game.userJoin(socket);
                         spawnWorldForPlayer(id);
                         // World generated but player not allowed to see it yet
                         socket.emit('lobby join', 'Please wait for the second player to join...', false);
+                        fn(true,playerNum);
                     }); // fixme: .room necessary?
                 } else if (clients.length === 1 && canJoin(socket.username)) { // If this is the second and last player to join -> start the game!
                     socket.join(id.toString(), () => {
                         //game.playerCount++;
-                        game.userJoin(socket);
+                        let playerNum = game.userJoin(socket);
                         spawnWorldForPlayer(id);
                         // remove pause overlay from game
                         io.sockets.in(socket.room).emit('game status', {pause:false});
                         // Responds to clients and display lobby/world to them
                         io.in(id).emit('lobby join', 'You may now enter the game.. Enjoy!', true);
-                    }); // fixme: .room necessary?
+                        fn(true,playerNum);
+                    });
                 } else {
                     io.in(id).emit('lobby join', 'Something went wrong.. Sorry', false);
                 }
