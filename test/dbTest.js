@@ -2,7 +2,7 @@
 var db = require('../server/db/simple-db')
 var expect = require('chai').expect;
 
-describe('User', async function() {
+describe('database testing', async function() {
     let user_name = "testNormalUser"
     let new_user_name = "testNormalUser2"
 
