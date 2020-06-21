@@ -162,7 +162,7 @@ io.sockets.on('connect', function (socket) {
         function spawnWorldForPlayer(id) {
             // Packs the positions of the points into a list for the clients to read
             let pointPositions = [];
-            for (let point of game.init()) {
+            for (let point of game.points) {
                 pointPositions.push(point.position);
             }
             io.sockets.in(id).emit('startGame', pointPositions, game.status);
@@ -193,14 +193,16 @@ io.sockets.on('connect', function (socket) {
                 socket.room = id;
                 if (clients.length === 0 && canJoin(socket.username)) { // Zero players in game
                     socket.join(id.toString(), () => {
-                        game.playerCount++;
+                        //game.playerCount++;
+                        game.userJoin(socket);
                         spawnWorldForPlayer(id);
                         // World generated but player not allowed to see it yet
                         socket.emit('lobby join', 'Please wait for the second player to join...', false);
                     }); // fixme: .room necessary?
                 } else if (clients.length === 1 && canJoin(socket.username)) { // If this is the second and last player to join -> start the game!
                     socket.join(id.toString(), () => {
-                        game.playerCount++;
+                        //game.playerCount++;
+                        game.userJoin(socket);
                         spawnWorldForPlayer(id);
                         // remove pause overlay from game
                         io.sockets.in(socket.room).emit('game status', {pause:false});
@@ -608,7 +610,7 @@ class GameRoom {
         if (this.playerCount < 2) {
             console.log(`User ${user.username} joined game ${this.name}`);
 
-            user.join(this.id);
+            //user.join(this.id);
             user.room = this.id;
             this.playerCount++;
 
