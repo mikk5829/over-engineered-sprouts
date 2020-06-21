@@ -19,6 +19,18 @@ function reset() {
 
 paper.install(window); // Make the paper scope global
 $(function () {
+
+    $.startSimulation = function(initialPoints) {
+        paper.setup(getCanvas());
+        paper.project.activeLayer.locked = status !== playerNum;
+        world = new SproutWorld();
+        for (let i = 0; i < initialPoints.length; i++) {
+            let pos = new paper.Point(initialPoints[i][1], initialPoints[i][2]);
+            let p = world.addPoint(i, pos, 0);
+            world.collisionGrid.t_insert_rectangle(p.bounds, p);
+        }
+    };
+
     socket.on("startGame", function (initialPoints, status) {
         paper.setup(getCanvas());
         paper.project.activeLayer.locked = status !== playerNum;

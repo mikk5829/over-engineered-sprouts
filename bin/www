@@ -194,6 +194,19 @@ io.sockets.on('connect', function (socket) {
         io.sockets.in(socket.room).emit('updateChat', timestamp, socket.username, msg);
     });
 
+    socket.on("joinSimulation", function (totalDots, fn) {
+        console.log(totalDots)
+        let id = makeid(6);
+        let game = new GameRoom(id, String(id));
+        activeRooms.set(id, game);
+
+        let pointPositions = [];
+        for (let point of game.init(null, totalDots)) {
+            pointPositions.push(point.position);
+        }
+        fn(true, pointPositions);
+    });
+
     socket.on('disconnect', function () {
         console.log(`${socket.username} disconnected`);
         if (activeRooms.has(socket.room)) {
