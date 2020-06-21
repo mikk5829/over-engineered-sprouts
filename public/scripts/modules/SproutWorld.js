@@ -236,7 +236,7 @@ export class SproutWorld {
                 p.dfs(toFind);
             }
         }
-        console.log("tofind length:", toFind.length)
+        console.log("tofind length:", toFind.length);
         let cycles = [];
 
         for (let t of toFind) {
@@ -245,7 +245,6 @@ export class SproutWorld {
             let loop = [t];
             let p0 = t.data.vertices[0];
             let p1 = t.data.vertices[1];
-            console.log(p0.data.id, p1.data.id)
             while (p0.data.root !== p0) {
                 paths0.push(p0.data.rootEdge);
                 p0 = p0.data.root;
@@ -266,18 +265,26 @@ export class SproutWorld {
         Sometimes the "parent edge" from DFS will be reversed and create an area outside the cycle. Check if direction is correct?
         If one large cycle is also split into 2 smaller cycles, one of them will be able to access all points on the other, but not vice versa.
          */
-        let tot = new paper.Path();
+        let total = new paper.Path();
 
         let cycles = this.getCycles();
+        console.log(cycles.length)
         for (let c of cycles) {
-            let total = new paper.Path();
+            total = new paper.Path();
             for (let p of c) {
                 for (let s of p.segments)
                     total.add(s);
             }
 
+            if (debug){
+                total.fillColor = "green";
+                //total.opacity = 0.1;
+                total.sendToBack();
+            }
+
             if (((total.contains(p1) && total.getLocationOf(p1) === null) && !total.contains(p2)) || ((total.contains(p2) && total.getLocationOf(p2) === null) && !total.contains(p1)))
                 return false;
+
             //total.remove();
             // tot.addSegments(total.segments);
 
