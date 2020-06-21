@@ -1,6 +1,7 @@
 //const cookieParser = require("cookie-parser");
 
 $(function () {
+    $.disableOverlay();
     let $msgField = $('#chatMsgField');
 
     $.joinRoom = function (roomId) {
@@ -9,6 +10,7 @@ $(function () {
                 if (paper.project) paper.project.activeLayer.removeChildren();
                 $.changeView("game");
                 playerNum = num;
+                $.enableOverlay("Waiting for game to start");
             } else alert("Failed to join room " + roomId);
         });
     };

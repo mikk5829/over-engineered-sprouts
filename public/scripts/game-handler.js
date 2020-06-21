@@ -29,6 +29,8 @@ $(function () {
             let p = world.addPoint(i, pos, 0);
             world.collisionGrid.t_insert_rectangle(p.bounds, p);
         }
+
+        $.disableOverlay();
         paper.view.onFrame = function () {
             // Update the colors of the points
 
