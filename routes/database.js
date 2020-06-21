@@ -3,7 +3,7 @@ var router = express.Router()
 const db = require('../server/db/simple-db');
 
 /**
- * API for manipulating db using http-requests
+ * API for manipulating db using http-requests useful for debugging
  * @namespace Database API
  * @author Mikkel Anderson
  */
