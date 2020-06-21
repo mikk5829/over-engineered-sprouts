@@ -112,8 +112,8 @@ $(function () {
                 let to = p2.data.id;
 
                 // Ask server to suggest a valid path between the selected points
-                socket.emit('suggestPath', from, to, function (response) {
-                    if (response) {
+                socket.emit('suggestPath', from, to, function (possible) {
+                    if (possible) {
                         world.suggestPath(p1, p2);
                     } else console.log("Impossible");
                     /*for (let c of response.cycles) {

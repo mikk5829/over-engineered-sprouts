@@ -265,21 +265,14 @@ export class SproutWorld {
         Sometimes the "parent edge" from DFS will be reversed and create an area outside the cycle. Check if direction is correct?
         If one large cycle is also split into 2 smaller cycles, one of them will be able to access all points on the other, but not vice versa.
          */
-        let total = new paper.Path();
 
         let cycles = this.getCycles();
         console.log(cycles.length)
         for (let c of cycles) {
-            total = new paper.Path();
+            let total = new paper.Path();
             for (let p of c) {
                 for (let s of p.segments)
                     total.add(s);
-            }
-
-            if (debug){
-                total.fillColor = "green";
-                //total.opacity = 0.1;
-                total.sendToBack();
             }
 
             if (((total.contains(p1) && total.getLocationOf(p1) === null) && !total.contains(p2)) || ((total.contains(p2) && total.getLocationOf(p2) === null) && !total.contains(p1)))
