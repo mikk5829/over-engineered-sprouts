@@ -10,7 +10,7 @@ const SEL_POINT_COLOR = 'Yellow';
 const HOVER_POINT_COLOR = 'CornflowerBlue';
 const STROKE_COLOR = 'Indigo';
 
-const POINT_SIZE = 10;
+const POINT_SIZE = 5;
 export {POINT_COLOR, SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR, POINT_SIZE}
 
 
@@ -41,7 +41,7 @@ export class SproutWorld {
         this.selectedPoints = []; // The points which are currently selected/pressed
         this.currentPath = null; // The path currently being drawn by the player
         this.suggestedPath = null; // Path that has been suggested by the server
-        this.collisionGrid = new CollisionGrid(10, this, new paper.Size(750, 472))
+        this.collisionGrid = new CollisionGrid(POINT_SIZE, this, new paper.Size(750, 472))
 
     }
 
@@ -77,8 +77,7 @@ export class SproutWorld {
     }
 
     submitSelection() {
-        if (this.currentPath.segments.length <= 2 && (!this.source || !this.target)) {
-            console.log("diddly")
+        if (this.currentPath.segments.length <= 2 || (!this.source || !this.target)) {
             this.resetSelection();
             return false;
         }
@@ -236,7 +235,6 @@ export class SproutWorld {
                 p.dfs(toFind);
             }
         }
-        console.log("tofind length:", toFind.length)
         let cycles = [];
 
         for (let t of toFind) {
@@ -245,7 +243,6 @@ export class SproutWorld {
             let loop = [t];
             let p0 = t.data.vertices[0];
             let p1 = t.data.vertices[1];
-            console.log(p0.data.id, p1.data.id)
             while (p0.data.root !== p0) {
                 paths0.push(p0.data.rootEdge);
                 p0 = p0.data.root;
@@ -293,11 +290,9 @@ export class SproutWorld {
         let cellSize = initCellSize;
         let suggest = this.collisionGrid.u_Astar(p1, p2);
         while (!suggest) {
-            console.log("!suggest");
             cellSize = cellSize / 2;
             this.collisionGrid = new CollisionGrid(cellSize, this, new paper.Size(750, 472));
             for (let line of this.pathGroup.children) {
-                console.log(line);
                 this.collisionGrid.t_insert_line(line.curves, line);
             }
             for (let point of this.points) {

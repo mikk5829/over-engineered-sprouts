@@ -6,6 +6,7 @@ $(function () {
     $.joinRoom = function (roomId) {
         socket.emit('joinRoom', roomId, function (success, num) {
             if (success) {
+                if (paper.project) paper.project.activeLayer.removeChildren();
                 $.changeView("game");
                 playerNum = num;
             } else alert("Failed to join room " + roomId);

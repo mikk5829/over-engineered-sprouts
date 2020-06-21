@@ -2,10 +2,8 @@
 // connects with a set of objects.
 // import {SproutWorld} from '../public/scripts/modules/SproutWorld.js';
 
-
 export class CollisionGrid {
     constructor(cell_size, world, gridSize) {
-        console.log("CollisionGrid Created!");
         this.world = world;
         this.cell_size = cell_size;
         this.contents = {};
@@ -147,7 +145,6 @@ export class CollisionGrid {
     }
 
     u_Astar(start, goal){
-        console.log(start, goal);
         let grid = {};
         let goal_tile = this.t_return(goal.position);
         let start_tile = this.t_return(start.position);
@@ -193,78 +190,3 @@ export class CollisionGrid {
     }
 
 }
-
-/*
- 
-         let randomFromAllowedRange = () => {
-            let possible = [];
-            allowedRanges.forEach((range) => {
-                let random_x = this.randomIntFromInterval(range.x_range.from, range.x_range.to);
-                let random_y = this.randomIntFromInterval(range.y_range.from, range.y_range.to);
-                possible.push({ x: random_x, y: random_y });
-            });
-            let randomIndex = Math.floor(Math.random() * possible.length);
-            return possible[randomIndex];
-        }
-
-        let occupyRange = (tile_coord) => {
-            let x_range = {
-                from: (tile_coord.x - safeSpace),
-                to: (tile_coord.x + safeSpace)
-            };
-            let x_range = {
-                from: (tile_coord.y - safeSpace),
-                to: (tile_coord.y + safeSpace)
-            };
-            return { x_range: x_range, y_range: y_range};
-        }
-
-
-        let notInUsedRanges = (occ_range) => {
-            if (occRanges.includes(occ_range)) {
-                return false;
-            } else {
-                return true;
-            }
-        }
-
-
-let randomFromMatrix = () => {
-            tile_matrix.forEach(function (value, index, matrix) {
-                console.log(index);
-                if (math.isZero(value)) {
-                    indices.push(index);
-                    console.log(indices);
-                }
-            });
-            if (indices.length === 0) console.log("No available places to put new dot..");
-            return indices[Math.floor(Math.random() * indices.length)];
-        }
-
-        let updateMatrix = (tile_coord) => {
-            let x_range = math.range(tile_coord.x - safeSpace, tile_coord.x + safeSpace);
-            let y_range = math.range(tile_coord.y - safeSpace, tile_coord.y + safeSpace);
-
-            let inRange = (range, check) => {
-                range.forEach(val => {
-                    if (val === check) {
-                        return true;
-                    }
-                });
-                return false;
-            }
-
-            tile_matrix.forEach(function (value, index, matrix) {
-                indices = [];
-                if (inRange(x_range, index[0]) && inRange(y_range, index[1])) {
-                    value = 1;
-                }
-            });
-            //matrix = matrix.set(math.index(math.range(tile_coord.x - safeSpace, tile_coord.x + safeSpace), math.range(tile_coord.y - safeSpace, tile_coord.y + safeSpace)), 1);
-        }
- 
- 
- 
- */
-
-//module.exports=CollisionGrid;
