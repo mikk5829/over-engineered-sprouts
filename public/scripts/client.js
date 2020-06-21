@@ -12,6 +12,11 @@ socket.on('connect', function () {
         setCookie("playerName", username);
         console.log("Joined as", username);
     });
+
+    if (!$('#main_menu').is(':hidden')) {
+        if(getCookie("playername") !== undefined) $('#welcomeUser').text("Welcome " + getCookie("playerName"));
+    }
+
 });
 
 $(function () {

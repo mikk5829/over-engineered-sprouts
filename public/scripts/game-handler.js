@@ -1,5 +1,4 @@
 import {SproutWorld} from "./modules/SproutWorld.js";
-import {getCookieValue, getResolutionFromCookie, worldInLocalStorage} from "./modules/Utility.js"
 import {POINT_COLOR, SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR, POINT_SIZE} from "./modules/SproutWorld.js";
 
 /**
