@@ -10,7 +10,6 @@ let world;
 
 function getCanvas() {
     return document.getElementById("sproutGameCanvas");
-    // return $('#sproutGameCanvas'); //fixme virker ikke?
 }
 
 function reset() {
@@ -21,9 +20,6 @@ function reset() {
 paper.install(window); // Make the paper scope global
 $(function () {
     socket.on("startGame", function (initialPoints, status) {
-        console.log(getCanvas().width, getCanvas().height);
-        console.log("startGame", initialPoints, status, playerNum);
-
         paper.setup(getCanvas());
         paper.project.activeLayer.locked = status !== playerNum;
         world = new SproutWorld();
@@ -33,7 +29,6 @@ $(function () {
             let p = world.addPoint(i, pos, 0);
             world.collisionGrid.t_insert_rectangle(p.bounds, p);
         }
-
         paper.view.onFrame = function () {
             // Update the colors of the points
 
@@ -71,9 +66,11 @@ $(function () {
         world.collisionGrid.t_insert_rectangle(p.bounds, p);
     });
 
-    socket.on('gameOver', function (winner) {
+    socket.on('gameOver', function (winner){
         if (playerNum === winner) alert('You won!');
         else alert('You lost...');
+        paper.project.activeLayer.removeChildren();
+        paper.view.remove();
         $.changeView("main_menu");
         world = undefined;
     });
