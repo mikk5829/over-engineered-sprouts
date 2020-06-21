@@ -28,3 +28,13 @@ export function worldInLocalStorage() {
     }
 
 }
+
+export function enableOverlay(msg) {
+    $('#overlay').show();
+    $('#overlay-text').text(msg);
+}
+
+export function disableOverlay() {
+    $('#overlay').hide();
+    $('#overlay-text').text('');
+}

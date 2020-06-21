@@ -232,6 +232,11 @@ io.sockets.on('connect', function (socket) {
         console.log(`${socket.username} disconnected`);
         console.log(socket.username + " leaving room: " + socket.room + "...");
         console.log("reason: " + reason);
+        // Pause game when a player quits game
+        console.log("socket details!");
+        console.log(socket);
+        io.sockets.in(socket.room).emit('game status', {pause:true});
+
         socket.leave(socket.room);
     });
 });

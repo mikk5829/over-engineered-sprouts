@@ -1,9 +1,14 @@
 //const cookieParser = require("cookie-parser");
 
 import {worldInLocalStorage} from "./modules/Utility.js";
-
 $(function () {
     let $msgField = $('#chatMsgField');
+
+    socket.on('lobby join', function(msg, join_bool) {
+        if (join_bool) {
+            $.changeView("game");
+        }
+    });
 
     $.joinRoom = function(roomId) {
         socket.emit('joinRoom', roomId, function (err, result) {
@@ -11,13 +16,6 @@ $(function () {
             console.log(result);
         });
     };
-
-    // Listening for events telling if the player is allowed to join the game or not!
-    socket.on('lobby join', function(msg, join_bool){
-        if (join_bool) {
-            $.changeView("game");
-        }
-    });
 
     function createRoom(join = false) {
         let game_config = worldInLocalStorage();
