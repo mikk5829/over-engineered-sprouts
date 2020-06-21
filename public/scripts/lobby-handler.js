@@ -96,6 +96,36 @@ $(function () {
 
     $('#scoreboardBtn').click(function () {
         // $.openScoreBoardMenu();
+
+        /*$('#scores>tbody').empty();
+        let results = [{name: 'Laura', wins: '3', losses: '1'},
+            {name: 'Laura1', wins: '3', losses: '1'},
+            {name: 'Laura2', wins: '3', losses: '1'},
+            {name: 'Laura3', wins: '3', losses: '1'},
+            {name: 'Laura4', wins: '3', losses: '1'},
+            {name: 'Laura5', wins: '3', losses: '1'},
+            {name: 'Laura6', wins: '3', losses: '1'},
+            {name: 'Laura7', wins: '3', losses: '1'},
+            {name: 'Laura8', wins: '3', losses: '1'},
+            {name: 'Laura9', wins: '3', losses: '1'},
+            {name: 'Laura10', wins: '3', losses: '1'},
+            {name: 'Laura11', wins: '3', losses: '1'},
+            {name: 'Laura12', wins: '3', losses: '1'},
+            {name: 'Laura13', wins: '3', losses: '1'},
+            {name: 'Laura14', wins: '3', losses: '1'},
+            {name: 'Laura15', wins: '3', losses: '1'},
+            {name: 'Laura16', wins: '3', losses: '1'},
+            {name: 'Laura17', wins: '3', losses: '1'},
+            {name: 'Laura18', wins: '3', losses: '1'},
+            {name: 'Laura19', wins: '3', losses: '1'}];
+
+        for (let result of results) {
+            let name = result.name;
+            let wins = result.wins;
+            let losses = result.losses;
+            $('#scores > tbody:last-child').append(`<tr class="w3-hover-pale-green w3-hover-text-green"> <th class="w3-left-align"> ${name} </th> <th class="w3-center-align"> ${wins} </th> <th class="w3-center-align"> ${losses} </th></tr>`);
+        }*/
+
         $.changeView("scoreboard");
         // $("#scoreboardPane").fadeIn(1000);
     });
@@ -110,5 +140,4 @@ $(function () {
             $('#rooms > tbody:last-child').append(`<tr data-href=${room.id} role="button" class="w3-hover-pale-green w3-hover-text-green"> <th class="w3-left-align"> ${name} </th><th class="w3-right-align"> ${capacity} </th></tr>`);
         }
     });
-
 });
