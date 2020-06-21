@@ -179,10 +179,12 @@ export class CollisionGrid {
         if (grid[goal_tile] !== undefined) {
             let t = grid[goal_tile];
             let path = new paper.Path();
+            path.add(goal.position);
             while (t.parent !== t.tile){
                 t = grid[t.parent];
                 path.add(this.u_middle(t.tile));
             }
+            path.add(start.position);
             return path;
         }
 
