@@ -1,7 +1,22 @@
 //const cookieParser = require("cookie-parser");
 
+import {worldInLocalStorage,disableOverlay,enableOverlay} from "./modules/Utility.js";
 $(function () {
     let $msgField = $('#chatMsgField');
+
+    socket.on('lobby join', function(msg, join_bool) {
+        if (join_bool) {
+            $.changeView("game");
+        }
+    });
+
+    socket.on('game status', function(status_object) {
+        if(status_object.pause) {
+            enableOverlay("Game paused");
+        } else {
+            disableOverlay();
+        }
+    });
 
     $.joinRoom = function (roomId) {
         socket.emit('joinRoom', roomId, function (success, num) {
@@ -15,14 +30,13 @@ $(function () {
 
     $.createRoom = function () {
         let roomName = prompt("Name of new room");
-
+        let game_config = worldInLocalStorage();
         // Check room name requirements
         while (roomName.length < 1 || roomName.length > 20) {
             alert("Room name illegal, try again");
             roomName = prompt("Name of new room");
         }
-
-        socket.emit('addRoom', roomName, function (success, id) {
+        socket.emit('addRoom', roomName, game_config, function (success, id) {
             if (success) {
                 console.log("Added new room " + id);
                 $.joinRoom(id);
@@ -63,6 +77,17 @@ $(function () {
         $('#fileInput')[0].click();
     });
 
+    let d_hideGameConfigStatus = function (bool) {
+        document.getElementById('loadedGameConfiguration').hidden = bool;
+        document.getElementById('unloadGameConfiguration').hidden = bool;
+    }
+
+    // Do dom manipulation on storage events
+    if (worldInLocalStorage() !== null) {
+        document.getElementById('loadedGameConfiguration').textContent = "Map configuration loaded";
+        d_hideGameConfigStatus(false);
+    }
+
     // Handles the import button (game world from file) - Vanilla not jQuery
     document.getElementById('fileInput').addEventListener('change', () => {
         const file = document.getElementById('fileInput').files[0];
@@ -81,9 +106,16 @@ $(function () {
             localStorage.setItem("FileResultPaths", JSON.stringify(paths));
         }
         reader.readAsText(file);
-        document.getElementById('infoBoxP').innerText = "Loaded new map. Click generate!";
-        document.getElementById('infoBox').style.display = "inline"
+        document.getElementById('loadedGameConfiguration').textContent = "Map configuration loaded";
+        d_hideGameConfigStatus(false);
     });
+
+    $('#unloadGameConfiguration').click(function () {
+        localStorage.removeItem('FileResultDotTotal');
+        localStorage.removeItem('FileResultPaths');
+        d_hideGameConfigStatus(true);
+    });
+
 
     $('#generateBtn').click(function () {
         console.log("click");

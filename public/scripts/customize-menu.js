@@ -1,14 +1,3 @@
-const RESOLUTIONS = [
-    {res_x : 1024, res_y:576},
-    {res_x : 1152, res_y:648},
-    {res_x : 1280, res_y:720},
-    {res_x : 1366, res_y:768},
-    {res_x : 1600, res_y:900},
-    {res_x : 1920, res_y:1080},
-    {res_x : 2560, res_y:1440},
-    {res_x : 3840, res_y:2160 },
-];
-
 $(function () {
     $.openSettingsMenu = function() {
         console.log("entering settings");
@@ -35,7 +24,6 @@ $(function () {
         console.log("submit");
         e.preventDefault();
         setCookie("dotColor", $("input[name=dotColor]").val());
-        setCookie("gameResolution", $("input[name=gameResolution]").val());
         $.changeView('main_menu');
 
         // LAURA TODO: Fortæl serveren at brugeren vil ændre navn, ændr navnet som hører til brugerens socket
