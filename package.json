@@ -6,7 +6,7 @@
     "start": "node ./bin/www",
     "doc": "jsdoc public routes server -r -c ./documentation/configuration.json",
     "test": "mocha",
-    "dev": "nodemon --ignore server/ -r dotenv/config /bin/www"
+    "dev": "nodemon --ignore server/ --ignore out/ -r dotenv/config /bin/www"
   },
   "dependencies": {
     "@popperjs/core": "^2.0.6",
