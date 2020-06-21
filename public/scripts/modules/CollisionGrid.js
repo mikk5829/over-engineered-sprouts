@@ -1,5 +1,3 @@
-// The idea is that tiles are like buckets. Buc7kets are associated with keys and/or several keys
-// connects with a set of objects.
 // import {SproutWorld} from '../public/scripts/modules/SproutWorld.js';
 
 /**
@@ -45,7 +43,11 @@ export class CollisionGrid {
         return Math.floor(Math.random() * (max - min + 1) + min);
     }
 
-// Return tile indices overlapping hitbox (Hash function)
+    /**
+     * Return tile indices overlapping hitbox (Hash function)
+     * @param rectangle
+     * @memberOf Collision Grid
+     */
     t_rectangle_return(rectangle) {
         let tile_objects = new Set();
         // Min and Max corners of rectangle

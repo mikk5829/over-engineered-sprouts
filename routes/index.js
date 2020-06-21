@@ -4,9 +4,15 @@ var simpleDb = require('../server/db/simple-db')
 require('dotenv').config();
 
 /**
- * GET home page
+ * HTTP API for node.js and manipulating website
  * @namespace Routes
- *
+ * @author Mikkel Anderson
+ */
+
+/**
+ * Returns a new instance of JSONdb. Also adds database.json if it does not exist
+ * @memberOf Routes
+ * @returns {JSONdb}
  */
 router.get('/', async(req, res, next) => {
     var db = await simpleDb.getAllScores();
