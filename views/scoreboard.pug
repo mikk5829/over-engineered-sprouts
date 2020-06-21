@@ -1,18 +1,36 @@
 div(class="flex-container hidden")#scoreboard
     div(class="back-btn") X
+    div(class="container")
+        h1(class='center-text') Scoreboard
+        // Table containing scoreboard
+        table(class="w3-table w3-hoverable")#scores
+            thead
+                tr
+                    th(class="w3-center" style="cursor: pointer;" onclick="w3.sortHTML('#scores','.item', 'td:nth-child(1)')") name
+                    th(class="w3-center" style="cursor: pointer;" onclick="w3.sortHTML('#scores','.item', 'td:nth-child(2)')") wins
+                    th(class="w3-center" style="cursor: pointer;" onclick="w3.sortHTML('#scores','.item', 'td:nth-child(3)')") losses
+            tbody
+                -  results=Object.entries(results).sort(function (a, b) {return (a[1].wins < b[1].wins) ? 1 : ((a[1].wins > b[1].wins) ? -1 : 0);})
+                each result in results
+                    tr(class="w3-hover-pale-green w3-hover-text-green")
+                        td=result[0]
+                        td(class="w3-right-align")=result[1].wins
+                        td(class="w3-right-align")=result[1].losses
 
-    h1(class='center-text') Scoreboard
-    //- Space between header and content
-    div(style="height:90px;")
-    table(class="u-full-width" id="myTable")
-        thead
-            tr
-                th(style="cursor: pointer;" onclick="w3.sortHTML('#myTable','.item', 'td:nth-child(1)')") Name
-                th(style="cursor: pointer;" onclick="w3.sortHTML('#myTable','.item', 'td:nth-child(2)')") Wins
-                th(style="cursor: pointer;" onclick="w3.sortHTML('#myTable','.item', 'td:nth-child(3)')") Losses
-        //tbody
-        //    each result in results
-        //        tr(class="item")
-        //            td=result.name
-        //            td=result.wins
-        //            td=result.losses
+
+
+    //h1(class='center-text') Scoreboard
+    ////- Space between header and content
+    //div(style="height:90px;")
+    //table(class="u-full-width" id="myTable")
+    //    thead
+    //        tr
+    //            th(style="cursor: pointer;" onclick="w3.sortHTML('#myTable','.item', 'td:nth-child(1)')") Name
+    //            th(style="cursor: pointer;" onclick="w3.sortHTML('#myTable','.item', 'td:nth-child(2)')") Wins
+    //            th(style="cursor: pointer;" onclick="w3.sortHTML('#myTable','.item', 'td:nth-child(3)')") Losses
+    //    tbody
+    //        each result in results
+    //            tr(class="item")
+    //                td=result.name
+    //                td=result.wins
+    //                td=result.losses

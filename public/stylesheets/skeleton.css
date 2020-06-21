@@ -48,14 +48,14 @@
 @media (min-width: 400px) {
     .container {
         width: 85%;
-        padding: 20px 0 0 0;
+        /*padding: 20px 0 0 0;*/
     }
 }
 
 /* For devices larger than 550px */
 @media (min-width: 550px) {
     .container {
-        width: 80%;
+        /*width: 80%;*/
     }
 
     .column,
@@ -320,7 +320,7 @@ input[type="button"] {
     display: block;
     box-sizing: border-box;
     white-space: nowrap;
-    width: 8.5em;
+    width: 9.5em;
     height: 2.3em;
     margin: 0.5em auto;
 

@@ -3,15 +3,15 @@
 /**
  * Module dependencies.
  */
-
-var app = require('../app');
-var debug = require('debug')('over-engineered-sprout:server');
-var http = require('http');
-var Sentencer = require('sentencer');
+const app = require('../app');
+const debug = require('debug')('over-engineered-sprout:server');
+const http = require('http');
+const sentencer = require('sentencer');
+const math = require('mathjs');
+const db = require('../server/db/simple-db')
 
 var paper = require('paper');
-// import {CollisionGrid} from './public/scripts/modules/CollisionGrid.js';
-var CollisionGrid = require('./CollisionGrid');
+// var CollisionGrid = require('./CollisionGrid');
 paper.install(this);
 paper.setup([750, 472]);
 
@@ -33,7 +33,7 @@ var server = http.createServer(app);
  */
 
 server.listen(port, function () {
-    console.log("listening on *:3000")
+    console.log(`Listening on port ${port.valueOf()}`)
 });
 
 server.on('error', onError);
@@ -44,7 +44,17 @@ server.on('listening', onListening);
 * Socket IO
 * */
 const io = require('socket.io').listen(server);
-let activeRooms = [];
+let activeRooms = new Map();
+
+function makeid(length) {
+    var result = '';
+    var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var charactersLength = characters.length;
+    for (var i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
+}
 
 io.sockets.on('connect', function (socket) {
 
@@ -61,25 +71,31 @@ io.sockets.on('connect', function (socket) {
 
     // Client has submitted a path -> server will validate the path
     socket.on('submitPath', (pathJson, fromId, toId, fn) => {
-        console.log(`${socket.username} in game ${socket.room} submits a path`);
-        let game = activeRooms[socket.room];
-        let from = game.points[fromId];
-        let to = game.points[toId];
+        if (!activeRooms.has(socket.room)) return false;
+
+        let gameRoom = activeRooms.get(socket.room);
+        if (socket.playerNum !== gameRoom) fn(false);
+        console.log(`${socket.username} in game ${gameRoom.name} submits a path`);
+
+
+        let from = gameRoom.points[fromId];
+        let to = gameRoom.points[toId];
         let path = new paper.Path().importJSON(pathJson);
-        game.collisionGrid.t_insert_line(path.curves, path);
 
+        // Check if the move is legal
+        if (!gameRoom.isLegal(from, to, path)) fn(false); // Callback - path not accepted
 
-        if (!game.isLegal(from, to, path)) {
-            console.log("Illegal");
-            fn(false); // Callback - path not accepted
-            // path.remove();
-            return false;
-        } else {
+        else {
             fn(true); // Callback - path accepted
-            let resp = game.addPath(from, to, path);
-            io.sockets.in(socket.room).emit('updateGame', from.data.id, to.data.id, resp.path, resp.pointData);
-            // path.remove();
-            return true;
+
+            let resp = gameRoom.addPath(from, to, path);
+            io.sockets.in(socket.room).emit('updateGame', from.data.id, to.data.id, resp.path, resp.pointData, gameRoom.nextTurn());
+
+            if (gameRoom.isGameOver()) {
+                let loser = gameRoom.player1 === socket ? gameRoom.player2 : gameRoom.player1;
+                gameRoom.endGame(socket, loser);
+                io.sockets.in(socket.room).emit('gameOver', socket.playerNum);
+            }
         }
 
 
@@ -87,7 +103,10 @@ io.sockets.on('connect', function (socket) {
 
     // TODO: Only emit to lobby socket
     setInterval(function () {
-        let roomList = activeRooms.map(a => a.lobbyRepresentation());
+        let roomList = [];
+        for (let room of activeRooms.values()) {
+            roomList.push(room.lobbyRepresentation());
+        }
         socket.emit('updateLobby', roomList);
     }, 1000);
 
@@ -106,31 +125,29 @@ io.sockets.on('connect', function (socket) {
         } else {
             do {
                 let randInt = Math.floor(Math.random() * 10);
-                let adjective = Sentencer.make("{{ adjective }}").capitalize();
+                let adjective = sentencer.make("{{ adjective }}").capitalize();
                 username = adjective + "Guest" + randInt;
             } while (getSockets().some(e => e.username === username));
         }
         socket.username = username;
         console.log("Added user", username);
+        db.createUser(username);
         fn(username);
     });
 
     socket.on('suggestPath', (from, to, fn) => {
-        console.log("suggestpath")
-        let game = activeRooms[socket.room];
-        let suggestedPath = game.suggestPath(game.points[from], game.points[to]);
-        if (suggestedPath) {
-            console.log("path found")
-            fn(suggestedPath.exportJSON());
-        } else {
-            console.log("path not found")
-            fn(null);
-        }
+        if (!activeRooms.has(socket.room)) return false;
+        let game = activeRooms.get(socket.room);
+        let pos1 = game.points[from].position;
+        let pos2 = game.points[to].position;
+        fn(game.possibleMove(pos1, pos2));
     });
 
     socket.on('changeUsername', (requestedUsername, fn) => {
+        // TODO: Change username in JSON database!
         if (usernameIsValid(requestedUsername)) {
             console.log(`${socket.username} changed their username to ${requestedUsername}`);
+            db.changeUsername(socket.username, requestedUsername);
             socket.username = requestedUsername;
             fn(true);
         } else fn(false)
@@ -191,23 +208,21 @@ io.sockets.on('connect', function (socket) {
                 } else {
                     io.in(id).emit('lobby join', 'Something went wrong.. Sorry', false);
                 }
-            });
+                io.sockets.in(socket.room).emit('startGame', pointPositions, game.status);
+            }
         }
     });
 
     // Lets the user connect to an existing room if one exists
     // Otherwise prompts them to create their own room
-    socket.on('quickplay', function (fn) {
-        if (Object.keys(activeRooms).length === 0) fn(false);
-        else {
-            Object.keys(activeRooms).forEach((roomId) => {
-                let room = activeRooms[roomId];
-                if (room.playerCount < 2) {
-                    fn(true, roomId);
-                }
-            })
+    socket.on('quickPlay', function (fn) {
+        // fixme
+        for (let room of activeRooms.values()) {
+            if (room.playerCount < 2) fn(true, room.id);
         }
+
         fn(false);
+        return false;
     });
 
     // Client wants to create a new room => server validates room name, creates new room
@@ -225,7 +240,7 @@ io.sockets.on('connect', function (socket) {
     });
 
     socket.on('sendChatMsg', function (msg) {
-        console.log("received sendChat from " + socket.username + ": " + msg);
+        console.log("Received sendChatMsg from " + socket.username + ": " + msg);
         let timestamp = +new Date();
         io.sockets.in(socket.room).emit('updateChat', timestamp, socket.username, msg);
     });
@@ -239,6 +254,20 @@ io.sockets.on('connect', function (socket) {
         console.log(socket);
         io.sockets.in(socket.room).emit('game status', {pause:true});
 
+        // Lauras end game implementation. Included as comment as assistance
+        /*if (activeRooms.has(socket.room)) {
+            let game = activeRooms.get(socket.room);
+            console.log("has socket.room");
+            let response = game.userLeave(socket);
+            if (response.status === Status.gameover) {
+                console.log("Gameover prematurely", socket.room);
+                io.sockets.in(game.id).emit('gameOver', response.winner.playerNum);
+                game.endGame(response.winner, response.loser);
+            } else if (response.waiting) {
+                console.log("Deleting room", socket.room);
+                game.endGame();
+            }
+        }*/
         socket.leave(socket.room);
     });
 });
@@ -300,25 +329,82 @@ function usernameIsValid(username) {
     return !getSockets().some(e => io.sockets.sockets[e].username === username);
 }
 
+
+const Status = Object.freeze({"player1": 1, "player2": 2, "waiting": 3, "gameover": 4});
+
+function randomPoints(amount) {
+    let tileSize = 40;
+    let cellSize = 8;
+    let width = 750;
+    let height = 472;
+
+    let totalTiles = Math.floor(width / tileSize) * Math.floor(height / tileSize);
+    let tileMatrix = math.zeros(Math.floor(width / tileSize), Math.floor(height / tileSize), 'sparse');
+
+    // Set edge tiles to 1 to prevent dots being placed partially outside game canvas
+    let tileMatrixWidth = Math.floor(width / tileSize);
+    let tileMatrixHeight = Math.floor(height / tileSize);
+    tileMatrix.subset(math.index(0, math.range(0, tileMatrixHeight)), math.ones(tileMatrixHeight));
+    tileMatrix.subset(math.index(tileMatrixWidth - 1, math.range(0, tileMatrixHeight)), math.ones(tileMatrixHeight));
+    tileMatrix.subset(math.index(math.range(0, tileMatrixWidth), 0), math.ones(tileMatrixWidth));
+    tileMatrix.subset(math.index(math.range(0, tileMatrixWidth), tileMatrixHeight - 1), math.ones(tileMatrixWidth));
+
+    if (amount > totalTiles) {
+        console.log("dot_count > totalTiles... t_random won't be able to find enough random tiles!");
+    }
+
+    let getIndices = (value) => {
+        let indices = [];
+        tileMatrix.forEach((val, index, matrix) => {
+            if (val === value) {
+                indices.push(index);
+            }
+        });
+        return indices;
+    };
+
+    let updateMatrix = (index, value) => {
+        tileMatrix = tileMatrix.set(index, value);
+    };
+
+    let getRandomIndex = (value) => {
+        let indices = getIndices(value);
+        let randomIndex = Math.floor(Math.random() * indices.length);
+        updateMatrix(indices[randomIndex], 1);
+        return indices[randomIndex];
+    };
+
+    let permuted = [];
+    for (let i = 0; i < amount; i++) {
+        let randIndex = getRandomIndex(0);
+        permuted.push(new paper.Point(randIndex[0] * tileSize, randIndex[1] * tileSize));
+    }
+    return permuted;
+
+}
+
 class GameRoom {
-    constructor(id, name, players = []) {
+    constructor(id, name, player1 = null, player2 = null) {
         this.id = id;
         this.name = name;
-        this.players = players;
+        this.player1 = player1;
+        this.player2 = player2;
         this.playerCount = 0;
         this.maxCapacity = 2;
         this.project = new paper.Project([750, 472]);
         this.lineGroup = new paper.Group();
         this.points = [];
-        this.collisionGrid = null;
+        // this.collisionGrid = null;
+        this.gameStarted = false;
+        this.status = Status.waiting;
     }
 
-    init(mapConfiguration = null, numPoints = 10) {
-        this.collisionGrid = new CollisionGrid(8, this, new paper.Size(750, 472));
+    init(mapConfiguration = null, numPoints = 2) {
+        // this.collisionGrid = new CollisionGrid(10, this, new paper.Size(750, 472));
 
         let dotPoints = [];
         if (!mapConfiguration) {
-            dotPoints = this.collisionGrid.g_randomPoints(numPoints, 40);
+            dotPoints = randomPoints(numPoints);
         } else {
             dotPoints = this.collisionGrid.g_randomPoints(mapConfiguration.dots, 40);
             /*mapConfiguration.paths.forEach(dotPair => {
@@ -332,12 +418,17 @@ class GameRoom {
             let center = dotPoints[i];
             this.points[i] = this.createPoint(center, i, 0, []);
         }
+
+        let rand = Math.floor(Math.random() * 2);
+        this.status = rand === 1 ? Status.player1 : Status.player2;
+        this.gameStarted = true;
+        return this.points;
     }
 
     createPoint(pos, id, connections, edges) {
         let point = new paper.Path.Circle({
             center: pos,
-            radius: 10,
+            radius: 5,
         });
         point.data = {
             id: id,
@@ -379,28 +470,28 @@ class GameRoom {
             point.data.status = "done";
         };
 
-        if (this.collisionGrid != null) {
-            this.collisionGrid.t_insert_rectangle(point.bounds, point);
-        }
+        // if (this.collisionGrid != null) {
+        //     this.collisionGrid.t_insert_rectangle(point.bounds, point);
+        // }
 
 
         return point;
     }
 
     addPath(from, to, path) {
+        path.simplify(3);
         let originalPath = path.clone();
 
         // Create new point at midpoint of path
         let pointId = this.points.length;
         let newPoint = this.createPoint(path.getPointAt(path.length / 2), pointId, 0, []);
 
-        function save(from, to, path) {
-            from.data.connections += 1;
-            from.data.edges.push(path);
-            to.data.connections += 1;
-            to.data.edges.push(path);
-            path.data.vertices = [from, to];
-            path.simplify(3);
+        function save(_from, _to, path) {
+            _from.data.connections += 1;
+            _from.data.edges.push(path);
+            _to.data.connections += 1;
+            _to.data.edges.push(path);
+            path.data.vertices = [_from, _to];
             return path;
         }
 
@@ -415,7 +506,6 @@ class GameRoom {
 
         path1.addTo(this.lineGroup);
         path2.addTo(this.lineGroup);
-        path.addTo(this.lineGroup);
         this.points[pointId] = newPoint;
 
         // Return the unsplit path and the new poin
@@ -428,15 +518,6 @@ class GameRoom {
         //todo: send newPoint.data instead
 
         return {path: originalPath.exportJSON(), pointData: pointData};
-    }
-
-    lobbyRepresentation() {
-        // Returns a representation of this gameroom for the game lobby
-        return {
-            capacity: `${this.playerCount}/${this.maxCapacity}`,
-            id: '' + this.id,
-            name: this.name
-        }
     }
 
     isLegal(from, to, path) {
@@ -492,62 +573,105 @@ class GameRoom {
     }
 
     possibleMove(p1, p2, debug = false) {
-        console.log(p1,p2);
         /*TODO: Known bugs
         Sometimes the "parent edge" from DFS will be reversed and create an area outside the cycle. Check if direction is correct?
         If one large cycle is also split into 2 smaller cycles, one of them will be able to access all points on the other, but not vice versa.
          */
+        let tot = new paper.Path();
+
         let cycles = this.getCycles();
-        console.log(cycles.length);
         for (let c of cycles) {
             let total = new paper.Path();
             for (let p of c) {
                 for (let s of p.segments)
                     total.add(s);
             }
-            console.log("total: " + total.segments.length);
-            // total.fillColor = "blue"
-            // total.opacity = 0.1;
-            // return total;
 
             if (((total.contains(p1) && total.getLocationOf(p1) === null) && !total.contains(p2)) || ((total.contains(p2) && total.getLocationOf(p2) === null) && !total.contains(p1)))
                 return false;
             //total.remove();
+            // tot.addSegments(total.segments);
+
         }
         return true;
     }
 
-    suggestPath(p1, p2) {
-        // return this.possibleMove(p1.position, p2.position);
-        if (this.possibleMove(p1.position, p2.position)) {
-            console.log("if possiblemove");
-            let initCellSize = this.collisionGrid.cell_size;
-            let cellSize = initCellSize;
-            let suggest = this.collisionGrid.u_Astar(p1, p2);
-            while (!suggest) {
-                console.log("!suggest")
-                cellSize = cellSize / 2;
-                this.collisionGrid = new CollisionGrid(cellSize, this, new paper.Size(750, 472));
-                for (let line of this.lineGroup.children) {
-                    this.collisionGrid.t_insert_line(line.curves, line);
-                }
-                for (let point of this.points) {
-                    this.collisionGrid.t_insert_rectangle(point.bounds, point);
-                }
-                suggest = this.collisionGrid.u_Astar(p1, p2);
-            }
-            this.collisionGrid = new CollisionGrid(initCellSize, this, new paper.Size(750, 472));
-            for (let line of this.lineGroup.children) {
-                this.collisionGrid.t_insert_line(line.curves, line);
-            }
-
-            for (let point of this.points) {
-                this.collisionGrid.t_insert_rectangle(point.bounds, point);
-            }
-            suggest.strokeColor = "red";
-            return suggest;
-        } else {
-            return new paper.Path();
+    lobbyRepresentation() {
+        // Returns a representation of this gameroom for the game lobby
+        return {
+            capacity: `${this.playerCount}/${this.maxCapacity}`,
+            id: this.id,
+            name: this.name
         }
     }
+
+    userJoin(user) {
+        if (this.playerCount < 2) {
+            console.log(`User ${user.username} joined game ${this.name}`);
+
+            user.join(this.id);
+            user.room = this.id;
+            this.playerCount++;
+
+            if ((!this.player1 && !this.player2) || (!this.player1)) {
+                this.player1 = user;
+                user.playerNum = Status.player1;
+                return Status.player1;
+            } else if (!this.player2) {
+                this.player2 = user;
+                user.playerNum = Status.player2;
+                return Status.player2;
+            }
+        }
+    }
+
+    nextTurn() {
+        this.status = this.status === Status.player1 ? Status.player2 : Status.player1;
+        return this.status;
+    }
+
+    userLeave(user) {
+        console.log(`User ${user.username} left game ${this.name}`);
+        this.playerCount--;
+        let opponent = this.player1 === user ? this.player2 : this.player1;
+        this.player1 = this.player1 === user ? null : this.player1;
+        this.player2 = this.player2 === user ? null : this.player2;
+
+        // End game prematurely
+        if (this.gameStarted) return {status: Status.gameover, winner: opponent, loser: user};
+        else if (this.playerCount < 1) return {status: Status.waiting};
+    }
+
+    isGameOver() {
+        /*
+       * If there is a point with zero or one connections, it can loop back to itself.
+       * EDGE CASE: If paths have been drawn very close to the point so a legal loop cannot be drawn.
+       * */
+        if (this.points.some(p => p.data.connections < 2)) return false;
+
+        let twoConnections = this.points.filter(p => p.data.connections === 2);
+
+        /*
+        * If there is 0 or 1 points with 2 connections, and 0 points with <2 connections,
+        * no legal paths can be drawn --> game is over.
+        * */
+        if (twoConnections.length <= 1) return true;
+
+        /*
+        * Check if a path can be drawn between any of the points with two connections.
+        * */
+        for (let point of twoConnections) {
+            if (twoConnections.some(p => p !== point && this.possibleMove(point.position, p.position))) return false;
+        }
+        return true;
+    }
+
+    endGame(winner = null, loser = null) {
+        this.status = Status.gameover;
+        this.gameStarted = false;
+        if (winner) db.addWin(winner.username);
+        if (loser) db.addLoss(loser.username);
+        activeRooms.delete(this.id);
+    }
 }
+

@@ -1,5 +1,6 @@
 const JSONdb = require('simple-json-db');
-var fs = require('fs');
+let fs = require('fs');
+
 /**
  * These functions are used to manipulate the simple database
  * @namespace Database
@@ -8,6 +9,7 @@ var fs = require('fs');
 
 /**
  * Returns a new instance of JSONdb.
+ * @memberOf Database
  * @returns {JSONdb}
  */
 function createInstance() {
@@ -18,49 +20,69 @@ function createInstance() {
 
 /**
  * Creates new user in database
- * @param {string} user_name
- * @param {number} user_wins
- * @param {number} user_losses
+ * @param {string} username
+ * @param {number} userWins
+ * @param {number} userLosses
  * @memberOf Database
  * @returns {Object}
  */
-var createUser = exports.createUser = (user_name, user_wins, user_losses) => {
-    var db = createInstance();
-    const score = {
-        'wins': user_wins,
-        'losses': user_losses
+let createUser = exports.createUser = (username, userWins = 0, userLosses = 0) => {
+    let db = createInstance();
+    if (!db.has(username)) {
+        const score = {
+            'name': username,
+            'wins': userWins,
+            'losses': userLosses
+        };
+
+        db.set(username, score);
+        return db.get(username);
     }
+    return "user exists"
+};
 
-    db.set(user_name, score);
-    return db.get(user_name);
-}
-
-exports.addWin = (user_name) => {
-    var db = createInstance();
-    // if (!db.has(user_name)) {
-    //     createUser(user_name,0,0)
-    // }
-    let user_score = db.get(user_name);
-    const score = {
-        'wins': user_score.wins + 1,
-        'losses': user_score.losses
+let changeUsername = exports.changeUsername = (oldUsername, newUsername) => {
+    let db = createInstance();
+    if (!db.has(oldUsername)) createUser(newUsername);
+    else {
+        let userScore = db.get(oldUsername);
+        const score = {
+            'name': newUsername,
+            'wins': userScore.wins,
+            'losses': userScore.losses
+        };
+        db.delete(oldUsername);
+        db.set(newUsername, score);
     }
+};
 
-    db.set(user_name, score);
-    return db.get(user_name);
-}
-
-exports.addLoss = (user_name) => {
-    var db = createInstance();
-    // if (!db.has(user_name)) {
-    //     createUser(user_name,0,0)
-    // }
-    let user_score = db.get(user_name);
+exports.addWin = (username) => {
+    let db = createInstance();
+    let userScore = db.get(username);
     const score = {
+        'name': username,
+        'wins': userScore.wins + 1,
+        'losses': userScore.losses
+    };
+
+    db.set(username, score);
+    return db.get(username);
+};
+
+exports.addLoss = (username) => {
+    let db = createInstance();
+    let user_score = db.get(username);
+    const score = {
+        'name': username,
         'wins': user_score.wins,
         'losses': user_score.losses + 1
-    }
+    };
 
-    db.set(user_name, score);
-    return db.get(user_name);
-}
+    db.set(username, score);
+    return db.get(username);
+};
+
+exports.getAllScores = () => {
+    let db = createInstance();
+    return db.JSON();
+};

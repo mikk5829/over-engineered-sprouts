@@ -51,23 +51,36 @@ a, a:hover {
 .back-btn {
     float:       right;
     color:       var(--main-text-color);
-    font-size:   30px;
+    font-size:   25px;
     font-weight: 700;
     z-index:     75;
-    margin:      20px;
+    /*margin:      20px;*/
+    /*margin:      0 -1.2em;*/
     cursor:      pointer;
 }
 
 /************ MAIN MENU ************/
 #main_menu {
     align-items: center;
-    display: inline-flex;
+    display:     inline-flex;
 }
 
 .w3-table#rooms {
     margin:        0 1em;
     width:         24em;
     height:        30em;
+    cursor:        pointer;
+    border:        2px solid #4bac88;
+    border-radius: 4px;
+}
+.w3-center {
+    text-align: unset!important;
+}
+
+.w3-table#scores {
+    /*margin:        1em;*/
+    width:         100%;
+    height:        35em;
     cursor:        pointer;
     border:        2px solid #4bac88;
     border-radius: 4px;
@@ -122,18 +135,17 @@ canvas[resize] {
     display: inline-block
 }
 
-.center-text { text-align: center; }
+/*.center-text { text-align: center; }*/
 
-.right-align { float: right; }
+/*.right-align { float: right; }*/
 
-.button:hover {
-    background-color: #e5fff0;
-    border-color:     #4bac88;
-    color:            #4bac88;
-}
+/*.button:hover {*/
+/*    background-color: #e5fff0;*/
+/*    border-color:     #4bac88;*/
+/*    color:            #4bac88;*/
+/*}*/
 
 /************ CUSTOM SCROLLBAR ************/
-/*TODO: cross-browser scrollbar*/
 thead tr {
     color: rgba(75, 172, 136, 0.49);
 }
@@ -154,7 +166,7 @@ tbody::-webkit-scrollbar-thumb:hover {
 tbody {
     display:    block; /* to enable vertical scrolling */
     height:     inherit;
-    overflow-y: auto;
+    overflow-y: scroll;
 }
 
 tr {

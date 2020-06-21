@@ -3,12 +3,14 @@
  * @namespace SproutWorld
  * */
 
-const POINT_COLOR = 'Indigo';
+import {CollisionGrid} from "./CollisionGrid.js";
+
+const POINT_COLOR = getCookie('dotColor');
 const SEL_POINT_COLOR = 'Yellow';
 const HOVER_POINT_COLOR = 'CornflowerBlue';
 const STROKE_COLOR = 'Indigo';
 
-const POINT_SIZE = 10;
+const POINT_SIZE = 5;
 export {POINT_COLOR, SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR, POINT_SIZE}
 
 
@@ -22,13 +24,12 @@ export class SproutWorld {
      * @param sprout_configuration
      **/
 
-    constructor(pointColor = 'Indigo', groups = [], sprout_configuration = null) {
+    constructor(groups = [], sprout_configuration = null) {
         this.sprout_configuration = sprout_configuration;
         this.groups = groups;
-        this.lineGroup = new paper.Group();
+
+        this.pathGroup = new paper.Group(); // The paths that have been drawn so far
         this.points = [];
-        this.suggestedPath = new paper.Path();
-        this.pointColor = pointColor;
 
         this.dragEnabled = false;
         this.dragSelection = false; // Whether or not a line is currently being drawn
@@ -36,27 +37,30 @@ export class SproutWorld {
         this.source = null; // Source node of the current line
         this.target = null; // Target node of the current line
 
-
         this.hoveredPoint = null; // A legal point that the mouse hovers on
         this.selectedPoints = []; // The points which are currently selected/pressed
-        this.currentLine = null; // The line currently being drawn by the player
+        this.currentPath = null; // The path currently being drawn by the player
+        this.suggestedPath = null; // Path that has been suggested by the server
+        this.collisionGrid = new CollisionGrid(POINT_SIZE, this, new paper.Size(750, 472))
+
     }
 
+    /*
+    * A point can be selected either by clicking on it or drawing a path over it.
+    * */
     select(point) {
-        console.log("select", point.data.id);
-        if (point.data.connections >= 3) return;
-        if (!this.source) {
-            this.source = point;
 
+        if (point.data.connections >= 3) return;
+        if (!this.source) { // New selection - start drawing path
+            this.source = point;
             if (!this.clickSelection) {
-                // Start drawing a path
-                this.currentLine = new paper.Path({
+                this.currentPath = new paper.Path({
                     segments: [point.position],
                     strokeColor: STROKE_COLOR,
                     strokeCap: 'round',
                     strokeJoin: 'round'
                 });
-                this.currentLine.sendToBack();
+                this.currentPath.sendToBack();
             }
         } else if (!this.target) this.target = point;
     }
@@ -69,26 +73,25 @@ export class SproutWorld {
         this.dragEnabled = false;
         this.clickSelection = false;
         this.selectedPoints = [];
-        if (this.currentLine) this.currentLine.remove();
+        if (this.currentPath) this.currentPath.remove();
     }
 
     submitSelection() {
-        if (this.currentLine.segments.length <= 2 && (!this.source || !this.target)) {
+        if (this.currentPath.segments.length <= 2 || (!this.source || !this.target)) {
             this.resetSelection();
             return false;
         }
 
-        let line = this.currentLine;
-
         // Trim the path underneath the points
-        let sourcePoint = line.getCrossings(this.source)[0];
+        let path = this.currentPath;
+        let sourcePoint = path.getCrossings(this.source)[0];
         let i = this.source === this.target ? 1 : 0;
-        let targetPoint = line.getCrossings(this.target)[i];
-        line.curves[0].point1 = sourcePoint.point;
-        line.curves[line.curves.length - 1].point2 = targetPoint.point;
+        let targetPoint = path.getCrossings(this.target)[i];
+        path.curves[0].point1 = sourcePoint.point;
+        path.curves[path.curves.length - 1].point2 = targetPoint.point;
 
         // Send to server for validation
-        socket.emit('submitPath', line.exportJSON(), this.source.data.id, this.target.data.id, function (pathIsLegal, intersections = []) {
+        socket.emit('submitPath', path.exportJSON(), this.source.data.id, this.target.data.id, function (pathIsLegal, intersections = []) {
             if (pathIsLegal) console.log("Path legal");
             else console.log("Path illegal");
         });
@@ -100,7 +103,7 @@ export class SproutWorld {
         let point = new paper.Path.Circle({
             center: center,
             radius: POINT_SIZE,
-            fillColor: this.pointColor,
+            fillColor: POINT_COLOR,
         });
         point.data = {
             id: id,
@@ -129,7 +132,7 @@ export class SproutWorld {
                 _this.select(point);
                 _this.dragSelection = true;
             }
-            if (_this.dragEnabled) _this.currentLine.add(e.point);
+            if (_this.dragEnabled) _this.currentPath.add(e.point);
         };
 
         point.onMouseDown = function () {
@@ -164,7 +167,7 @@ export class SproutWorld {
                     _this.dragEnabled = false;
                 } else { // Select the point
                     _this.dragEnabled = false;
-                    _this.currentLine.add(point.position);
+                    _this.currentPath.add(point.position);
                     _this.select(point);
                     _this.selectedPoints.push(point);
                 }
@@ -188,21 +191,124 @@ export class SproutWorld {
                 }
             }
         };
+
+        point.dfs = function (toFind) {
+            //Marker som søgende
+            point.data.status = "seeking";
+            //Kør dfs på alle naboer
+            for (let e of point.data.edges) {
+                let p = e.data.vertices.find(x => x !== point);
+                if (e !== point.data.rootEdge && p !== undefined) {
+                    //Er en nabo søgende eller færdig, find alle links op til nabo og tilføj liste til cycles[]
+                    if (p.data.status === "") {
+                        //Sæt parent til dette point
+                        p.data.root = point;
+                        p.data.rootEdge = e;
+                        if (!(e.data.vertices[0] === p)) {
+                            e.reverse();
+                            e.data.vertices.reverse();
+                        }
+                        p.dfs(toFind);
+                    } else if (p.data.status === "done") {
+                        toFind.push(e);
+                    }
+                }
+            }
+            point.data.status = "done";
+        };
+
         return point;
     }
 
-
-    exportWorld() {
-        //alert("Exporting feature not done");
-        for (const group of this.groups) {
-            console.log(group.exportJSON());
+    getCycles() {
+        //TODO: Sørg for at alle edges "vender" rigtigt
+        //TODO: Ikke alle kanter i et loop bliver tilføjet selv om loopet er opdaget
+        let toFind = [];
+        for (let p of this.points) {
+            p.data.root = p;
+            p.data.rootEdge = null;
+            p.data.status = "";
         }
+        for (let p of this.points) {
+            if (p.data.status !== "done") {
+                p.data.root = p;
+                p.dfs(toFind);
+            }
+        }
+        let cycles = [];
+
+        for (let t of toFind) {
+            let paths0 = [];
+            let paths1 = [];
+            let loop = [t];
+            let p0 = t.data.vertices[0];
+            let p1 = t.data.vertices[1];
+            while (p0.data.root !== p0) {
+                paths0.push(p0.data.rootEdge);
+                p0 = p0.data.root;
+            }
+            while (p1.data.root !== p1) {
+                paths1.push(p1.data.rootEdge);
+                p1 = p1.data.root;
+            }
+            let difference = paths0.filter(x => !paths1.includes(x)).concat(paths1.filter(x => !paths0.includes(x)));
+            loop = loop.concat(difference);
+            cycles.push([...loop]);
+        }
+        return cycles;
     }
 
-    importWorld() {
-        alert("Importing feature not done");
-        for (const group of this.groups) {
-            alert("NOT DONE");
+    possibleMove(p1, p2, debug = false) {
+        /*TODO: Known bugs
+        Sometimes the "parent edge" from DFS will be reversed and create an area outside the cycle. Check if direction is correct?
+        If one large cycle is also split into 2 smaller cycles, one of them will be able to access all points on the other, but not vice versa.
+         */
+        let tot = new paper.Path();
+
+        let cycles = this.getCycles();
+        for (let c of cycles) {
+            let total = new paper.Path();
+            for (let p of c) {
+                for (let s of p.segments)
+                    total.add(s);
+            }
+
+            if (((total.contains(p1) && total.getLocationOf(p1) === null) && !total.contains(p2)) || ((total.contains(p2) && total.getLocationOf(p2) === null) && !total.contains(p1)))
+                return false;
+            //total.remove();
+            // tot.addSegments(total.segments);
+
         }
+        return true;
+    }
+
+    suggestPath(p1, p2) {
+        // return this.possibleMove(p1.position, p2.position);
+        if (this.suggestedPath)
+            this.suggestedPath.remove();
+        let initCellSize = this.collisionGrid.cell_size;
+        let cellSize = initCellSize;
+        let suggest = this.collisionGrid.u_Astar(p1, p2);
+        while (!suggest) {
+            cellSize = cellSize / 2;
+            this.collisionGrid = new CollisionGrid(cellSize, this, new paper.Size(750, 472));
+            for (let line of this.pathGroup.children) {
+                this.collisionGrid.t_insert_line(line.curves, line);
+            }
+            for (let point of this.points) {
+                this.collisionGrid.t_insert_rectangle(point.bounds, point);
+            }
+            suggest = this.collisionGrid.u_Astar(p1, p2);
+        }
+        this.collisionGrid = new CollisionGrid(initCellSize, this, new paper.Size(750, 472));
+        for (let line of this.pathGroup.children) {
+            this.collisionGrid.t_insert_line(line.curves, line);
+        }
+
+        for (let point of this.points) {
+            this.collisionGrid.t_insert_rectangle(point.bounds, point);
+        }
+        suggest.strokeColor = "red";
+        this.suggestedPath = suggest;
     }
 }
