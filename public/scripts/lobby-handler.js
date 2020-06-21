@@ -28,15 +28,15 @@ $(function () {
         });
     };
 
-        socket.emit('addRoom', prompt("Name of new room"), game_config, roomName, function (success, id) {
-        }
-            roomName = prompt("Name of new room");
-            alert("Room name illegal, try again");
-        while (roomName.length < 1 || roomName.length > 20) {
-        // Check room name requirements
-        let roomName = prompt("Name of new room");
     $.createRoom = function () {
-
+        let roomName = prompt("Name of new room");
+        let game_config = worldInLocalStorage();
+        // Check room name requirements
+        while (roomName.length < 1 || roomName.length > 20) {
+            alert("Room name illegal, try again");
+            roomName = prompt("Name of new room");
+        }
+        socket.emit('addRoom', roomName, game_config, function (success, id) {
             if (success) {
                 console.log("Added new room " + id);
                 $.joinRoom(id);
