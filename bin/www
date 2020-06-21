@@ -67,16 +67,15 @@ io.sockets.on('connect', function (socket) {
         let path = new paper.Path().importJSON(pathJson);
         // Check if the move is legal
         if (!gameRoom.isLegal(from, to, path)) {
-            console.log("simulated path illegal!")
-            fn(false);
+            console.log("simulated path illegal, but haha who cares amirite?!")
         } // Callback - path not accepted
-        else {
-            console.log("simulated path legal!")
-            // fn(true); // Callback - path accepted
 
-            let resp = gameRoom.addPath(from, to, path);
-            socket.emit('updateGame', from.data.id, to.data.id, resp.path, resp.pointData, null);
-        }
+        console.log("simulated path legal!")
+        fn(true); // Callback - path accepted
+
+        let resp = gameRoom.addPath(from, to, path);
+        socket.emit('updateGame', from.data.id, to.data.id, resp.path, resp.pointData, null);
+
     });
 
     // Client has submitted a path -> server will validate the path
@@ -226,7 +225,7 @@ io.sockets.on('connect', function (socket) {
     socket.on("joinSimulation", function (totalDots, fn) {
         console.log(totalDots)
         let id = makeid(6);
-        let game = new GameRoom(id, String(id));
+        let game = new GameRoom(id, String(id), null, null, true);
         socket.room = id;
         activeRooms.set(id, game);
 
@@ -241,6 +240,9 @@ io.sockets.on('connect', function (socket) {
         console.log(`${socket.username} disconnected`);
         if (activeRooms.has(socket.room)) {
             let game = activeRooms.get(socket.room);
+
+            if (game.simulation) return;
+
             console.log("has socket.room");
             let response = game.userLeave(socket);
             if (response.status === Status.gameover) {
@@ -368,9 +370,10 @@ function randomPoints(amount) {
 }
 
 class GameRoom {
-    constructor(id, name, player1 = null, player2 = null) {
+    constructor(id, name, player1 = null, player2 = null, simulation = false) {
         this.id = id;
         this.name = name;
+        this.simulation = simulation;
         this.player1 = player1;
         this.player2 = player2;
         this.playerCount = 0;

@@ -81,7 +81,8 @@ export class SproutWorld {
 
     submitSelection(simulate = false) {
         if (this.currentPath.segments.length <= 2 || (!this.source || !this.target)) {
-            console.log("case a")
+            console.log("case a",console.log(this.source,this.target,this.currentPath.
+            segments.length))
             this.resetSelection();
             return false;
         }
@@ -102,7 +103,8 @@ export class SproutWorld {
                 if (pathIsLegal) console.log("Path legal");
                 else {
                     // FIXME her siger serveren at paths er legal men alligevel kommer vi ind i else??!?!??!
-                    alert("Path illegal");
+                    // alert("Path illegal");
+                    console.log("hvorfor FUCK siger den path illegal her?????????????????????????????")
                     // $.submitMove(); // Continue to next move if this one failed for some reason
                 }
             });
@@ -110,9 +112,9 @@ export class SproutWorld {
             // Send to server for validation
             socket.emit('submitPath', path.exportJSON(), this.source.data.id, this.target.data.id, function (pathIsLegal, intersections = []) {
                 console.log("pathIsLegal", pathIsLegal)
-                if (pathIsLegal) console.log("Path legal");
+                if (pathIsLegal) console.log("Path legalWTF");
                 else {
-                    console.log("Path illegal");
+                    console.log("Path illegalWTF");
                 }
             });
         }
