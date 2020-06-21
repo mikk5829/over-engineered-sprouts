@@ -86,6 +86,15 @@ a, a:hover {
     border-radius: 4px;
 }
 
+td {
+    width: 33%;
+    display: table-cell;
+}
+
+th {
+    text-align: center;
+}
+
 
 /************ GAME ************/
 /* Scale canvas with resize attribute to full size */
@@ -171,6 +180,7 @@ tbody {
 
 tr {
     display:    table; /* display purpose; th's border */
+    text-align:    center;
     width:      100%;
     box-sizing: border-box; /* because of the border (Chrome needs this line, but not FF) */
     overflow-y: auto;
@@ -182,7 +192,6 @@ td {
     border-left:   none;
     overflow-y:    auto;
     white-space:   nowrap;
-    display:       block;
 }
 
 /************ TRANSFORM ************/

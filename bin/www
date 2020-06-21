@@ -119,7 +119,7 @@ io.sockets.on('connect', function (socket) {
         }
         socket.username = username;
         console.log("Added user", username);
-        db.createUser(username);
+        db.createUser(username,0,0);
         fn(username);
     });
 

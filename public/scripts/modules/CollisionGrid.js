@@ -1,8 +1,20 @@
-// The idea is that tiles are like buckets. Buc7kets are associated with keys and/or several keys
-// connects with a set of objects.
 // import {SproutWorld} from '../public/scripts/modules/SproutWorld.js';
 
+/**
+ * The idea is that tiles are like buckets. Buckets are associated with keys and/or several keys
+ * connects with a set of objects.
+ * @namespace Collision Grid
+ * @author Wictor Jensen & Benjamin Starostka
+ * */
 export class CollisionGrid {
+    /**
+     * Creates new Collision grid
+     * @memberOf Collision Grid
+     * @constructor
+     * @param cell_size
+     * @param world
+     * @param gridSize
+     */
     constructor(cell_size, world, gridSize) {
         this.world = world;
         this.cell_size = cell_size;
@@ -26,7 +38,11 @@ export class CollisionGrid {
         return Math.floor(Math.random() * (max - min + 1) + min);
     }
 
-// Return tile indices overlapping hitbox (Hash function)
+    /**
+     * Return tile indices overlapping hitbox (Hash function)
+     * @param rectangle
+     * @memberOf Collision Grid
+     */
     t_rectangle_return(rectangle) {
         let tile_objects = new Set();
         // Min and Max corners of rectangle
@@ -42,7 +58,12 @@ export class CollisionGrid {
         return tile_objects;
     }
 
-// Insert object at "tile from point" to dictionary
+    /**
+     * Insert object at "tile from point" to dictionary
+     * @param {string|number} tile
+     * @param {*} object
+     * @memberOf Collision Grid
+     */
     t_insert_point(tile, object) {
         if (this.contents[tile] === undefined) {
             this.contents[tile] = new Set();
@@ -50,7 +71,12 @@ export class CollisionGrid {
         this.contents[tile].add({object: object, visualized: false});
     }
 
-// Insert object from rectangle - Intended for use with hitboxes
+    /**
+     * Insert object from rectangle - Intended for use with hitboxes
+     * @param {paper.Rectangle | boolean} rectangle
+     * @param {*} object
+     * @memberOf Collision Grid
+     */
     t_insert_rectangle(rectangle, object) {
         // Min and Max corners of rectangle
         let min = this.t_return(rectangle.topLeft).split(";");
