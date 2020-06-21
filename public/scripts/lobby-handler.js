@@ -2,12 +2,6 @@
 
 import {worldInLocalStorage} from "./modules/Utility.js";
 
-let originalSetItemFunc = localStorage.setItem;
-localStorage.setItem = function () {
-    document.createEvent('Event').initEvent('updatedLocalStorage', true, true);
-    originalSetItemFunc.apply(this, arguments);
-};
-
 $(function () {
     let $msgField = $('#chatMsgField');
 
@@ -53,7 +47,18 @@ $(function () {
     $('#importBtn').click(function () {
         $('#fileInput')[0].click();
     });
-    
+
+    let d_hideGameConfigStatus = function (bool) {
+        document.getElementById('loadedGameConfiguration').hidden = bool;
+        document.getElementById('unloadGameConfiguration').hidden = bool;
+    }
+
+    // Do dom manipulation on storage events
+    if (worldInLocalStorage() !== null) {
+        document.getElementById('loadedGameConfiguration').textContent = "Map configuration loaded";
+        d_hideGameConfigStatus(false);
+    }
+
     // Handles the import button (game world from file) - Vanilla not jQuery
     document.getElementById('fileInput').addEventListener('change', () => {
         const file = document.getElementById('fileInput').files[0];
@@ -73,11 +78,14 @@ $(function () {
         }
         reader.readAsText(file);
         document.getElementById('loadedGameConfiguration').textContent = "Map configuration loaded";
+        d_hideGameConfigStatus(false);
     });
 
-    if (worldInLocalStorage() !== null) {
-        document.getElementById('loadedGameConfiguration').textContent = "Map configuration loaded";
-    }
+    $('#unloadGameConfiguration').click(function () {
+        localStorage.removeItem('FileResultDotTotal');
+        localStorage.removeItem('FileResultPaths');
+        d_hideGameConfigStatus(true);
+    });
 
 
     $('#generateBtn').click(function () {

@@ -314,7 +314,11 @@ class GameRoom {
             dotPoints = this.collisionGrid.g_randomPoints(numPoints, 40);
         } else {
             dotPoints = this.collisionGrid.g_randomPoints(mapConfiguration.dots, 40);
-            //ToDo generate paths between points here using mapConfiguration.paths
+            /*mapConfiguration.paths.forEach(dotPair => {
+                let points = //select points from dotPair ids
+                let suggested_path = suggestPath(points[0], points[1]);
+                // add the suggested path to game
+            });*/
         }
 
         for (let i = 0; i < dotPoints.length; i++) {
