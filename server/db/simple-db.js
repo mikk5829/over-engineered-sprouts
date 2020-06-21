@@ -1,18 +1,21 @@
 const JSONdb = require('simple-json-db');
 var fs = require('fs');
 /**
- * These functions are used to manipulate the simple database
+ * These functions are used to manipulate the simple database, all functions are async
+ * to make sure bigger databases are supported
  * @namespace Database
  * @author Mikkel Anderson
  * */
 
 /**
- * Returns a new instance of JSONdb.
+ * Returns a new instance of JSONdb. Also adds database.json if it does not exist
  * @memberOf Database
  * @returns {JSONdb}
  */
-function createInstance() {
+async function createInstance() {
     global.filePath = __dirname + '/database.json';
+    await fs.writeFile(global.filePath, "", {flag: 'wx'}, function (err) {
+    });
     fs.statSync(global.filePath);
     return new JSONdb(global.filePath);
 }
@@ -25,9 +28,9 @@ function createInstance() {
  * @memberOf Database
  * @returns {Object}
  */
-var createUser = exports.createUser = (user_name, user_wins, user_losses) => {
-    var db = createInstance();
-    if (!db.has(user_name)){
+exports.createUser = async (user_name, user_wins, user_losses) => {
+    var db = await createInstance();
+    if (!db.has(user_name)) {
         const score = {
             'name': user_name,
             'wins': user_wins,
@@ -40,8 +43,14 @@ var createUser = exports.createUser = (user_name, user_wins, user_losses) => {
     return "user exists"
 }
 
-exports.addWin = (user_name) => {
-    var db = createInstance();
+/**
+ * Adds win to specific user
+ * @param {string} user_name
+ * @memberOf Database
+ * @returns {Object}
+ */
+exports.addWin = async (user_name) => {
+    var db = await createInstance();
     // if (!db.has(user_name)) {
     //     createUser(user_name,0,0)
     // }
@@ -54,10 +63,16 @@ exports.addWin = (user_name) => {
 
     db.set(user_name, score);
     return db.get(user_name);
-}
+};
 
-exports.addLoss = (user_name) => {
-    var db = createInstance();
+/**
+ * Adds loss to specific user
+ * @param {string} user_name
+ * @memberOf Database
+ * @returns {Object}
+ */
+exports.addLoss = async (user_name) => {
+    var db = await createInstance();
     // if (!db.has(user_name)) {
     //     createUser(user_name,0,0)
     // }
@@ -72,7 +87,33 @@ exports.addLoss = (user_name) => {
     return db.get(user_name);
 }
 
-exports.getAllScores = () => {
-    var db = createInstance();
-    return db.JSON();
+/**
+ * Gets all scores in database
+ * @memberOf Database
+ * @returns {Object} All scores in database
+ */
+exports.getAllScores = async () => {
+    var db = await createInstance();
+    let scores = await db.JSON();
+    return scores;
+}
+
+/**
+ * Gets user from database
+ * @memberOf Database
+ * @returns {Object} returns user
+ */
+exports.getUser = async (user_name) => {
+    var db = await createInstance();
+    return db.get(user_name);
+}
+
+/**
+ * Removes user from database
+ * @memberOf Database
+ * @returns {Object} Undefined if user does not exist
+ */
+exports.removeUser = async (user_name) => {
+    var db = await createInstance();
+    return db.delete(user_name);
 }
