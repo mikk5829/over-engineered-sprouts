@@ -1,4 +1,6 @@
 //const cookieParser = require("cookie-parser");
+// import {worldInLocalStorage} from "./modules/Utility.js";
+
 
 $(function () {
     $.disableOverlay();
@@ -63,28 +65,58 @@ $(function () {
 
     $('#importBtn').click(function () {
         $('#fileInput')[0].click();
+        let tDots = localStorage.getItem("FileResultDotTotal");
+        let tPaths = localStorage.getItem("FileResultPaths");
+        if (tDots !== null && tPaths !== null) {
+            return {dots: JSON.parse(tDots), paths: JSON.parse(tPaths)};
+        } else {
+            return null;
+        }
     });
 
     // Handles the import button (game world from file) - Vanilla not jQuery
     document.getElementById('fileInput').addEventListener('change', () => {
+        console.log("changed")
+
         const file = document.getElementById('fileInput').files[0];
         const reader = new FileReader();
         reader.onload = event => {
             const result = event.target.result;
             const split = result.split('\n');
-            const totalDots = split.length - 1;
+            const totalDots = Number(split[0]);
             let paths = [];
-            for (let i = 1; i < split.length; i++) {
+            for (let i = 1; i < split.length-1; i++) {
                 const dots = split[i].split(' ');
-                paths.push({dot1: dots[0], dot2: dots[1]});
+                paths.push({dot1: Number(dots[0]), dot2: Number(dots[1])});
             }
             // ToDo validate it is a valid world
             localStorage.setItem("FileResultDotTotal", String(totalDots));
             localStorage.setItem("FileResultPaths", JSON.stringify(paths));
-        }
+            console.log("POINTS", localStorage.getItem("FileResultDotTotal"));
+            console.log("PATHS", localStorage.getItem("FileResultPaths"))
+            // if (points,paths).isvalid:
+            // socket.emit("joinSimulation", numPoints, fn...)
+            // then the server makes a gameroom and says fn(true)
+
+            // for move in PATHS:
+            // if gameroom.possiblemove(move.dot1, move.dot2):
+            // socket.emit("drawpath",move.dot1,move.dot2) (user has to draw it with A*)
+            // else: socket.emit("pathfailed"
+
+            socket.emit("joinSimulation", totalDots, function(success, initialPoints) {
+                if (success) {
+                    $.changeView("game");
+                    $.startSimulation(initialPoints);
+                    // changeview to game
+                    // draw the points
+                    // then submit one move at a time from the paths list above
+                    // and if server says (y) then draw it automatically using A*
+                    // If server says nope then show an alert saying it wasn't possible
+                    // Or alert that the file is invalid or something
+                }
+            })
+        };
         reader.readAsText(file);
-        document.getElementById('infoBoxP').innerText = "Loaded new map. Click generate!";
-        document.getElementById('infoBox').style.display = "inline"
     });
 
     $('#generateBtn').click(function () {
