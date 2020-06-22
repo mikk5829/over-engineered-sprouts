@@ -167,7 +167,7 @@ io.sockets.on('connect', function (socket) {
             let playerNum = game.userJoin(socket);
             fn(true, playerNum);
 
-            if (game.playerCount === 2) {
+            if (game.playerCount === game.maxCapacity) {
                 console.log(`2 players connected to game ${id}`);
 
                 // Packs the positions of the points into a list for the clients to read
