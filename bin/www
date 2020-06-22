@@ -218,12 +218,17 @@ io.sockets.on('connect', function (socket) {
         let game = new GameRoom(id, String(id), null, null, true);
         socket.room = id;
         activeRooms.set(id, game);
-
         let pointPositions = [];
         for (let point of game.init(null, totalDots)) {
             pointPositions.push(point.position);
         }
-        fn(true, pointPositions);
+        if (pointPositions.length === 0) {
+            socket.leave(id);
+            activeRooms.delete(id);
+            fn(false, pointPositions);
+        } else {
+            fn(true, pointPositions);
+        }
     });
 
     socket.on('disconnect', async () => {

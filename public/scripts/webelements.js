@@ -7,14 +7,18 @@ $(function () {
         }
     };
 
-    $.enableOverlay = function (msg = "Paused") {
+    $.enableOverlay = function (msg = "Paused", enable_button) {
         $('#overlay').show();
         $('#overlay-text').text(msg);
+        if (enable_button) {
+            $('#overlay-btn').show();
+        }
     };
 
     $.disableOverlay = function () {
         $('#overlay').hide();
         $('#overlay-text').text('');
+        $('#overlay-btn').hide();
     };
 });
 
