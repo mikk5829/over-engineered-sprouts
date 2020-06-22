@@ -5,13 +5,12 @@
 
 import {CollisionGrid} from "./CollisionGrid.js";
 
-const POINT_COLOR = getCookie('dotColor');
 const SEL_POINT_COLOR = 'Yellow';
 const HOVER_POINT_COLOR = 'CornflowerBlue';
 const STROKE_COLOR = 'Indigo';
 
 const POINT_SIZE = 5;
-export {POINT_COLOR, SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR, POINT_SIZE}
+export {SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR, POINT_SIZE}
 
 
 export class SproutWorld {
@@ -29,7 +28,7 @@ export class SproutWorld {
         this.groups = groups;
 
         this.ready = true;
-
+        this.pointColor = getCookie('dotColor') !== null ? getCookie('dotColor') : 'Indigo';
         this.pathGroup = new paper.Group(); // The paths that have been drawn so far
         this.points = [];
         this.simulate = simulate;
@@ -115,7 +114,7 @@ export class SproutWorld {
         let point = new paper.Path.Circle({
             center: center,
             radius: POINT_SIZE,
-            fillColor: POINT_COLOR,
+            fillColor: this.pointColor,
         });
         point.data = {
             id: id,
