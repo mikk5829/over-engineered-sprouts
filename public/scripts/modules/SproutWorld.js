@@ -24,12 +24,15 @@ export class SproutWorld {
      * @param sprout_configuration
      **/
 
-    constructor(groups = [], sprout_configuration = null) {
+    constructor(simulate = false, groups = [], sprout_configuration = null) {
         this.sprout_configuration = sprout_configuration;
         this.groups = groups;
 
+        this.ready = true;
+
         this.pathGroup = new paper.Group(); // The paths that have been drawn so far
         this.points = [];
+        this.simulate = simulate;
 
         this.dragEnabled = false;
         this.dragSelection = false; // Whether or not a line is currently being drawn
@@ -73,28 +76,37 @@ export class SproutWorld {
         this.dragEnabled = false;
         this.clickSelection = false;
         this.selectedPoints = [];
+        this.ready = true;
         if (this.currentPath) this.currentPath.remove();
     }
 
-    submitSelection() {
-        if (this.currentPath.segments.length <= 2 || (!this.source || !this.target)) {
+    submitSelection(simulate = false) {
+        if (!simulate && (this.currentPath.segments.length <= 2 || (!this.source || !this.target))) {
+            console.log("case a", console.log(this.source.data.id, this.target.data.id));
             this.resetSelection();
             return false;
         }
 
         // Trim the path underneath the points
         let path = this.currentPath;
-        let sourcePoint = path.getCrossings(this.source)[0];
-        let i = this.source === this.target ? 1 : 0;
-        let targetPoint = path.getCrossings(this.target)[i];
-        path.curves[0].point1 = sourcePoint.point;
-        path.curves[path.curves.length - 1].point2 = targetPoint.point;
+        if (!simulate) {
+            let sourcePoint = path.getCrossings(this.source)[0];
+            let i = this.source === this.target ? 1 : 0;
+            let targetPoint = path.getCrossings(this.target)[i];
+            path.curves[0].point1 = sourcePoint.point;
+            path.curves[path.curves.length - 1].point2 = targetPoint.point;
+        }
 
-        // Send to server for validation
-        socket.emit('submitPath', path.exportJSON(), this.source.data.id, this.target.data.id, function (pathIsLegal, intersections = []) {
-            if (pathIsLegal) console.log("Path legal");
-            else console.log("Path illegal");
-        });
+        if (simulate) {
+            socket.emit('submitSimPath', path.exportJSON(), this.source.data.id, this.target.data.id, function (pathIsLegal) {
+                if (!pathIsLegal) $('#status-header').text(`Illegal move from ${fromId} to ${toId}.`);
+            });
+        } else {
+            // Send to server for validation
+            socket.emit('submitPath', path.exportJSON(), this.source.data.id, this.target.data.id, function (pathIsLegal) {
+                if (!pathIsLegal) $('#status-header').text(`Path illegal, try again.`);
+            });
+        }
         this.resetSelection();
     }
 
