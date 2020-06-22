@@ -128,3 +128,14 @@ exports.removeUser = async (user_name) => {
     var db = await createInstance();
     return db.delete(user_name);
 }
+
+/**
+ * Removes all users from database
+ * @memberOf Database
+ * @returns {Object}
+ */
+exports.removeAllUsers = async () => {
+    await fs.writeFile(global.filePath, "", {flag: 'w'}, function (err) {
+    });
+    return true;
+}
