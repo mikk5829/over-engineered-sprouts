@@ -53,6 +53,7 @@ $(function () {
 
                 } else { // Server giver ikke lov
                     console.log("Impossible");
+                    $('#status-header').text(`Illegal move from ${p1.data.id} to ${p1.data.id}.`);
                     world.resetSelection();
                 }
             });

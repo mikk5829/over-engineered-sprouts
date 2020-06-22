@@ -97,8 +97,11 @@ export class SproutWorld {
         }
 
         if (simulate) {
+            let from = this.source.data.id;
+            let to = this.target.data.id;
+            console.log(from,to)
             socket.emit('submitSimPath', path.exportJSON(), this.source.data.id, this.target.data.id, function (pathIsLegal) {
-                if (!pathIsLegal) $('#status-header').text(`Illegal move from ${fromId} to ${toId}.`);
+                if (!pathIsLegal) $('#status-header').text(`Illegal move from ${from} to ${to}.`);
             });
         } else {
             // Send to server for validation
