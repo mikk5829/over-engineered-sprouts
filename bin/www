@@ -642,7 +642,6 @@ class GameRoom {
         this.gameStarted = false;
         if (winner) db.addWin(winner.username);
         if (loser) db.addLoss(loser.username);
-        console.log("winner",winner.username,"loser",loser.username)
         activeRooms.delete(this.id);
     }
 }

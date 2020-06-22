@@ -84,10 +84,7 @@ exports.addWin = async (user_name) => {
  */
 exports.addLoss = async (user_name) => {
     var db = await createInstance();
-    // if (!db.has(user_name)) {
-    //     createUser(user_name,0,0)
-    // }
-    let user_score = db.get(user_name);
+    let user_score = await db.get(user_name);
     const score = {
         'name': user_name,
         'wins': user_score.wins,

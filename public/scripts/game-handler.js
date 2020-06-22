@@ -1,5 +1,5 @@
 import {SproutWorld} from "./modules/SproutWorld.js";
-import {POINT_COLOR, SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR, POINT_SIZE} from "./modules/SproutWorld.js";
+import {SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR, POINT_SIZE} from "./modules/SproutWorld.js";
 
 /**
  * TODO UPDATE DESCRIPTION
@@ -105,7 +105,7 @@ $(function () {
                 // Update the colors of the points
 
                 for (let point of world.points) {
-                    point.fillColor = POINT_COLOR;
+                    point.fillColor = world.pointColor;
                 }
 
                 if (world.hoveredPoint) world.hoveredPoint.fillColor = HOVER_POINT_COLOR;
@@ -174,7 +174,7 @@ $(function () {
 
             if (!world.clickSelection) {
                 // Reset point colors
-                for (let p of world.points) p.fillColor = POINT_COLOR;
+                for (let p of world.points) p.fillColor = world.pointColor;
                 if (world.points.includes(e.item)) e.item.fillColor = HOVER_POINT_COLOR;
 
                 // Reset the selection
