@@ -76,7 +76,7 @@ io.sockets.on('connect', function (socket) {
     });
 
     // Client has submitted a path -> server will validate the path
-    socket.on('submitPath', (pathJson, fromId, toId, fn) => {
+    socket.on('submitPath', async (pathJson, fromId, toId, fn) => {
         let gameRoom = activeRooms.get(socket.room);
         if (!activeRooms.has(socket.room) || socket.room !== gameRoom.id) return false;
 
@@ -98,7 +98,9 @@ io.sockets.on('connect', function (socket) {
 
             if (gameRoom.isGameOver()) {
                 let loser = gameRoom.player1 === socket ? gameRoom.player2 : gameRoom.player1;
-                gameRoom.endGame(socket, loser);
+                await gameRoom.endGame(socket, loser).then(function () {
+                    console.log("game ended")
+                });
                 io.sockets.in(socket.room).emit('gameOver', socket.playerNum);
             }
             return true;
@@ -229,7 +231,7 @@ io.sockets.on('connect', function (socket) {
         }
     });
 
-    socket.on('disconnect', function () {
+    socket.on('disconnect', async () => {
         console.log(`${socket.username} disconnected`);
         if (activeRooms.has(socket.room)) {
             let game = activeRooms.get(socket.room);
@@ -237,10 +239,10 @@ io.sockets.on('connect', function (socket) {
             if (response.status === Status.gameover) {
                 console.log("Gameover prematurely", socket.room);
                 io.sockets.in(game.id).emit('gameOver', response.winner.playerNum);
-                game.endGame(response.winner, response.loser);
+                await game.endGame(response.winner, response.loser);
             } else if (response === Status.waiting) {
                 console.log("Deleting room", socket.room);
-                game.endGame();
+                await game.endGame();
             }
         }
         socket.leave(socket.room);
@@ -642,11 +644,11 @@ class GameRoom {
         return true;
     }
 
-    endGame(winner = null, loser = null) {
+    async endGame(winner = null, loser = null) {
         this.status = Status.gameover;
         this.gameStarted = false;
-        if (winner) db.addWin(winner.username);
-        if (loser) db.addLoss(loser.username);
+        if (winner) await db.addWin(winner.username);
+        if (loser) await db.addLoss(loser.username);
         activeRooms.delete(this.id);
     }
 }
