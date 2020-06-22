@@ -72,7 +72,7 @@ exports.addWin = async (user_name) => {
         'wins': user_score.wins + 1,
         'losses': user_score.losses
     };
-    db.set(user_name, score);
+    await db.set(user_name, score);
     return db.get(user_name);
 };
 
@@ -91,7 +91,7 @@ exports.addLoss = async (user_name) => {
         'losses': user_score.losses + 1
     };
 
-    db.set(user_name, score);
+    await db.set(user_name, score);
     return db.get(user_name);
 };
 
