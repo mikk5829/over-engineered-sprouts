@@ -68,7 +68,7 @@ io.sockets.on('connect', function (socket) {
         let path = new paper.Path().importJSON(pathJson);
         // Check if the move is legal
         if (!gameRoom.isLegal(from, to, path, true)) {
-            socket.emit('illegalMove', fromId, toId);
+            fn(false);
         } else {
             let resp = gameRoom.addPath(from, to, path);
             socket.emit('updateGame', from.data.id, to.data.id, resp.path, resp.pointData, null);
