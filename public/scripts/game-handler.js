@@ -24,7 +24,10 @@ $(function () {
         $.submitMove = function () {
             console.log("remaining:", remainingMoves)
             // Submits the next move in the list
-            if (remainingMoves.length === 0) return;
+            if (remainingMoves.length === 0) {
+                $('#status-header').text('Simulation successful!');
+                return;
+            }
             let move = remainingMoves.shift();
             console.log("move:", move);
             let p1 = world.points[move.dot1 - 1];
@@ -32,7 +35,7 @@ $(function () {
 
             socket.emit('possiblePath', p1.data.id, p2.data.id, function (possible) {
                 if (possible) { // Server giver lov
-                    console.log("Possible")
+                    console.log("Possible");
                     world.source = p1;
                     world.target = p2;
                     world.suggestPath(p1, p2);
@@ -46,10 +49,23 @@ $(function () {
             });
         };
 
+        $("#game-back-btn").click(function () {
+            paper.project.activeLayer.removeChildren();
+            paper.view.remove();
+            $.changeView("main_menu");
+            world = undefined;
+            // socket.disconnect();
+            location.reload();
+
+        });
+
+
         $.startSimulation = function (initialPoints, moves) {
+            $('#status-header').text('Simulation ongoing');
+
             paper.setup(getCanvas());
             paper.project.activeLayer.locked = status !== playerNum;
-            world = new SproutWorld();
+            world = new SproutWorld(true);
             for (let i = 0; i < initialPoints.length; i++) {
                 let pos = new paper.Point(initialPoints[i][1], initialPoints[i][2]);
                 let p = world.addPoint(i, pos, 0);
@@ -57,15 +73,14 @@ $(function () {
             }
             // remainingMoves = localStorage.getItem("FileResultPaths");
             remainingMoves = moves;
-            console.log(remainingMoves)
-            console.log(remainingMoves.length)
-            /*for (let move of remainingMoves) {
-                $.submitMove(move);
-            }*/
             $.submitMove();
         };
 
         socket.on("startGame", function (initialPoints, status) {
+            if (status === playerNum) $('#status-header').text(`Your turn!`);
+            else $('#status-header').text('Waiting for opponent to draw.');
+
+
             paper.setup(getCanvas());
             paper.project.activeLayer.locked = status !== playerNum;
             world = new SproutWorld();
@@ -95,10 +110,13 @@ $(function () {
         });
 
         socket.on('updateGame', function (fromId, toId, pathJson, pointData, status) {
-            if (status) paper.project.activeLayer.locked = status !== playerNum;
+            if (!world.simulate) {
+                paper.project.activeLayer.locked = status !== playerNum;
+                if (status === playerNum) $('#status-header').text(`Your turn!`);
+                else $('#status-header').text('Waiting for opponent to draw.');
+            }
 
             console.log("Received game update from server");
-
             let path = new paper.Path().importJSON(pathJson);
             path.strokeColor = STROKE_COLOR;
             path.strokeCap = 'round';
@@ -112,15 +130,17 @@ $(function () {
             let pos = new paper.Point(pointData.center[1], pointData.center[2]);
             let p = world.addPoint(pointData.id, pos, 2)
             world.collisionGrid.t_insert_rectangle(p.bounds, p);
-            $.submitMove();
+            if (world.simulate) $.submitMove();
         });
 
         socket.on('gameOver', function (winner) {
-            if (playerNum === winner) alert('You won!');
-            else alert('You lost...');
-            paper.project.activeLayer.removeChildren();
+            paper.project.activeLayer.locked = true;
+            if (playerNum === winner) $('#status-header').text('You won!');
+            else $('#status-header').text('You lost...');
+            /*paper.project.activeLayer.removeChildren();
             paper.view.remove();
-            $.changeView("main_menu");
+            $.changeView("main_menu");*/
+            paper.view.onFrame = null;
             world = undefined;
         });
 

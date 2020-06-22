@@ -1,8 +1,10 @@
 div(class="flex-container hidden")#game
+    div(class="flex-container" style="display:inline-flex; width:100%; align-items:center; justify-content:space-evenly;")
+        button#game-back-btn back
+        h4(style="width:20em;")#status-header waiting
     canvas(resize="true" width=750 height=472)#sproutGameCanvas
-    table(class="w3-table w3-striped w3-text-teal msg-box")#messages
+    table(class="w3-table w3-striped w3-text-teal msg-box" style="margin-bottom: 0.5em;")#messages
         tbody
-
     form(action="" autocomplete="off")#chatMsgForm
         div(class="flex-container" style="display:inline-flex; width:100%")
             input(type="text" style="width:95%;")#chatMsgField

@@ -60,50 +60,39 @@ io.sockets.on('connect', function (socket) {
 
     socket.on('submitSimPath', (pathJson, fromId, toId, fn) => {
         if (!activeRooms.has(socket.room)) return false;
+
         let gameRoom = activeRooms.get(socket.room);
-        if (socket.playerNum !== gameRoom) fn(false);
+        // if (socket.playerNum !== gameRoom) fn(false);
         let from = gameRoom.points[fromId];
         let to = gameRoom.points[toId];
         let path = new paper.Path().importJSON(pathJson);
         // Check if the move is legal
-        if (!gameRoom.isLegal(from, to, path)) {
-            console.log("simulated path illegal, but haha who cares amirite?!")
-        } // Callback - path not accepted
-
-        console.log("simulated path legal!")
-        fn(true); // Callback - path accepted
-
-        let resp = gameRoom.addPath(from, to, path);
-        socket.emit('updateGame', from.data.id, to.data.id, resp.path, resp.pointData, null);
-
+        if (!gameRoom.isLegal(from, to, path, true)) {
+            socket.emit('illegalMove', fromId, toId);
+        } else {
+            let resp = gameRoom.addPath(from, to, path);
+            socket.emit('updateGame', from.data.id, to.data.id, resp.path, resp.pointData, null);
+        }
     });
 
     // Client has submitted a path -> server will validate the path
     socket.on('submitPath', (pathJson, fromId, toId, fn) => {
-        if (!activeRooms.has(socket.room)) return false;
-
         let gameRoom = activeRooms.get(socket.room);
-        if (socket.playerNum !== gameRoom) {
-            console.log("bliver dette kaldt???")
-            fn(false);
-        }
-        console.log(`${socket.username} in game ${gameRoom.name} submits a path`);
+        if (!activeRooms.has(socket.room) || socket.room !== gameRoom.id) return false;
 
+        console.log(`${socket.username} in game ${gameRoom.name} submits a path`);
 
         let from = gameRoom.points[fromId];
         let to = gameRoom.points[toId];
         let path = new paper.Path().importJSON(pathJson);
 
         // Check if the move is legal
-        if (!gameRoom.isLegal(from, to, path)) {
-            console.log("eller dette???")
+        if (!gameRoom.isLegal(from, to, path, false)) {
+            // Callback - path not accepted
             fn(false);
-        } // Callback - path not accepted
-
-        else {
-            console.log("callback true")
+            return false;
+        } else {
             fn(true); // Callback - path accepted
-
             let resp = gameRoom.addPath(from, to, path);
             io.sockets.in(socket.room).emit('updateGame', from.data.id, to.data.id, resp.path, resp.pointData, gameRoom.nextTurn());
 
@@ -112,9 +101,8 @@ io.sockets.on('connect', function (socket) {
                 gameRoom.endGame(socket, loser);
                 io.sockets.in(socket.room).emit('gameOver', socket.playerNum);
             }
+            return true;
         }
-
-
     });
 
     // TODO: Only emit to lobby socket
@@ -172,7 +160,7 @@ io.sockets.on('connect', function (socket) {
     socket.on('joinRoom', function (id, fn) {
         console.log(`${socket.username} wants to join room with id ${id}`);
         let game = activeRooms.has(id) ? activeRooms.get(id) : null;
-        if (!game || game.playerCount >= 2) fn(false);
+        if (!game || game.playerCount >= game.maxCapacity) fn(false);
         else {
             let playerNum = game.userJoin(socket);
             fn(true, playerNum);
@@ -240,16 +228,12 @@ io.sockets.on('connect', function (socket) {
         console.log(`${socket.username} disconnected`);
         if (activeRooms.has(socket.room)) {
             let game = activeRooms.get(socket.room);
-
-            if (game.simulation) return;
-
-            console.log("has socket.room");
             let response = game.userLeave(socket);
             if (response.status === Status.gameover) {
                 console.log("Gameover prematurely", socket.room);
                 io.sockets.in(game.id).emit('gameOver', response.winner.playerNum);
                 game.endGame(response.winner, response.loser);
-            } else if (response.waiting) {
+            } else if (response === Status.waiting) {
                 console.log("Deleting room", socket.room);
                 game.endGame();
             }
@@ -315,7 +299,6 @@ function usernameIsValid(username) {
     return !getSockets().some(e => io.sockets.sockets[e].username === username);
 }
 
-
 const Status = Object.freeze({"player1": 1, "player2": 2, "waiting": 3, "gameover": 4});
 
 function randomPoints(amount) {
@@ -377,11 +360,10 @@ class GameRoom {
         this.player1 = player1;
         this.player2 = player2;
         this.playerCount = 0;
-        this.maxCapacity = 2;
+        this.maxCapacity = !simulation ? 2 : 1;
         this.project = new paper.Project([750, 472]);
         this.lineGroup = new paper.Group();
         this.points = [];
-        // this.collisionGrid = null;
         this.gameStarted = false;
         this.status = Status.waiting;
     }
@@ -451,12 +433,6 @@ class GameRoom {
             }
             point.data.status = "done";
         };
-
-        // if (this.collisionGrid != null) {
-        //     this.collisionGrid.t_insert_rectangle(point.bounds, point);
-        // }
-
-
         return point;
     }
 
@@ -468,6 +444,8 @@ class GameRoom {
         let pointId = this.points.length;
         let newPoint = this.createPoint(path.getPointAt(path.length / 2), pointId, 0, []);
 
+        // FIXME simulation loop edgecase, doesn't have a midpoint ^^^
+
         function save(_from, _to, path) {
             _from.data.connections += 1;
             _from.data.edges.push(path);
@@ -478,8 +456,13 @@ class GameRoom {
         }
 
         // Separate into 2 subpaths - used for pathfinding
-        let path2 = path.splitAt(path.length / 2);
         let path1 = path.clone();
+        let path2;
+        if (this.simulation && from === to) {
+            console.log("simulation loop edge case!");
+            //FIXME
+            path2 = path.clone();
+        } else path2 = path.splitAt(path.length / 2);
         path1.insert(0, from.position);
         path2.add(to.position);
 
@@ -490,33 +473,32 @@ class GameRoom {
         path2.addTo(this.lineGroup);
         this.points[pointId] = newPoint;
 
-        // Return the unsplit path and the new poin
+        // Return the unsplit path and the new point
         let pointData = {
-            // x: newPoint.
             center: newPoint.position,
             id: pointId,
             connections: 2
         };
-        //todo: send newPoint.data instead
-
         return {path: originalPath.exportJSON(), pointData: pointData};
     }
 
-    isLegal(from, to, path) {
+    isLegal(from, to, path, simulate = false) {
         this.project.activate();
 
         if (!(from || to)) return false;
         else if (from === to && from.data.connections >= 2) return false;
         else if (from.data.connections >= 3 || to.data.connections >= 3) return false;
 
-        // Check for intersections w. existing paths
-        for (let line of this.lineGroup.getItems({type: 'path'})) {
-            if (path.getIntersections(line).length > 0) {
-                console.log("intersect")
-                return false;
+        if (!simulate) {
+            // Check for intersections w. existing paths
+            for (let line of this.lineGroup.getItems({type: 'path'})) {
+                if (path.getIntersections(line).length > 0) {
+                    console.log("intersect")
+                    return false;
+                }
             }
-        }
-        return path.getIntersections(path).length <= 0;
+            return path.getIntersections(path).length <= 0;
+        } else return true;
     }
 
     getCycles() {
@@ -576,8 +558,6 @@ class GameRoom {
 
             if (((total.contains(p1) && total.getLocationOf(p1) === null) && !total.contains(p2)) || ((total.contains(p2) && total.getLocationOf(p2) === null) && !total.contains(p1)))
                 return false;
-            //total.remove();
-            // tot.addSegments(total.segments);
 
         }
         return true;
@@ -618,6 +598,7 @@ class GameRoom {
     }
 
     userLeave(user) {
+        if (this.simulation) return Status.waiting;
         console.log(`User ${user.username} left game ${this.name}`);
         this.playerCount--;
         let opponent = this.player1 === user ? this.player2 : this.player1;
@@ -658,6 +639,7 @@ class GameRoom {
         this.gameStarted = false;
         if (winner) db.addWin(winner.username);
         if (loser) db.addLoss(loser.username);
+        console.log("winner",winner.username,"loser",loser.username)
         activeRooms.delete(this.id);
     }
 }

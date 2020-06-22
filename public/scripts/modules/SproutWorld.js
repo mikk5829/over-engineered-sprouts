@@ -24,7 +24,7 @@ export class SproutWorld {
      * @param sprout_configuration
      **/
 
-    constructor(groups = [], sprout_configuration = null) {
+    constructor(simulate = false, groups = [], sprout_configuration = null) {
         this.sprout_configuration = sprout_configuration;
         this.groups = groups;
 
@@ -32,6 +32,7 @@ export class SproutWorld {
 
         this.pathGroup = new paper.Group(); // The paths that have been drawn so far
         this.points = [];
+        this.simulate = simulate;
 
         this.dragEnabled = false;
         this.dragSelection = false; // Whether or not a line is currently being drawn
@@ -80,9 +81,8 @@ export class SproutWorld {
     }
 
     submitSelection(simulate = false) {
-        if (this.currentPath.segments.length <= 2 || (!this.source || !this.target)) {
-            console.log("case a",console.log(this.source,this.target,this.currentPath.
-            segments.length))
+        if (!simulate && (this.currentPath.segments.length <= 2 || (!this.source || !this.target))) {
+            console.log("case a", console.log(this.source.data.id, this.target.data.id));
             this.resetSelection();
             return false;
         }
@@ -98,24 +98,13 @@ export class SproutWorld {
         }
 
         if (simulate) {
-            socket.emit('submitSimPath', path.exportJSON(), this.source.data.id, this.target.data.id, function (pathIsLegal, intersections = []) {
-                console.log(pathIsLegal)
-                if (pathIsLegal) console.log("Path legal");
-                else {
-                    // FIXME her siger serveren at paths er legal men alligevel kommer vi ind i else??!?!??!
-                    // alert("Path illegal");
-                    console.log("hvorfor FUCK siger den path illegal her?????????????????????????????")
-                    // $.submitMove(); // Continue to next move if this one failed for some reason
-                }
+            socket.emit('submitSimPath', path.exportJSON(), this.source.data.id, this.target.data.id, function (pathIsLegal) {
+                if (!pathIsLegal) $('#status-header').text(`Illegal move from ${fromId} to ${toId}.`);
             });
         } else {
             // Send to server for validation
-            socket.emit('submitPath', path.exportJSON(), this.source.data.id, this.target.data.id, function (pathIsLegal, intersections = []) {
-                console.log("pathIsLegal", pathIsLegal)
-                if (pathIsLegal) console.log("Path legalWTF");
-                else {
-                    console.log("Path illegalWTF");
-                }
+            socket.emit('submitPath', path.exportJSON(), this.source.data.id, this.target.data.id, function (pathIsLegal) {
+                if (!pathIsLegal) $('#status-header').text(`Path illegal, try again.`);
             });
         }
         this.resetSelection();
