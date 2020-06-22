@@ -1,6 +1,11 @@
 import {SproutWorld} from "./modules/SproutWorld.js";
-import {getCookieValue, getResolutionFromCookie, worldInLocalStorage} from "./modules/Utility.js"
 import {POINT_COLOR, SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR, POINT_SIZE} from "./modules/SproutWorld.js";
+
+/**
+ * TODO UPDATE DESCRIPTION
+ * @namespace Game Handler
+ * @author Laura Hansen & Benjamin Starostka
+ * */
 
 function openGame() {
 
@@ -18,7 +23,11 @@ function reset() {
 }
 
 
-paper.install(window); // Make the paper scope global
+paper.install(window);
+/**
+ * Make the paper scope global
+ * @memberOf Game Handler
+ */
 $(function () {
 
         $.submitMove = function () {
@@ -144,7 +153,10 @@ $(function () {
             world = undefined;
         });
 
-        //Adds a new chat message to the chatlog
+        /**
+     * Adds a new chat message to the chatlog
+     * @memberOf Game Handler
+     */
         socket.on('updateChat', function (timestamp, sender, msg) {
             let time = new Date(timestamp).toTimeString().slice(0, 5);
             let sent = `(${time}) ${sender}:`;

@@ -19,7 +19,6 @@ $(function () {
 
     $.createRoom = function () {
         let roomName = prompt("Name of new room");
-
         // Check room name requirements
         while (roomName.length < 1 || roomName.length > 20) {
             alert("Room name illegal, try again");

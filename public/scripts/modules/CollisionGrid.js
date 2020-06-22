@@ -1,8 +1,20 @@
-// The idea is that tiles are like buckets. Buc7kets are associated with keys and/or several keys
-// connects with a set of objects.
 // import {SproutWorld} from '../public/scripts/modules/SproutWorld.js';
 
+/**
+ * Generates the world
+ * @namespace SproutWorld
+ * */
+
 export class CollisionGrid {
+    /**
+     * Collisiongrid constructor
+     * @constructor
+     * @memberof CollisionGrid
+     * @param cell_size The initial size of the cells in the grid
+     * @param world The world the grid is connected to
+     * @param gridSize The size of the game area in standard pixel measurements.
+     **/
+
     constructor(cell_size, world, gridSize) {
         this.world = world;
         this.cell_size = cell_size;
@@ -10,7 +22,12 @@ export class CollisionGrid {
         this.gridSize = gridSize;
     }
 
-// Return position of tile from point (Hash function)
+    /**
+     * Converts a paper Point object to a CollisionGrid tile format
+     * @memberof CollisionGrid
+     * @param point The point from the game map
+     * @returns {string} A string representation of the corresponding tile on the CollisionGrid
+     **/
     t_return(point) {
         return Math.floor(point.x / this.cell_size) + ";" + Math.floor(point.y / this.cell_size);
     }
@@ -26,7 +43,11 @@ export class CollisionGrid {
         return Math.floor(Math.random() * (max - min + 1) + min);
     }
 
-// Return tile indices overlapping hitbox (Hash function)
+    /**
+     * Return tile indices overlapping hitbox (Hash function)
+     * @param rectangle
+     * @memberOf Collision Grid
+     */
     t_rectangle_return(rectangle) {
         let tile_objects = new Set();
         // Min and Max corners of rectangle
@@ -43,6 +64,13 @@ export class CollisionGrid {
     }
 
 // Insert object at "tile from point" to dictionary
+    /**
+     * Associates a tile with an object
+     * @memberof CollisionGrid
+     * @param tile The tile on the CollisionGrid to insert the object
+     * @param object The object to associate with the tile
+     **/
+
     t_insert_point(tile, object) {
         if (this.contents[tile] === undefined) {
             this.contents[tile] = new Set();
@@ -51,6 +79,13 @@ export class CollisionGrid {
     }
 
 // Insert object from rectangle - Intended for use with hitboxes
+    /**
+     * Associates a group of tiles with an object
+     * @memberof CollisionGrid
+     * @param rectangle The area on the game map containing the object
+     * @param object The object to associate with the tiles
+     **/
+
     t_insert_rectangle(rectangle, object) {
         // Min and Max corners of rectangle
         let min = this.t_return(rectangle.topLeft).split(";");
@@ -62,6 +97,13 @@ export class CollisionGrid {
             }
         }
     }
+
+    /**
+     * Associates a series of tiles with a Path object
+     * @memberof CollisionGrid
+     * @param curves The curves denoting the path to follow and convert
+     * @param object The object to associate with the tiles
+     **/
 
     t_insert_line(curves, object) {
         for (let i = 0; i < curves.length; i++) {
@@ -144,6 +186,14 @@ export class CollisionGrid {
         return unexplored && in_map && inside && legal;
     }
 
+    /**
+     * Finds and returns a path between two points
+     * @memberof CollisionGrid
+     * @param start The starting point of the algorithm
+     * @param goal The end point of the algorithm
+     * @returns {Object}
+     **/
+
     u_Astar(start, goal){
         let grid = {};
         let goal_tile = this.t_return(goal.position);
@@ -188,7 +238,7 @@ export class CollisionGrid {
             return path;
         }
 
-        return false;
+        return null;
     }
 
 }

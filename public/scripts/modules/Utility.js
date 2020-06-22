@@ -1,3 +1,14 @@
+/**
+ * The Utility methods gets settings stored as cookies from the browser
+ * @namespace Utility
+ * @author Laura Hansen & Benjamin Starostka
+ * */
+
+/**
+ * Gets the cookies value
+ * @memberOf Utility
+ * @param cookieName
+ */
 export function getCookieValue(cookieName) {
     let cookies = document.cookie.split(';');
     for (let i = 0; i < cookies.length; i++) {
@@ -8,6 +19,11 @@ export function getCookieValue(cookieName) {
     }
 }
 
+/**
+ * Gets resolution used in the game from cookie
+ * @memberOf Utility
+ * @param cookieName
+ */
 export function getResolutionFromCookie(cookieName) {
     let value = getCookieValue(cookieName);
     let components;
@@ -18,6 +34,9 @@ export function getResolutionFromCookie(cookieName) {
     return components;
 }
 
+/**
+ * @memberOf Utility
+ */
 export function worldInLocalStorage() {
     let tDots = localStorage.getItem("FileResultDotTotal");
     let tPaths = localStorage.getItem("FileResultPaths");

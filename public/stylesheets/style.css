@@ -97,9 +97,18 @@ a, a:hover {
     border-radius: 4px;
 }
 
+td {
+    width: 33%;
+    display: table-cell;
+}
 thead#scoreThead {
     /*display: table-header-group*/
 }
+
+th {
+    text-align: center;
+}
+
 
 tbody#scoreTbody {
     /*display: table-row-group*/
@@ -188,6 +197,7 @@ tbody {
 
 tr {
     display:    table; /* display purpose; th's border */
+    text-align:    center;
     width:      100%;
     box-sizing: border-box; /* because of the border (Chrome needs this line, but not FF) */
     overflow-y: auto;
@@ -199,7 +209,6 @@ td {
     border-left:   none;
     overflow-y:    auto;
     white-space:   nowrap;
-    display:       block;
 }
 
 /************ TRANSFORM ************/
@@ -239,6 +248,7 @@ td {
     animation-name:             slideIn;
     animation-duration:         4s
 }
+
 
 /************ OVERLAY ************/
 #overlay {
