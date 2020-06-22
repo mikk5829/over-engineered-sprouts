@@ -38,10 +38,10 @@ let add_win = router.post('/add-win', function(req, res) {
  * Adds loss to user.
  * @memberOf Database API
  */
-let add_loss = router.post('/add-loss', function(req, res) {
+let add_loss = router.post('/add-loss', async(req, res) => {
     var user_name = req.body.name;
 
-    var response = db.addLoss(user_name);
+    var response = await db.addLoss(user_name);
 
     res.send('wins: ' + response.wins + ' losses: ' + response.losses);
 });
@@ -50,8 +50,18 @@ let add_loss = router.post('/add-loss', function(req, res) {
  * Gets all scores in db.
  * @memberOf Database API
  */
-let get_scores = router.get('/get-scores', function(req, res) {
-    var response = db.getAllScores();
+let get_scores = router.get('/get-scores', async(req, res) => {
+    var response = await db.getAllScores();
+
+    res.send(response);
+})
+
+/**
+ * Removes all scores in db.
+ * @memberOf Database API
+ */
+let remove_scores = router.get('/remove-scores', async(req, res) => {
+    var response = await db.removeAllUsers();
 
     res.send(response);
 })

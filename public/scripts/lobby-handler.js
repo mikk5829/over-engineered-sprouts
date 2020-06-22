@@ -79,6 +79,7 @@ $(function () {
 
         const file = document.getElementById('fileInput').files[0];
         const reader = new FileReader();
+
         reader.onload = event => {
             const result = event.target.result;
             const split = result.split('\n');
@@ -106,6 +107,8 @@ $(function () {
                 if (success) {
                     $.changeView("game");
                     $.startSimulation(initialPoints, paths);
+                } else {
+                    $.enableOverlay("Invalid file!", true);
                 }
             })
         };
@@ -114,6 +117,10 @@ $(function () {
 
     $('#generateBtn').click(function () {
         console.log("click");
+    });
+
+    $('#overlay-btn').click(function () {
+        $.disableOverlay();
     });
 
     $('#settingsBtn').click(function () {

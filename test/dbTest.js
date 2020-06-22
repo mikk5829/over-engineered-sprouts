@@ -79,4 +79,21 @@ describe('database testing', async function() {
         })
     })
 
+    context('Normal user', function() {
+        it('should exist', async function() {
+            await db.createUser(user_name,0,0)
+            await db.createUser(new_user_name,0,0)
+            let user = await db.getUser(user_name)
+            expect(user.name).to.equal(user_name)
+        })
+    })
+
+    context('Remove all users', function() {
+        it('should not have any users left', async function() {
+            await db.removeAllUsers()
+            let scores = await db.getAllScores()
+            expect(Object.keys(scores).length).to.equal(0)
+        })
+    })
+
 })

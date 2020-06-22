@@ -1,14 +1,14 @@
 {
   "stats": {
-    "suites": 10,
-    "tests": 9,
-    "passes": 9,
+    "suites": 12,
+    "tests": 11,
+    "passes": 11,
     "pending": 0,
     "failures": 0,
-    "start": "2020-06-22T08:42:57.909Z",
-    "end": "2020-06-22T08:42:57.937Z",
-    "duration": 28,
-    "testsRegistered": 9,
+    "start": "2020-06-22T09:45:21.736Z",
+    "end": "2020-06-22T09:45:21.755Z",
+    "duration": 19,
+    "testsRegistered": 11,
     "passPercent": 100,
     "pendingPercent": 0,
     "other": 0,
@@ -18,7 +18,7 @@
   },
   "results": [
     {
-      "uuid": "a43b4e7e-8ec6-4d76-80fa-638c4a51ba17",
+      "uuid": "97b7d1ff-2a45-453c-8bae-7f4b222103b5",
       "title": "",
       "fullFile": "",
       "file": "",
@@ -27,7 +27,7 @@
       "tests": [],
       "suites": [
         {
-          "uuid": "228f578c-ef7c-4749-9d2f-deeadade1684",
+          "uuid": "910a4fce-6e5a-4d2f-93f3-4b78d9625b77",
           "title": "database testing",
           "fullFile": "/Users/mikkelrosenfeldtanderson/Udvikler/over-engineered-sprout/test/dbTest.js",
           "file": "/test/dbTest.js",
@@ -36,7 +36,7 @@
           "tests": [],
           "suites": [
             {
-              "uuid": "18aa9ef8-28ac-4211-80a4-7425bd960cb1",
+              "uuid": "1dc07b00-e6bf-467e-bec1-cc2d9ee071b6",
               "title": "Normal user",
               "fullFile": "/Users/mikkelrosenfeldtanderson/Udvikler/over-engineered-sprout/test/dbTest.js",
               "file": "/test/dbTest.js",
@@ -47,7 +47,7 @@
                   "title": "should exist",
                   "fullTitle": "database testing Normal user should exist",
                   "timedOut": false,
-                  "duration": 4,
+                  "duration": 3,
                   "state": "passed",
                   "speed": "fast",
                   "pass": true,
@@ -56,26 +56,26 @@
                   "context": null,
                   "code": "await db.removeUser(user_name)\nawait db.createUser(user_name,0,0)\nlet user = await db.getUser(user_name)\nexpect(user.name).to.equal(user_name)",
                   "err": {},
-                  "uuid": "0c75af19-807a-4f32-ba43-6131d92b8db0",
-                  "parentUUID": "18aa9ef8-28ac-4211-80a4-7425bd960cb1",
+                  "uuid": "213dee7d-dbfc-44df-8314-47ee393b1303",
+                  "parentUUID": "1dc07b00-e6bf-467e-bec1-cc2d9ee071b6",
                   "isHook": false,
                   "skipped": false
                 }
               ],
               "suites": [],
               "passes": [
-                "0c75af19-807a-4f32-ba43-6131d92b8db0"
+                "213dee7d-dbfc-44df-8314-47ee393b1303"
               ],
               "failures": [],
               "pending": [],
               "skipped": [],
-              "duration": 4,
+              "duration": 3,
               "root": false,
               "rootEmpty": false,
               "_timeout": 2000
             },
             {
-              "uuid": "e2ab2206-438e-4428-9354-02ce05c0a06e",
+              "uuid": "705ecff7-87c6-4445-987c-a06f3770ee33",
               "title": "Normal user",
               "fullFile": "/Users/mikkelrosenfeldtanderson/Udvikler/over-engineered-sprout/test/dbTest.js",
               "file": "/test/dbTest.js",
@@ -86,7 +86,7 @@
                   "title": "should not be created twice",
                   "fullTitle": "database testing Normal user should not be created twice",
                   "timedOut": false,
-                  "duration": 0,
+                  "duration": 1,
                   "state": "passed",
                   "speed": "fast",
                   "pass": true,
@@ -95,26 +95,26 @@
                   "context": null,
                   "code": "let user = await db.createUser(user_name,0,0)\nexpect(user).to.equal(\"user exists\")",
                   "err": {},
-                  "uuid": "86c9f88e-92a4-459e-85fc-af63543ceb7c",
-                  "parentUUID": "e2ab2206-438e-4428-9354-02ce05c0a06e",
+                  "uuid": "9e3b14c5-9beb-4ff3-90e6-4a9fa86063a4",
+                  "parentUUID": "705ecff7-87c6-4445-987c-a06f3770ee33",
                   "isHook": false,
                   "skipped": false
                 }
               ],
               "suites": [],
               "passes": [
-                "86c9f88e-92a4-459e-85fc-af63543ceb7c"
+                "9e3b14c5-9beb-4ff3-90e6-4a9fa86063a4"
               ],
               "failures": [],
               "pending": [],
               "skipped": [],
-              "duration": 0,
+              "duration": 1,
               "root": false,
               "rootEmpty": false,
               "_timeout": 2000
             },
             {
-              "uuid": "c245642d-0bba-4148-b371-caa5505bb522",
+              "uuid": "04cd1948-6339-4d12-a718-00b9ac3dd323",
               "title": "Normal user",
               "fullFile": "/Users/mikkelrosenfeldtanderson/Udvikler/over-engineered-sprout/test/dbTest.js",
               "file": "/test/dbTest.js",
@@ -125,7 +125,7 @@
                   "title": "should have 0 wins",
                   "fullTitle": "database testing Normal user should have 0 wins",
                   "timedOut": false,
-                  "duration": 1,
+                  "duration": 0,
                   "state": "passed",
                   "speed": "fast",
                   "pass": true,
@@ -134,93 +134,15 @@
                   "context": null,
                   "code": "let user = await db.getUser(user_name)\nexpect(user.wins).to.equal(0)",
                   "err": {},
-                  "uuid": "342dfbc5-8b8a-4831-a23b-f3b10d3c3872",
-                  "parentUUID": "c245642d-0bba-4148-b371-caa5505bb522",
+                  "uuid": "959b1607-382c-4f7f-afe0-0510a8277059",
+                  "parentUUID": "04cd1948-6339-4d12-a718-00b9ac3dd323",
                   "isHook": false,
                   "skipped": false
                 }
               ],
               "suites": [],
               "passes": [
-                "342dfbc5-8b8a-4831-a23b-f3b10d3c3872"
-              ],
-              "failures": [],
-              "pending": [],
-              "skipped": [],
-              "duration": 1,
-              "root": false,
-              "rootEmpty": false,
-              "_timeout": 2000
-            },
-            {
-              "uuid": "1895b580-5d32-4b48-8519-35f4f568f123",
-              "title": "Normal user",
-              "fullFile": "/Users/mikkelrosenfeldtanderson/Udvikler/over-engineered-sprout/test/dbTest.js",
-              "file": "/test/dbTest.js",
-              "beforeHooks": [],
-              "afterHooks": [],
-              "tests": [
-                {
-                  "title": "should have 0 losses",
-                  "fullTitle": "database testing Normal user should have 0 losses",
-                  "timedOut": false,
-                  "duration": 1,
-                  "state": "passed",
-                  "speed": "fast",
-                  "pass": true,
-                  "fail": false,
-                  "pending": false,
-                  "context": null,
-                  "code": "let user = await db.getUser(user_name)\nexpect(user.losses).to.equal(0)",
-                  "err": {},
-                  "uuid": "e1d145de-788e-453f-903c-e2b1610ad76f",
-                  "parentUUID": "1895b580-5d32-4b48-8519-35f4f568f123",
-                  "isHook": false,
-                  "skipped": false
-                }
-              ],
-              "suites": [],
-              "passes": [
-                "e1d145de-788e-453f-903c-e2b1610ad76f"
-              ],
-              "failures": [],
-              "pending": [],
-              "skipped": [],
-              "duration": 1,
-              "root": false,
-              "rootEmpty": false,
-              "_timeout": 2000
-            },
-            {
-              "uuid": "79e979f1-ddfb-410d-ade7-26dffb87a222",
-              "title": "Add win",
-              "fullFile": "/Users/mikkelrosenfeldtanderson/Udvikler/over-engineered-sprout/test/dbTest.js",
-              "file": "/test/dbTest.js",
-              "beforeHooks": [],
-              "afterHooks": [],
-              "tests": [
-                {
-                  "title": "should have 1 wins",
-                  "fullTitle": "database testing Add win should have 1 wins",
-                  "timedOut": false,
-                  "duration": 0,
-                  "state": "passed",
-                  "speed": "fast",
-                  "pass": true,
-                  "fail": false,
-                  "pending": false,
-                  "context": null,
-                  "code": "let user = await db.addWin(user_name)\nexpect(user.wins).to.equal(1)\nexpect(user.losses).to.equal(0)",
-                  "err": {},
-                  "uuid": "6b0f73b6-d9de-48e7-b8c9-d5ee63e3199b",
-                  "parentUUID": "79e979f1-ddfb-410d-ade7-26dffb87a222",
-                  "isHook": false,
-                  "skipped": false
-                }
-              ],
-              "suites": [],
-              "passes": [
-                "6b0f73b6-d9de-48e7-b8c9-d5ee63e3199b"
+                "959b1607-382c-4f7f-afe0-0510a8277059"
               ],
               "failures": [],
               "pending": [],
@@ -231,7 +153,85 @@
               "_timeout": 2000
             },
             {
-              "uuid": "cc4a8015-7673-4a67-bb8c-81b3a69d56d8",
+              "uuid": "edf198e4-d0b1-4b07-ab47-747680b6387f",
+              "title": "Normal user",
+              "fullFile": "/Users/mikkelrosenfeldtanderson/Udvikler/over-engineered-sprout/test/dbTest.js",
+              "file": "/test/dbTest.js",
+              "beforeHooks": [],
+              "afterHooks": [],
+              "tests": [
+                {
+                  "title": "should have 0 losses",
+                  "fullTitle": "database testing Normal user should have 0 losses",
+                  "timedOut": false,
+                  "duration": 0,
+                  "state": "passed",
+                  "speed": "fast",
+                  "pass": true,
+                  "fail": false,
+                  "pending": false,
+                  "context": null,
+                  "code": "let user = await db.getUser(user_name)\nexpect(user.losses).to.equal(0)",
+                  "err": {},
+                  "uuid": "b5d3e0c8-496e-4871-9166-4f0e9c33fc2f",
+                  "parentUUID": "edf198e4-d0b1-4b07-ab47-747680b6387f",
+                  "isHook": false,
+                  "skipped": false
+                }
+              ],
+              "suites": [],
+              "passes": [
+                "b5d3e0c8-496e-4871-9166-4f0e9c33fc2f"
+              ],
+              "failures": [],
+              "pending": [],
+              "skipped": [],
+              "duration": 0,
+              "root": false,
+              "rootEmpty": false,
+              "_timeout": 2000
+            },
+            {
+              "uuid": "016caf26-8eff-45bd-afb3-5a4ccd035963",
+              "title": "Add win",
+              "fullFile": "/Users/mikkelrosenfeldtanderson/Udvikler/over-engineered-sprout/test/dbTest.js",
+              "file": "/test/dbTest.js",
+              "beforeHooks": [],
+              "afterHooks": [],
+              "tests": [
+                {
+                  "title": "should have 1 wins",
+                  "fullTitle": "database testing Add win should have 1 wins",
+                  "timedOut": false,
+                  "duration": 1,
+                  "state": "passed",
+                  "speed": "fast",
+                  "pass": true,
+                  "fail": false,
+                  "pending": false,
+                  "context": null,
+                  "code": "let user = await db.addWin(user_name)\nexpect(user.wins).to.equal(1)\nexpect(user.losses).to.equal(0)",
+                  "err": {},
+                  "uuid": "38436bb7-4644-4115-97ee-1391f5c6778e",
+                  "parentUUID": "016caf26-8eff-45bd-afb3-5a4ccd035963",
+                  "isHook": false,
+                  "skipped": false
+                }
+              ],
+              "suites": [],
+              "passes": [
+                "38436bb7-4644-4115-97ee-1391f5c6778e"
+              ],
+              "failures": [],
+              "pending": [],
+              "skipped": [],
+              "duration": 1,
+              "root": false,
+              "rootEmpty": false,
+              "_timeout": 2000
+            },
+            {
+              "uuid": "b5e5b6fe-93c6-4913-8654-d6e1d7a51f7e",
               "title": "Add loss",
               "fullFile": "/Users/mikkelrosenfeldtanderson/Udvikler/over-engineered-sprout/test/dbTest.js",
               "file": "/test/dbTest.js",
@@ -251,15 +251,15 @@
                   "context": null,
                   "code": "let user = await db.addLoss(user_name)\nexpect(user.losses).to.equal(1)\nexpect(user.wins).to.equal(1)",
                   "err": {},
-                  "uuid": "e3974137-a5cc-4fa3-916f-cbb68c8a31c3",
-                  "parentUUID": "cc4a8015-7673-4a67-bb8c-81b3a69d56d8",
+                  "uuid": "6a2636dc-bf31-4340-8c9e-29216386d1d4",
+                  "parentUUID": "b5e5b6fe-93c6-4913-8654-d6e1d7a51f7e",
                   "isHook": false,
                   "skipped": false
                 }
               ],
               "suites": [],
               "passes": [
-                "e3974137-a5cc-4fa3-916f-cbb68c8a31c3"
+                "6a2636dc-bf31-4340-8c9e-29216386d1d4"
               ],
               "failures": [],
               "pending": [],
@@ -270,7 +270,7 @@
               "_timeout": 2000
             },
             {
-              "uuid": "0a18972a-bc45-446c-a65e-8e2d31aa5ec8",
+              "uuid": "def68043-2c55-4158-adba-c7f4f047f5b9",
               "title": "Get users",
               "fullFile": "/Users/mikkelrosenfeldtanderson/Udvikler/over-engineered-sprout/test/dbTest.js",
               "file": "/test/dbTest.js",
@@ -281,7 +281,7 @@
                   "title": "should have at least one user",
                   "fullTitle": "database testing Get users should have at least one user",
                   "timedOut": false,
-                  "duration": 0,
+                  "duration": 1,
                   "state": "passed",
                   "speed": "fast",
                   "pass": true,
@@ -290,26 +290,26 @@
                   "context": null,
                   "code": "let scores = await db.getAllScores()\nexpect(Object.keys(scores).length).to.be.at.least(1)",
                   "err": {},
-                  "uuid": "d01bceb9-c041-43db-9f39-a9e4d8f518b2",
-                  "parentUUID": "0a18972a-bc45-446c-a65e-8e2d31aa5ec8",
+                  "uuid": "731e2ee5-4810-4787-8d85-bb7f21f6c223",
+                  "parentUUID": "def68043-2c55-4158-adba-c7f4f047f5b9",
                   "isHook": false,
                   "skipped": false
                 }
               ],
               "suites": [],
               "passes": [
-                "d01bceb9-c041-43db-9f39-a9e4d8f518b2"
+                "731e2ee5-4810-4787-8d85-bb7f21f6c223"
               ],
               "failures": [],
               "pending": [],
               "skipped": [],
-              "duration": 0,
+              "duration": 1,
               "root": false,
               "rootEmpty": false,
               "_timeout": 2000
             },
             {
-              "uuid": "f8cc1929-1b33-416f-a6a3-ddda0c127d7e",
+              "uuid": "62ecc734-b7ee-4c10-88bc-c9773a580e9a",
               "title": "Change name",
               "fullFile": "/Users/mikkelrosenfeldtanderson/Udvikler/over-engineered-sprout/test/dbTest.js",
               "file": "/test/dbTest.js",
@@ -320,7 +320,7 @@
                   "title": "should change name in db and have same score",
                   "fullTitle": "database testing Change name should change name in db and have same score",
                   "timedOut": false,
-                  "duration": 3,
+                  "duration": 1,
                   "state": "passed",
                   "speed": "fast",
                   "pass": true,
@@ -329,26 +329,26 @@
                   "context": null,
                   "code": "let user = await db.getUser(user_name)\nawait db.changeUsername(user_name,new_user_name)\nlet new_user = await db.getUser(new_user_name)\nexpect(user.losses).to.equal(new_user.losses)\nexpect(user.wins).to.equal(new_user.wins)\nexpect(user.name).to.not.equal(new_user.name)",
                   "err": {},
-                  "uuid": "06d09962-115e-480c-8515-5142793f7fee",
-                  "parentUUID": "f8cc1929-1b33-416f-a6a3-ddda0c127d7e",
+                  "uuid": "19056966-a603-45c3-9925-53721eeff54c",
+                  "parentUUID": "62ecc734-b7ee-4c10-88bc-c9773a580e9a",
                   "isHook": false,
                   "skipped": false
                 }
               ],
               "suites": [],
               "passes": [
-                "06d09962-115e-480c-8515-5142793f7fee"
+                "19056966-a603-45c3-9925-53721eeff54c"
               ],
               "failures": [],
               "pending": [],
               "skipped": [],
-              "duration": 3,
+              "duration": 1,
               "root": false,
               "rootEmpty": false,
               "_timeout": 2000
             },
             {
-              "uuid": "794c7b7d-c170-4345-96ee-36b37d3b39dc",
+              "uuid": "4b4d590e-2aa9-47bd-b1dc-3381641f946e",
               "title": "Remove test user",
               "fullFile": "/Users/mikkelrosenfeldtanderson/Udvikler/over-engineered-sprout/test/dbTest.js",
               "file": "/test/dbTest.js",
@@ -359,7 +359,7 @@
                   "title": "should be undefined",
                   "fullTitle": "database testing Remove test user should be undefined",
                   "timedOut": false,
-                  "duration": 2,
+                  "duration": 0,
                   "state": "passed",
                   "speed": "fast",
                   "pass": true,
@@ -368,20 +368,98 @@
                   "context": null,
                   "code": "let user = await db.removeUser(new_user_name)\nexpect(user.name).to.be.undefined\nexpect(user.wins).to.be.undefined\nexpect(user.losses).to.be.undefined",
                   "err": {},
-                  "uuid": "7a0d00af-e0cd-488b-9381-6b537f5955fb",
-                  "parentUUID": "794c7b7d-c170-4345-96ee-36b37d3b39dc",
+                  "uuid": "05cc3fd0-4325-46f1-8438-9fc436fa032b",
+                  "parentUUID": "4b4d590e-2aa9-47bd-b1dc-3381641f946e",
                   "isHook": false,
                   "skipped": false
                 }
               ],
               "suites": [],
               "passes": [
-                "7a0d00af-e0cd-488b-9381-6b537f5955fb"
+                "05cc3fd0-4325-46f1-8438-9fc436fa032b"
               ],
               "failures": [],
               "pending": [],
               "skipped": [],
-              "duration": 2,
+              "duration": 0,
+              "root": false,
+              "rootEmpty": false,
+              "_timeout": 2000
+            },
+            {
+              "uuid": "0b2a4e88-c24e-4534-84a5-a5a020d6ab02",
+              "title": "Normal user",
+              "fullFile": "/Users/mikkelrosenfeldtanderson/Udvikler/over-engineered-sprout/test/dbTest.js",
+              "file": "/test/dbTest.js",
+              "beforeHooks": [],
+              "afterHooks": [],
+              "tests": [
+                {
+                  "title": "should exist",
+                  "fullTitle": "database testing Normal user should exist",
+                  "timedOut": false,
+                  "duration": 1,
+                  "state": "passed",
+                  "speed": "fast",
+                  "pass": true,
+                  "fail": false,
+                  "pending": false,
+                  "context": null,
+                  "code": "await db.createUser(user_name,0,0)\nawait db.createUser(new_user_name,0,0)\nlet user = await db.getUser(user_name)\nexpect(user.name).to.equal(user_name)",
+                  "err": {},
+                  "uuid": "2e6a8cff-197b-4c89-8892-cd3b780d1317",
+                  "parentUUID": "0b2a4e88-c24e-4534-84a5-a5a020d6ab02",
+                  "isHook": false,
+                  "skipped": false
+                }
+              ],
+              "suites": [],
+              "passes": [
+                "2e6a8cff-197b-4c89-8892-cd3b780d1317"
+              ],
+              "failures": [],
+              "pending": [],
+              "skipped": [],
+              "duration": 1,
+              "root": false,
+              "rootEmpty": false,
+              "_timeout": 2000
+            },
+            {
+              "uuid": "c7f2aa66-40b4-46c6-bd3b-3e6579fa7c1c",
+              "title": "Remove all users",
+              "fullFile": "/Users/mikkelrosenfeldtanderson/Udvikler/over-engineered-sprout/test/dbTest.js",
+              "file": "/test/dbTest.js",
+              "beforeHooks": [],
+              "afterHooks": [],
+              "tests": [
+                {
+                  "title": "should not have any users left",
+                  "fullTitle": "database testing Remove all users should not have any users left",
+                  "timedOut": false,
+                  "duration": 0,
+                  "state": "passed",
+                  "speed": "fast",
+                  "pass": true,
+                  "fail": false,
+                  "pending": false,
+                  "context": null,
+                  "code": "await db.removeAllUsers()\nlet scores = await db.getAllScores()\nexpect(Object.keys(scores).length).to.equal(0)",
+                  "err": {},
+                  "uuid": "8230d95a-d01c-43ed-a738-6bf595bf04ec",
+                  "parentUUID": "c7f2aa66-40b4-46c6-bd3b-3e6579fa7c1c",
+                  "isHook": false,
+                  "skipped": false
+                }
+              ],
+              "suites": [],
+              "passes": [
+                "8230d95a-d01c-43ed-a738-6bf595bf04ec"
+              ],
+              "failures": [],
+              "pending": [],
+              "skipped": [],
+              "duration": 0,
               "root": false,
               "rootEmpty": false,
               "_timeout": 2000
