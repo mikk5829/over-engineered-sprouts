@@ -1,5 +1,4 @@
-import {SproutWorld} from "./modules/SproutWorld.js";
-import {SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR} from "./modules/SproutWorld.js";
+import {HOVER_POINT_COLOR, SEL_POINT_COLOR, SproutWorld, STROKE_COLOR} from "./modules/SproutWorld.js";
 
 /**
  * TODO UPDATE DESCRIPTION

@@ -98,9 +98,10 @@ a, a:hover {
 }
 
 td {
-    width: 33%;
+    width:   33%;
     display: table-cell;
 }
+
 thead#scoreThead {
     /*display: table-header-group*/
 }
@@ -197,7 +198,7 @@ tbody {
 
 tr {
     display:    table; /* display purpose; th's border */
-    text-align:    center;
+    text-align: center;
     width:      100%;
     box-sizing: border-box; /* because of the border (Chrome needs this line, but not FF) */
     overflow-y: auto;
@@ -217,7 +218,6 @@ td {
     -webkit-transition: all 2s ease;
     -moz-transition:    all 2s ease;
     -o-transition:      all 2s ease;
-    -ms-transition:     all 2s ease;
     transition:         all 2s ease;
 }
 
@@ -252,24 +252,25 @@ td {
 
 /************ OVERLAY ************/
 #overlay {
-    position: fixed; /* Sit on top of the page content */
-    display: block; /* Hidden by default */
-    width: 100%; /* Full width (cover the whole page) */
-    height: 100%; /* Full height (cover the whole page) */
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0,0,0,0.5); /* Black background with opacity */
-    z-index: 10; /* Specify a stack order in case you're using a different order for other elements */
-    cursor: pointer; /* Add a pointer on hover */
+    position:         fixed; /* Sit on top of the page content */
+    display:          block; /* Hidden by default */
+    width:            100%; /* Full width (cover the whole page) */
+    height:           100%; /* Full height (cover the whole page) */
+    top:              0;
+    left:             0;
+    right:            0;
+    bottom:           0;
+    background-color: rgba(0, 0, 0, 0.5); /* Black background with opacity */
+    z-index:          10; /* Specify a stack order in case you're using a different order for other elements */
+    cursor:           pointer; /* Add a pointer on hover */
 }
-#overlay-text{
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    font-size: 50px;
-    color: white;
-    transform: translate(-50%,-50%);
-    -ms-transform: translate(-50%,-50%);
+
+#overlay-text {
+    position:      absolute;
+    top:           50%;
+    left:          50%;
+    font-size:     50px;
+    color:         white;
+    transform:     translate(-50%, -50%);
+    -ms-transform: translate(-50%, -50%);
 }
