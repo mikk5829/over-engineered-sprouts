@@ -3,6 +3,7 @@
 /**
  * Generates the world
  * @namespace SproutWorld
+ * @author Benjamin Starostka
  * */
 
 export class CollisionGrid {

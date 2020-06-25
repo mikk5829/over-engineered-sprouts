@@ -1,6 +1,7 @@
 /**
  * Generates the world
  * @namespace SproutWorld
+ * @author Benjamin Starostka & Laura Hansen & Wictor Jensen
  * */
 
 import {CollisionGrid} from "./CollisionGrid.js";
@@ -19,6 +20,8 @@ export class SproutWorld {
      * @constructor
      * @memberof SproutWorld
      * @param simulation
+     * @param groups
+     * @param sprout_configuration
      **/
 
     constructor(simulation = false) {
@@ -42,8 +45,9 @@ export class SproutWorld {
 
     }
 
-    /*
+    /**
     * A point can be selected either by clicking on it or drawing a path over it.
+     * @memberOf SproutWorld
     * */
     select(point) {
 

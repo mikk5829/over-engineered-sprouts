@@ -1,3 +1,9 @@
+/**
+ * JavasScript for manipulating the customize menu on the webpage.
+ * @namespace Views
+ * @author Laura Hansen
+ */
+
 $(function () {
     $.openSettingsMenu = function() {
         console.log("entering settings");

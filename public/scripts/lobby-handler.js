@@ -1,4 +1,10 @@
 $(function () {
+/**
+ * Logic for joining rooms and chat
+ * @namespace Socket
+ * @author Laura Hansen & Benjamin Starostka
+ */
+
     $.disableOverlay();
     let $msgField = $('#chatMsgField');
 

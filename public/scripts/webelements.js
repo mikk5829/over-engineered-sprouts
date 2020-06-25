@@ -26,7 +26,7 @@ $(function () {
  * Enables a more dynamic web experience, e.g. saves customization and adds animations to
  * web elements
  * @namespace WebElements
- * @author Mikkel Anderson
+ * @author Mikkel Anderson & Laura Hansen
  * */
 let today = new Date();
 let expiry = new Date(today.getTime() + 100 * 24 * 3600 * 1000); // Cookie expires after 100 days
