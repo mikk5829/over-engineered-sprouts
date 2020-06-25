@@ -11,8 +11,7 @@ const HOVER_POINT_COLOR = 'CornflowerBlue';
 const STROKE_COLOR = 'Indigo';
 
 const POINT_SIZE = 5;
-export {SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR, POINT_SIZE}
-
+export {SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR}
 
 export class SproutWorld {
 
@@ -20,26 +19,23 @@ export class SproutWorld {
      * World constructor
      * @constructor
      * @memberof SproutWorld
-     * @param simulate
+     * @param simulation
      * @param groups
      * @param sprout_configuration
      **/
 
-    constructor(simulate = false, groups = [], sprout_configuration = null) {
-        this.sprout_configuration = sprout_configuration;
-        this.groups = groups;
+    constructor(simulation = false) {
 
-        this.ready = true;
-        this.pointColor = getCookie('dotColor') !== null ? getCookie('dotColor') : 'Indigo';
+        this.pointColor = getCookie('pointColor') !== null ? getCookie('pointColor') : 'Indigo';
         this.pathGroup = new paper.Group(); // The paths that have been drawn so far
         this.points = [];
-        this.simulate = simulate;
+        this.simulation = simulation;
 
         this.dragEnabled = false;
-        this.dragSelection = false; // Whether or not a line is currently being drawn
+        this.dragSelection = false; // Whether or not a path is currently being drawn
         this.clickSelection = false; // Whether or not the drawing should be updated right now
-        this.source = null; // Source node of the current line
-        this.target = null; // Target node of the current line
+        this.source = null; // Source node of the current path
+        this.target = null; // Target node of the current path
 
         this.hoveredPoint = null; // A legal point that the mouse hovers on
         this.selectedPoints = []; // The points which are currently selected/pressed
@@ -78,20 +74,18 @@ export class SproutWorld {
         this.dragEnabled = false;
         this.clickSelection = false;
         this.selectedPoints = [];
-        this.ready = true;
         if (this.currentPath) this.currentPath.remove();
     }
 
-    submitSelection(simulate = false) {
-        if (!simulate && (this.currentPath.segments.length <= 2 || (!this.source || !this.target))) {
-            console.log("case a", console.log(this.source.data.id, this.target.data.id));
+    submitSelection(simulation = false) {
+        if (!simulation && (this.currentPath.segments.length <= 2 || (!this.source || !this.target))) {
             this.resetSelection();
             return false;
         }
 
         // Trim the path underneath the points
         let path = this.currentPath;
-        if (!simulate) {
+        if (!simulation) {
             let sourcePoint = path.getCrossings(this.source)[0];
             let i = this.source === this.target ? 1 : 0;
             let targetPoint = path.getCrossings(this.target)[i];
@@ -99,10 +93,9 @@ export class SproutWorld {
             path.curves[path.curves.length - 1].point2 = targetPoint.point;
         }
 
-        if (simulate) {
+        if (simulation) {
             let from = this.source.data.id;
             let to = this.target.data.id;
-            console.log(from,to)
             socket.emit('submitSimPath', path.exportJSON(), this.source.data.id, this.target.data.id, function (pathIsLegal) {
                 if (!pathIsLegal) $('#status-header').text(`Illegal move from ${from} to ${to}.`);
             });
@@ -124,7 +117,7 @@ export class SproutWorld {
         });
         point.data = {
             id: id,
-            edges: [], // fixme
+            edges: [],
             connections: connections,
         };
 
@@ -135,14 +128,17 @@ export class SproutWorld {
             fillColor: 'white',
             content: id,
             locked: true,
-        })
+        });
+        pointText.fontSize=6;
+        pointText.fontFamily='courant';
+        pointText.fontWeight=0;
+        pointText.position.y=pointText.position.y+3;
 
         this.points[id] = point;
-
         let _this = this;
 
         point.onMouseDrag = function (e) {
-            // When first starting to draw a line, reset the current selection
+            // When first starting to draw a path, reset the current selection
             if (!_this.dragSelection) {
                 if (!point.hitTest(e.point)) return false;
                 _this.resetSelection();
@@ -153,15 +149,12 @@ export class SproutWorld {
         };
 
         point.onMouseDown = function () {
-            if (point.data.connections < 3) {
-                _this.selectedPoints.push(point);
-            }
+            if (point.data.connections < 3) _this.selectedPoints.push(point);
         };
 
         point.onMouseUp = function (e) {
-            if (!_this.clickSelection && !_this.dragEnabled) {
-                _this.selectedPoints = [];
-            } else if (_this.clickSelection) {
+            if (!_this.clickSelection && !_this.dragEnabled) _this.selectedPoints = [];
+            else if (_this.clickSelection) {
                 point.onClick(e);
                 e.stop();
             }
@@ -174,7 +167,7 @@ export class SproutWorld {
         };
 
         point.onMouseEnter = function () {
-            // Highlights this point if it is possible to draw a line to/from it
+            // Highlights this point if it is possible to draw a path to/from it
             if ((point.data.connections < 3) && !(_this.source && _this.target)) _this.hoveredPoint = point;
 
             if (_this.dragEnabled && _this.source && !_this.target) {
@@ -193,32 +186,26 @@ export class SproutWorld {
 
         point.onMouseLeave = function () {
             _this.hoveredPoint = null;
-
             if (_this.dragSelection) {
-                /* FIXME: If the user draws a line quickly, onMouseLeave is called before onMouseDrag,
-                    which means a line won't be drawn. (doesn't break anything, it's just not optimal) */
-
-                if (_this.dragEnabled) { // Stop drawing the line once the second point has been selected
+                if (_this.dragEnabled) { // Stop drawing the path once the second point has been selected
                     _this.select(point);
                     _this.dragEnabled = false;
                 } else if (!_this.target) {
                     /* Only start drawing when leaving the source point
-                        = the part of the line within the point's radius won't be drawn */
+                        = the part of the path within the point's radius won't be drawn */
                     _this.dragEnabled = true;
                 }
             }
         };
 
         point.dfs = function (toFind) {
-            //Marker som søgende
             point.data.status = "seeking";
-            //Kør dfs på alle naboer
+            // Run DFS on all neighbors
             for (let e of point.data.edges) {
                 let p = e.data.vertices.find(x => x !== point);
                 if (e !== point.data.rootEdge && p !== undefined) {
-                    //Er en nabo søgende eller færdig, find alle links op til nabo og tilføj liste til cycles[]
+                    // If a neighbor is seeking or done, find all links to the neighbor and add list to cycles
                     if (p.data.status === "") {
-                        //Sæt parent til dette point
                         p.data.root = point;
                         p.data.rootEdge = e;
                         if (!(e.data.vertices[0] === p)) {
@@ -233,7 +220,6 @@ export class SproutWorld {
             }
             point.data.status = "done";
         };
-
         return point;
     }
 
@@ -242,10 +228,7 @@ export class SproutWorld {
      * @memberof SproutWorld
      * @returns {Array} All cycles gathered into singular Path objects
      **/
-
     getCycles() {
-        //TODO: Sørg for at alle edges "vender" rigtigt
-        //TODO: Ikke alle kanter i et loop bliver tilføjet selv om loopet er opdaget
         let toFind = [];
         for (let p of this.points) {
             p.data.root = p;
@@ -258,7 +241,6 @@ export class SproutWorld {
                 p.dfs(toFind);
             }
         }
-        console.log("tofind length:", toFind.length);
         let cycles = [];
 
         for (let t of toFind) {
@@ -290,13 +272,7 @@ export class SproutWorld {
      * @memberof SproutWorld
      * @returns {boolean} Determines whether there can be a path between the two points
      **/
-
     possibleMove(p1, p2) {
-        /*TODO: Known bugs
-        Sometimes the "parent edge" from DFS will be reversed and create an area outside the cycle. Check if direction is correct?
-        If one large cycle is also split into 2 smaller cycles, one of them will be able to access all points on the other, but not vice versa.
-         */
-
         let cycles = this.getCycles();
         for (let c of cycles) {
             let total = new paper.Path();
@@ -305,11 +281,9 @@ export class SproutWorld {
                     total.add(s);
             }
 
-            if (((total.contains(p1) && total.getLocationOf(p1) === null) && !total.contains(p2)) || ((total.contains(p2) && total.getLocationOf(p2) === null) && !total.contains(p1)))
+            if (((total.contains(p1) && total.getLocationOf(p1) === null) && !total.contains(p2)) ||
+                ((total.contains(p2) && total.getLocationOf(p2) === null) && !total.contains(p1)))
                 return false;
-            //total.remove();
-            // tot.addSegments(total.segments);
-
         }
         return true;
     }
@@ -321,9 +295,7 @@ export class SproutWorld {
      * @memberof SproutWorld
      * @returns {Object} A path between p1 and p2
      **/
-
     suggestPath(p1, p2) {
-        // return this.possibleMove(p1.position, p2.position);
         if (this.suggestedPath)
             this.suggestedPath.remove();
         let initCellSize = this.collisionGrid.cell_size;
@@ -332,8 +304,8 @@ export class SproutWorld {
         while (!suggest) {
             cellSize = cellSize / 2;
             this.collisionGrid = new CollisionGrid(cellSize, this, new paper.Size(750, 472));
-            for (let line of this.pathGroup.children) {
-                this.collisionGrid.t_insert_line(line.curves, line);
+            for (let path of this.pathGroup.children) {
+                this.collisionGrid.t_insert_path(path.curves, path);
             }
             for (let point of this.points) {
                 this.collisionGrid.t_insert_rectangle(point.bounds, point);
@@ -341,8 +313,8 @@ export class SproutWorld {
             suggest = this.collisionGrid.u_Astar(p1, p2);
         }
         this.collisionGrid = new CollisionGrid(initCellSize, this, new paper.Size(750, 472));
-        for (let line of this.pathGroup.children) {
-            this.collisionGrid.t_insert_line(line.curves, line);
+        for (let path of this.pathGroup.children) {
+            this.collisionGrid.t_insert_path(path.curves, path);
         }
 
         for (let point of this.points) {

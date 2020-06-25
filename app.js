@@ -1,18 +1,12 @@
-var createError = require('http-errors');
-var express = require('express');
-
-
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-var bodyParser = require('body-parser');
-
-var indexRouter = require('./routes/index');
-var databaseRouter = require('./routes/database');
-
-// import {CollisionGrid} from './public/scripts/modules/CollisionGrid.js';
-
-var app = express();
+const createError = require('http-errors');
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
+const bodyParser = require('body-parser');
+const indexRouter = require('./routes/index');
+const databaseRouter = require('./routes/database');
+const app = express();
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));

@@ -6,32 +6,22 @@
 const app = require('../app');
 const debug = require('debug')('over-engineered-sprout:server');
 const http = require('http');
-const sentencer = require('sentencer');
+const sentencer = require('sentencer'); // Library used for generation of random usernames
 const math = require('mathjs');
-const db = require('../server/db/simple-db')
+const db = require('../server/db/simple-db');
+const paper = require('paper');
 
-var paper = require('paper');
-// var CollisionGrid = require('./CollisionGrid');
 paper.install(this);
 paper.setup([750, 472]);
 
-/**
- * Get port from environment and store in Express.
- */
-
-var port = normalizePort(process.env.PORT || '3000');
+// Get port from environment and store in Express.
+const port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
-/**
- * Create HTTP server.
- */
+// Create HTTP server.
+const server = http.createServer(app);
 
-var server = http.createServer(app);
-
-/**
- * Listen on provided port, on all network interfaces.
- */
-
+// Listen on provided port, on all network interfaces.
 server.listen(port, function () {
     console.log(`Listening on port ${port.valueOf()}`)
 });
@@ -40,74 +30,11 @@ server.on('error', onError);
 server.on('listening', onListening);
 
 
-/*
-* Socket IO
-* */
+// Socket.io
 const io = require('socket.io').listen(server);
 let activeRooms = new Map();
 
-function makeid(length) {
-    var result = '';
-    var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    var charactersLength = characters.length;
-    for (var i = 0; i < length; i++) {
-        result += characters.charAt(Math.floor(Math.random() * charactersLength));
-    }
-    return result;
-}
-
 io.sockets.on('connect', function (socket) {
-
-    socket.on('submitSimPath', (pathJson, fromId, toId, fn) => {
-        if (!activeRooms.has(socket.room)) return false;
-
-        let gameRoom = activeRooms.get(socket.room);
-        // if (socket.playerNum !== gameRoom) fn(false);
-        let from = gameRoom.points[fromId];
-        let to = gameRoom.points[toId];
-        let path = new paper.Path().importJSON(pathJson);
-        // Check if the move is legal
-        if (!gameRoom.isLegal(from, to, path, true)) {
-            fn(false);
-        } else {
-            let resp = gameRoom.addPath(from, to, path);
-            socket.emit('updateGame', from.data.id, to.data.id, resp.path, resp.pointData, null);
-        }
-    });
-
-    // Client has submitted a path -> server will validate the path
-    socket.on('submitPath', async (pathJson, fromId, toId, fn) => {
-        let gameRoom = activeRooms.get(socket.room);
-        if (!activeRooms.has(socket.room) || socket.room !== gameRoom.id) return false;
-
-        console.log(`${socket.username} in game ${gameRoom.name} submits a path`);
-
-        let from = gameRoom.points[fromId];
-        let to = gameRoom.points[toId];
-        let path = new paper.Path().importJSON(pathJson);
-
-        // Check if the move is legal
-        if (!gameRoom.isLegal(from, to, path, false)) {
-            // Callback - path not accepted
-            fn(false);
-            return false;
-        } else {
-            fn(true); // Callback - path accepted
-            let resp = gameRoom.addPath(from, to, path);
-            io.sockets.in(socket.room).emit('updateGame', from.data.id, to.data.id, resp.path, resp.pointData, gameRoom.nextTurn());
-
-            if (gameRoom.isGameOver()) {
-                let loser = gameRoom.player1 === socket ? gameRoom.player2 : gameRoom.player1;
-                await gameRoom.endGame(socket, loser).then(function () {
-                    console.log("game ended")
-                });
-                io.sockets.in(socket.room).emit('gameOver', socket.playerNum);
-            }
-            return true;
-        }
-    });
-
-    // TODO: Only emit to lobby socket
     setInterval(function () {
         let roomList = [];
         for (let room of activeRooms.values()) {
@@ -118,26 +45,193 @@ io.sockets.on('connect', function (socket) {
 
     // when the client emits 'join', this listens and executes
     socket.on('join', (requestedUsername, fn) => {
-        console.log("Client wants to join with username", requestedUsername);
+        try {
+            console.log("Client wants to join with username", requestedUsername);
 
-        String.prototype.capitalize = function () {
-            return this.charAt(0).toUpperCase() + this.slice(1);
-        };
+            let username;
+            if (usernameIsValid(requestedUsername)) {
+                username = requestedUsername;
+            } else {
+                do {
+                    let randInt = Math.floor(Math.random() * 10);
+                    let adjective = sentencer.make("{{ adjective }}").capitalize();
+                    username = adjective + "Guest" + randInt;
+                } while (getSockets().some(e => e.username === username));
+            }
+            socket.username = username;
+            console.log("Added user", username);
+            db.createUser(username, 0, 0);
+            fn(username);
 
-        let username;
-        if (usernameIsValid(requestedUsername)) {
-            username = requestedUsername;
-        } else {
-            do {
-                let randInt = Math.floor(Math.random() * 10);
-                let adjective = sentencer.make("{{ adjective }}").capitalize();
-                username = adjective + "Guest" + randInt;
-            } while (getSockets().some(e => e.username === username));
+        } catch (error) {
+            console.log('Encountered error processing request');
+            socket.emit('error', 'Failed to join');
         }
-        socket.username = username;
-        console.log("Added user", username);
-        db.createUser(username,0,0);
-        fn(username);
+    });
+
+    socket.on('changeUsername', (requestedUsername, fn) => {
+        try {
+            if (usernameIsValid(requestedUsername)) {
+                console.log(`${socket.username} changed their username to ${requestedUsername}`);
+                db.changeUsername(socket.username, requestedUsername);
+                socket.username = requestedUsername;
+                fn(true);
+            } else fn(false)
+        } catch (error) {
+            console.log('Encountered error processing request');
+            socket.emit('error', 'Failed to update username');
+        }
+    });
+
+    // Client wants to create a new room => server validates room name, creates new room
+    socket.on('addRoom', (roomName, fn) => {
+        try {
+            if (roomName.length < 1 || roomName.length > 20) fn(false);
+
+            else {
+                console.log("Creating new room: " + roomName);
+                let id = makeId(6);
+                activeRooms.set(id, new GameRoom(id, roomName));
+                fn(true, id);
+            }
+        } catch (error) {
+            console.log('Encountered error processing request');
+            socket.emit('error', 'Failed to add room');
+        }
+    });
+
+    // Client wants to join a specific room
+    socket.on('joinRoom', function (id, fn) {
+        try {
+            console.log(`${socket.username} wants to join room with id ${id}`);
+            let game = activeRooms.has(id) ? activeRooms.get(id) : null;
+            if (!game || game.playerCount >= game.maxCapacity) fn(false);
+            else {
+                let playerNum = game.userJoin(socket);
+                fn(true, playerNum);
+
+                if (game.playerCount === 2) {
+                    console.log(`2 players connected to game ${id}`);
+
+                    // Packs the positions of the points into a list for the clients to read
+                    let pointPositions = [];
+                    for (let point of game.init()) {
+                        pointPositions.push(point.position);
+                    }
+                    io.sockets.in(socket.room).emit('startGame', pointPositions, game.status);
+                }
+            }
+        } catch (error) {
+            console.log('Encountered error processing request');
+            socket.emit('error', 'Failed to join room');
+        }
+    });
+
+    // Lets the user connect to an existing room if one exists
+    // Otherwise prompts them to create their own room
+    socket.on('quickPlay', function (fn) {
+        try {
+            for (let room of activeRooms.values()) {
+                if (room.playerCount < 2) fn(true, room.id);
+            }
+
+            fn(false);
+            return false;
+        } catch (error) {
+            console.log('Encountered error processing request');
+            socket.emit('error', 'Failed to quickplay');
+        }
+    });
+
+    socket.on("joinSimulation", function (numPoints, fn) {
+        try {
+            let id = makeId(6);
+            let game = new GameRoom(id, String(id), null, null, true);
+            socket.room = id;
+            activeRooms.set(id, game);
+            let pointPositions = [];
+
+            for (let point of game.init(numPoints)) pointPositions.push(point.position);
+
+            if (pointPositions.length === 0) {
+                socket.leave(id);
+                activeRooms.delete(id);
+                fn(false, pointPositions);
+            } else fn(true, pointPositions);
+        } catch (error) {
+            console.log('Encountered error processing request');
+            socket.emit('error', 'Failed to start simulation');
+        }
+    });
+
+    // Client submits a chat message
+    socket.on('sendChatMsg', function (msg) {
+        try {
+            console.log("Received sendChatMsg from " + socket.username + ": " + msg);
+            let timestamp = +new Date();
+            io.sockets.in(socket.room).emit('updateChat', timestamp, socket.username, msg);
+        } catch (error) {
+            console.log('Encountered error processing request');
+            socket.emit('error', 'Failed to send chat message');
+        }
+    });
+
+    // Client submits a path -> server will validate the path
+    socket.on('submitPath', async (pathJson, fromId, toId, fn) => {
+        try {
+            let gameRoom = activeRooms.get(socket.room);
+            if (!activeRooms.has(socket.room) || socket.room !== gameRoom.id) return false;
+
+            console.log(`${socket.username} in game ${gameRoom.name} submits a path`);
+
+            let from = gameRoom.points[fromId];
+            let to = gameRoom.points[toId];
+            let path = new paper.Path().importJSON(pathJson);
+
+            // Check if the move is legal
+            if (!gameRoom.isLegal(from, to, path, false)) {
+                // Callback - path not accepted
+                fn(false);
+                return false;
+            } else {
+                fn(true); // Callback - path accepted
+                let resp = gameRoom.addPath(from, to, path);
+                io.sockets.in(socket.room).emit('updateGame', from.data.id, to.data.id, resp.path, resp.pointData, gameRoom.nextTurn());
+
+                if (gameRoom.isGameOver()) {
+                    let loser = gameRoom.player1 === socket ? gameRoom.player2 : gameRoom.player1;
+                    await gameRoom.endGame(socket, loser);
+                    io.sockets.in(socket.room).emit('gameOver', socket.playerNum);
+                }
+                return true;
+            }
+        } catch (error) {
+            console.log('Encountered error processing request');
+            socket.emit('error', 'Failed to submit path');
+        }
+    });
+
+    // Client submits a simulated path
+    socket.on('submitSimPath', (pathJson, fromId, toId, fn) => {
+        try {
+            if (!activeRooms.has(socket.room)) return false;
+
+            let gameRoom = activeRooms.get(socket.room);
+            let from = gameRoom.points[fromId];
+            let to = gameRoom.points[toId];
+            let path = new paper.Path().importJSON(pathJson);
+
+            // Check if the move is legal
+            if (!gameRoom.isLegal(from, to, path, true)) fn(false);
+            else {
+                let resp = gameRoom.addPath(from, to, path);
+                socket.emit('updateGame', from.data.id, to.data.id, resp.path, resp.pointData, null);
+            }
+        } catch (error) {
+            fn(false);
+            console.log('Encountered error processing request');
+            socket.emit('error', 'Failed to submit path');
+        }
     });
 
     socket.on('possiblePath', (from, to, fn) => {
@@ -149,105 +243,308 @@ io.sockets.on('connect', function (socket) {
         fn(game.possibleMove(pos1, pos2));
     });
 
-    socket.on('changeUsername', (requestedUsername, fn) => {
-        // TODO: Change username in JSON database!
-        if (usernameIsValid(requestedUsername)) {
-            console.log(`${socket.username} changed their username to ${requestedUsername}`);
-            db.changeUsername(socket.username, requestedUsername);
-            socket.username = requestedUsername;
-            fn(true);
-        } else fn(false)
-    });
-
-    socket.on('joinRoom', function (id, fn) {
-        console.log(`${socket.username} wants to join room with id ${id}`);
-        let game = activeRooms.has(id) ? activeRooms.get(id) : null;
-        if (!game || game.playerCount >= game.maxCapacity) fn(false);
-        else {
-            let playerNum = game.userJoin(socket);
-            fn(true, playerNum);
-
-            if (game.playerCount === 2) {
-                console.log(`2 players connected to game ${id}`);
-
-                // Packs the positions of the points into a list for the clients to read
-                let pointPositions = [];
-                for (let point of game.init()) {
-                    pointPositions.push(point.position);
-                }
-                io.sockets.in(socket.room).emit('startGame', pointPositions, game.status);
-            }
-        }
-    });
-
-    // Lets the user connect to an existing room if one exists
-    // Otherwise prompts them to create their own room
-    socket.on('quickPlay', function (fn) {
-        // fixme
-        for (let room of activeRooms.values()) {
-            if (room.playerCount < 2) fn(true, room.id);
-        }
-
-        fn(false);
-        return false;
-    });
-
-    // Client wants to create a new room => server validates room name, creates new room
-    socket.on('addRoom', (roomName, fn) => {
-        if (activeRooms[roomName] !== undefined) fn(false); // FIXME can't check roomname like this
-
-        if (roomName.length < 1 || roomName.length > 20) fn(false);
-
-        else {
-            console.log("Creating new room: " + roomName);
-            let id = makeid(6);
-            activeRooms.set(id, new GameRoom(id, roomName));
-            fn(true, id);
-        }
-    });
-
-    socket.on('sendChatMsg', function (msg) {
-        console.log("Received sendChatMsg from " + socket.username + ": " + msg);
-        let timestamp = +new Date();
-        io.sockets.in(socket.room).emit('updateChat', timestamp, socket.username, msg);
-    });
-
-    socket.on("joinSimulation", function (totalDots, fn) {
-        console.log(totalDots)
-        let id = makeid(6);
-        let game = new GameRoom(id, String(id), null, null, true);
-        socket.room = id;
-        activeRooms.set(id, game);
-        let pointPositions = [];
-        for (let point of game.init(null, totalDots)) {
-            pointPositions.push(point.position);
-        }
-        if (pointPositions.length === 0) {
-            socket.leave(id);
-            activeRooms.delete(id);
-            fn(false, pointPositions);
-        } else {
-            fn(true, pointPositions);
-        }
-    });
-
     socket.on('disconnect', async () => {
-        console.log(`${socket.username} disconnected`);
-        if (activeRooms.has(socket.room)) {
-            let game = activeRooms.get(socket.room);
-            let response = game.userLeave(socket);
-            if (response.status === Status.gameover) {
-                console.log("Gameover prematurely", socket.room);
-                io.sockets.in(game.id).emit('gameOver', response.winner.playerNum);
-                await game.endGame(response.winner, response.loser);
-            } else if (response === Status.waiting) {
-                console.log("Deleting room", socket.room);
-                await game.endGame();
+        try {
+            console.log(`${socket.username} disconnected`);
+
+            if (activeRooms.has(socket.room)) {
+                let game = activeRooms.get(socket.room);
+
+                let response = game.userLeave(socket);
+                if (response.status === Status.gameover) {
+                    console.log("Gameover prematurely", game.name);
+                    io.sockets.in(game.id).emit('gameOver', response.winner.playerNum);
+                    await game.endGame(response.winner, response.loser);
+                } else if (response.status === Status.waiting) {
+                    console.log("Deleting room", game.name);
+                    await game.endGame();
+                }
             }
+            socket.leave(socket.room);
+        } catch (error) {
+            console.log('Encountered error processing request');
         }
-        socket.leave(socket.room);
     });
 });
+
+class GameRoom {
+    constructor(id, name, player1 = null, player2 = null, simulation = false) {
+        this.id = id;
+        this.name = name;
+        this.simulation = simulation;
+        this.player1 = player1;
+        this.player2 = player2;
+        this.playerCount = 0;
+        this.maxCapacity = !simulation ? 2 : 1;
+        this.project = new paper.Project([750, 472]);
+        this.pathGroup = new paper.Group();
+        this.points = [];
+        this.gameStarted = false;
+        this.status = Status.waiting;
+    }
+
+    init(numPoints = 10) {
+        let points = randomPoints(numPoints);
+
+        for (let i = 0; i < points.length; i++) {
+            let center = points[i];
+            this.points[i] = this.createPoint(center, i, 0, []);
+        }
+
+        let rand = Math.floor(Math.random() * 2);
+        this.status = rand === 1 ? Status.player1 : Status.player2;
+        this.gameStarted = true;
+        return this.points;
+    }
+
+    createPoint(pos, id, connections, edges) {
+        let point = new paper.Path.Circle({
+            center: pos,
+            radius: 5,
+        });
+
+        point.data = {
+            id: id,
+            edges: edges,
+            connections: connections,
+        };
+
+        point.commonEdges = function (p2) {
+            let inCommon = [];
+            for (let edge of point.data.edges) {
+                if (edge.data.vertices.includes(point) && edge.data.vertices.includes(p2))
+                    inCommon.push(edge);
+            }
+            return inCommon;
+        };
+
+        point.dfs = function (toFind) {
+            point.data.status = "seeking";
+            // Run DFS on all neighbors
+            for (let e of point.data.edges) {
+                let p = e.data.vertices.find(x => x !== point);
+                if (e !== point.data.rootEdge && p !== undefined) {
+                    // If a neighbor is seeking or done, find all links to the neighbor and add list to cycles
+                    if (p.data.status === "") {
+                        p.data.root = point;
+                        p.data.rootEdge = e;
+                        if (!(e.data.vertices[0] === p)) {
+                            e.reverse();
+                            e.data.vertices.reverse();
+                        }
+                        p.dfs(toFind);
+                    } else if (p.data.status === "done") {
+                        toFind.push(e);
+                    }
+                }
+            }
+            point.data.status = "done";
+        };
+        return point;
+    }
+
+    addPath(from, to, path) {
+        path.simplify(3);
+        let originalPath = path.clone();
+
+        // Create new point at midpoint of path
+        let pointId = this.points.length;
+        let newPoint = this.createPoint(path.getPointAt(path.length / 2), pointId, 0, []);
+
+        function save(_from, _to, path) {
+            _from.data.connections += 1;
+            _from.data.edges.push(path);
+            _to.data.connections += 1;
+            _to.data.edges.push(path);
+            path.data.vertices = [_from, _to];
+            return path;
+        }
+
+        // Separate into 2 subpaths - used for pathfinding
+        let path1 = path.clone();
+        let path2;
+        if (this.simulation && from === to) {
+            // FIXME: Edge case if trying to simulate a loop
+            path2 = path.clone();
+        } else path2 = path.splitAt(path.length / 2);
+        path1.insert(0, from.position);
+        path2.add(to.position);
+
+        save(from, newPoint, path1);
+        save(newPoint, to, path2);
+
+        path1.addTo(this.pathGroup);
+        path2.addTo(this.pathGroup);
+        this.points[pointId] = newPoint;
+
+        // Return the unsplit path and the new point
+        let pointData = {
+            center: newPoint.position,
+            id: pointId,
+            connections: 2
+        };
+        return {path: originalPath.exportJSON(), pointData: pointData};
+    }
+
+    isLegal(from, to, path, simulation = false) {
+        this.project.activate();
+
+        if (!(from || to)) return false;
+        else if (from === to && from.data.connections >= 2) return false;
+        else if (from.data.connections >= 3 || to.data.connections >= 3) return false;
+
+        if (!simulation) {
+            // Check for intersections w. existing paths
+            for (let line of this.pathGroup.getItems({type: 'path'})) {
+                if (path.getIntersections(line).length > 0) return false;
+            }
+            return path.getIntersections(path).length <= 0;
+        } else return true; // Trust that paths submitted in a simulation are without overlap
+    }
+
+    getCycles() {
+        let toFind = [];
+        for (let p of this.points) {
+            p.data.root = p;
+            p.data.rootEdge = null;
+            p.data.status = "";
+        }
+        for (let p of this.points) {
+            if (p.data.status !== "done") {
+                p.data.root = p;
+                p.dfs(toFind);
+            }
+        }
+        let cycles = [];
+
+        for (let t of toFind) {
+            let paths0 = [];
+            let paths1 = [];
+            let loop = [t.clone()];
+            let p0 = t.data.vertices[0];
+            let p1 = t.data.vertices[1];
+            while (p0.data.root !== p0) {
+                paths0.push(p0.data.rootEdge);
+                p0 = p0.data.root;
+            }
+            while (p1.data.root !== p1) {
+                paths1.push(p1.data.rootEdge);
+                p1 = p1.data.root;
+            }
+            let difference = paths0.filter(x => !paths1.includes(x)).concat(paths1.filter(x => !paths0.includes(x)));
+            loop = loop.concat(difference);
+            cycles.push([...loop]);
+        }
+        return cycles;
+    }
+
+    possibleMove(p1, p2, debug = false) {
+        this.project.activate();
+        let total = new paper.Path();
+
+        let cycles = this.getCycles();
+        for (let c of cycles) {
+            total = new paper.Path();
+            c[0].reverse();
+
+            for (let p of c) {
+                for (let s of p.segments)
+                    total.add(s);
+            }
+
+            if (((total.contains(p1) && total.getLocationOf(p1) === null) && !total.contains(p2)) || ((total.contains(p2) && total.getLocationOf(p2) === null) && !total.contains(p1)))
+                return false;
+
+        }
+        return true
+    }
+
+    lobbyRepresentation() {
+        // Returns a representation of this gameroom for the game lobby
+        return {
+            capacity: `${this.playerCount}/${this.maxCapacity}`,
+            id: this.id,
+            name: this.name
+        }
+    }
+
+    userJoin(user) {
+        if (this.playerCount < 2) {
+            console.log(`User ${user.username} joined game ${this.name}`);
+
+            user.join(this.id);
+            user.room = this.id;
+            this.playerCount++;
+
+            if ((!this.player1 && !this.player2) || (!this.player1)) {
+                this.player1 = user;
+                user.playerNum = Status.player1;
+                return Status.player1;
+            } else if (!this.player2) {
+                this.player2 = user;
+                user.playerNum = Status.player2;
+                return Status.player2;
+            }
+        }
+    }
+
+    nextTurn() {
+        this.status = this.status === Status.player1 ? Status.player2 : Status.player1;
+        return this.status;
+    }
+
+    userLeave(user) {
+        console.log(`User ${user.username} left game ${this.name}`);
+        if (this.simulation) return {status: Status.waiting};
+        this.playerCount--;
+        let opponent = this.player1 === user ? this.player2 : this.player1;
+        this.player1 = this.player1 === user ? null : this.player1;
+        this.player2 = this.player2 === user ? null : this.player2;
+
+        // End game prematurely
+        if (this.gameStarted) return {status: Status.gameover, winner: opponent, loser: user};
+        else if (this.playerCount < 1) return {status: Status.waiting};
+    }
+
+    isGameOver() {
+        // If there is a point with zero or one connections, it can loop back to itself.
+        if (this.points.some(p => p.data.connections < 2)) return false;
+        let twoConnections = this.points.filter(p => p.data.connections === 2);
+
+        /*
+        * If there is 0 or 1 points with 2 connections, and 0 points with <2 connections,
+        * no legal paths can be drawn --> game is over.
+        * */
+        if (twoConnections.length <= 1) return true;
+
+        //Check if a path can be drawn between any of the points with two connections.
+        for (let point of twoConnections) {
+            if (twoConnections.some(p => p !== point && this.possibleMove(point.position, p.position))) return false;
+        }
+        return true;
+    }
+
+    async endGame(winner = null, loser = null) {
+        this.status = Status.gameover;
+        this.gameStarted = false;
+        if (winner) await db.addWin(winner.username);
+        if (loser) await db.addLoss(loser.username);
+        activeRooms.delete(this.id);
+    }
+}
+
+function makeId(length) {
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    for (let i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return result;
+}
+
+String.prototype.capitalize = function () {
+    return this.charAt(0).toUpperCase() + this.slice(1);
+};
 
 /**
  * Normalize a port into a number, string, or false.
@@ -310,14 +607,13 @@ const Status = Object.freeze({"player1": 1, "player2": 2, "waiting": 3, "gameove
 
 function randomPoints(amount) {
     let tileSize = 40;
-    let cellSize = 8;
     let width = 750;
     let height = 472;
 
     let totalTiles = Math.floor(width / tileSize) * Math.floor(height / tileSize);
     let tileMatrix = math.zeros(Math.floor(width / tileSize), Math.floor(height / tileSize), 'sparse');
 
-    // Set edge tiles to 1 to prevent dots being placed partially outside game canvas
+    // Set edge tiles to 1 to prevent points being placed partially outside game canvas
     let tileMatrixWidth = Math.floor(width / tileSize);
     let tileMatrixHeight = Math.floor(height / tileSize);
     tileMatrix.subset(math.index(0, math.range(0, tileMatrixHeight)), math.ones(tileMatrixHeight));
@@ -331,7 +627,7 @@ function randomPoints(amount) {
 
     let getIndices = (value) => {
         let indices = [];
-        tileMatrix.forEach((val, index, matrix) => {
+        tileMatrix.forEach((val, index) => {
             if (val === value) {
                 indices.push(index);
             }
@@ -358,298 +654,3 @@ function randomPoints(amount) {
     return permuted;
 
 }
-
-class GameRoom {
-    constructor(id, name, player1 = null, player2 = null, simulation = false) {
-        this.id = id;
-        this.name = name;
-        this.simulation = simulation;
-        this.player1 = player1;
-        this.player2 = player2;
-        this.playerCount = 0;
-        this.maxCapacity = !simulation ? 2 : 1;
-        this.project = new paper.Project([750, 472]);
-        this.lineGroup = new paper.Group();
-        this.points = [];
-        this.gameStarted = false;
-        this.status = Status.waiting;
-    }
-
-    init(mapConfiguration = null, numPoints = 2) {
-        // this.collisionGrid = new CollisionGrid(10, this, new paper.Size(750, 472));
-
-        let dotPoints = [];
-        if (!mapConfiguration) {
-            dotPoints = randomPoints(numPoints);
-        } else {
-            dotPoints = randomPoints(mapConfiguration.dots);
-        }
-
-        for (let i = 0; i < dotPoints.length; i++) {
-            let center = dotPoints[i];
-            this.points[i] = this.createPoint(center, i, 0, []);
-        }
-
-        let rand = Math.floor(Math.random() * 2);
-        this.status = rand === 1 ? Status.player1 : Status.player2;
-        this.gameStarted = true;
-        return this.points;
-    }
-
-    createPoint(pos, id, connections, edges) {
-        let point = new paper.Path.Circle({
-            center: pos,
-            radius: 5,
-        });
-        point.data = {
-            id: id,
-            edges: edges,
-            connections: connections,
-        };
-
-        point.commonEdges = function (p2) {
-            let inCommon = [];
-            for (let edge of point.data.edges) {
-                if (edge.data.vertices.includes(point) && edge.data.vertices.includes(p2))
-                    inCommon.push(edge);
-            }
-            return inCommon;
-        };
-
-        point.dfs = function (toFind) {
-            //Marker som søgende
-            point.data.status = "seeking";
-            //Kør dfs på alle naboer
-            for (let e of point.data.edges) {
-                let p = e.data.vertices.find(x => x !== point);
-                if (e !== point.data.rootEdge && p !== undefined) {
-                    //Er en nabo søgende eller færdig, find alle links op til nabo og tilføj liste til cycles[]
-                    if (p.data.status === "") {
-                        //Sæt parent til dette point
-                        p.data.root = point;
-                        p.data.rootEdge = e;
-                        if (!(e.data.vertices[0] === p)) {
-                            e.reverse();
-                            e.data.vertices.reverse();
-                        }
-                        p.dfs(toFind);
-                    } else if (p.data.status === "done") {
-                        toFind.push(e);
-                    }
-                }
-            }
-            point.data.status = "done";
-        };
-        return point;
-    }
-
-    addPath(from, to, path) {
-        path.simplify(3);
-        let originalPath = path.clone();
-
-        // Create new point at midpoint of path
-        let pointId = this.points.length;
-        let newPoint = this.createPoint(path.getPointAt(path.length / 2), pointId, 0, []);
-
-        // FIXME simulation loop edgecase, doesn't have a midpoint ^^^
-
-        function save(_from, _to, path) {
-            _from.data.connections += 1;
-            _from.data.edges.push(path);
-            _to.data.connections += 1;
-            _to.data.edges.push(path);
-            path.data.vertices = [_from, _to];
-            return path;
-        }
-
-        // Separate into 2 subpaths - used for pathfinding
-        let path1 = path.clone();
-        let path2;
-        if (this.simulation && from === to) {
-            console.log("simulation loop edge case!");
-            //FIXME
-            path2 = path.clone();
-        } else path2 = path.splitAt(path.length / 2);
-        path1.insert(0, from.position);
-        path2.add(to.position);
-
-        save(from, newPoint, path1);
-        save(newPoint, to, path2);
-
-        path1.addTo(this.lineGroup);
-        path2.addTo(this.lineGroup);
-        this.points[pointId] = newPoint;
-
-        // Return the unsplit path and the new point
-        let pointData = {
-            center: newPoint.position,
-            id: pointId,
-            connections: 2
-        };
-        return {path: originalPath.exportJSON(), pointData: pointData};
-    }
-
-    isLegal(from, to, path, simulate = false) {
-        this.project.activate();
-
-        if (!(from || to)) return false;
-        else if (from === to && from.data.connections >= 2) return false;
-        else if (from.data.connections >= 3 || to.data.connections >= 3) return false;
-
-        if (!simulate) {
-            // Check for intersections w. existing paths
-            for (let line of this.lineGroup.getItems({type: 'path'})) {
-                if (path.getIntersections(line).length > 0) {
-                    console.log("intersect")
-                    return false;
-                }
-            }
-            return path.getIntersections(path).length <= 0;
-        } else return true;
-    }
-
-    getCycles() {
-        //TODO: Sørg for at alle edges "vender" rigtigt
-        //TODO: Ikke alle kanter i et loop bliver tilføjet selv om loopet er opdaget
-        let toFind = [];
-        for (let p of this.points) {
-            p.data.root = p;
-            p.data.rootEdge = null;
-            p.data.status = "";
-        }
-        for (let p of this.points) {
-            if (p.data.status !== "done") {
-                p.data.root = p;
-                p.dfs(toFind);
-            }
-        }
-        let cycles = [];
-
-        for (let t of toFind) {
-            let paths0 = [];
-            let paths1 = [];
-            let loop = [t.clone()];
-            let p0 = t.data.vertices[0];
-            let p1 = t.data.vertices[1];
-            while (p0.data.root !== p0) {
-                paths0.push(p0.data.rootEdge);
-                p0 = p0.data.root;
-            }
-            while (p1.data.root !== p1) {
-                paths1.push(p1.data.rootEdge);
-                p1 = p1.data.root;
-            }
-            let difference = paths0.filter(x => !paths1.includes(x)).concat(paths1.filter(x => !paths0.includes(x)));
-            loop = loop.concat(difference);
-            cycles.push([...loop]);
-        }
-        return cycles;
-    }
-
-    possibleMove(p1, p2, debug = false) {
-        this.project.activate();
-
-        /*TODO: Known bugs
-        Sometimes the "parent edge" from DFS will be reversed and create an area outside the cycle. Check if direction is correct?
-        If one large cycle is also split into 2 smaller cycles, one of them will be able to access all points on the other, but not vice versa.
-         */
-        let total = new paper.Path();
-
-
-        let cycles = this.getCycles();
-        for (let c of cycles) {
-            total = new paper.Path();
-            c[0].reverse();
-
-            for (let p of c) {
-                for (let s of p.segments)
-                    total.add(s);
-            }
-
-            if (((total.contains(p1) && total.getLocationOf(p1) === null) && !total.contains(p2)) || ((total.contains(p2) && total.getLocationOf(p2) === null) && !total.contains(p1)))
-                return false;
-
-        }
-        return true
-    }
-
-    lobbyRepresentation() {
-        // Returns a representation of this gameroom for the game lobby
-        return {
-            capacity: `${this.playerCount}/${this.maxCapacity}`,
-            id: this.id,
-            name: this.name
-        }
-    }
-
-    userJoin(user) {
-        if (this.playerCount < 2) {
-            console.log(`User ${user.username} joined game ${this.name}`);
-
-            user.join(this.id);
-            user.room = this.id;
-            this.playerCount++;
-
-            if ((!this.player1 && !this.player2) || (!this.player1)) {
-                this.player1 = user;
-                user.playerNum = Status.player1;
-                return Status.player1;
-            } else if (!this.player2) {
-                this.player2 = user;
-                user.playerNum = Status.player2;
-                return Status.player2;
-            }
-        }
-    }
-
-    nextTurn() {
-        this.status = this.status === Status.player1 ? Status.player2 : Status.player1;
-        return this.status;
-    }
-
-    userLeave(user) {
-        if (this.simulation) return Status.waiting;
-        console.log(`User ${user.username} left game ${this.name}`);
-        this.playerCount--;
-        let opponent = this.player1 === user ? this.player2 : this.player1;
-        this.player1 = this.player1 === user ? null : this.player1;
-        this.player2 = this.player2 === user ? null : this.player2;
-
-        // End game prematurely
-        if (this.gameStarted) return {status: Status.gameover, winner: opponent, loser: user};
-        else if (this.playerCount < 1) return {status: Status.waiting};
-    }
-
-    isGameOver() {
-        /*
-       * If there is a point with zero or one connections, it can loop back to itself.
-       * EDGE CASE: If paths have been drawn very close to the point so a legal loop cannot be drawn.
-       * */
-        if (this.points.some(p => p.data.connections < 2)) return false;
-
-        let twoConnections = this.points.filter(p => p.data.connections === 2);
-
-        /*
-        * If there is 0 or 1 points with 2 connections, and 0 points with <2 connections,
-        * no legal paths can be drawn --> game is over.
-        * */
-        if (twoConnections.length <= 1) return true;
-
-        /*
-        * Check if a path can be drawn between any of the points with two connections.
-        * */
-        for (let point of twoConnections) {
-            if (twoConnections.some(p => p !== point && this.possibleMove(point.position, p.position))) return false;
-        }
-        return true;
-    }
-
-    async endGame(winner = null, loser = null) {
-        this.status = Status.gameover;
-        this.gameStarted = false;
-        if (winner) await db.addWin(winner.username);
-        if (loser) await db.addLoss(loser.username);
-        activeRooms.delete(this.id);
-    }
-}
-
