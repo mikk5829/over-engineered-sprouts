@@ -105,7 +105,7 @@ export class CollisionGrid {
      * @param object The object to associate with the tiles
      **/
 
-    t_insert_line(curves, object) {
+    t_insert_path(curves, object) {
         for (let i = 0; i < curves.length; i++) {
             for (let j = 0; j < curves[i].length; j++) {
                 let location = curves[i].getLocationAt(j);

@@ -38,10 +38,10 @@ export function getResolutionFromCookie(cookieName) {
  * @memberOf Utility
  */
 export function worldInLocalStorage() {
-    let tDots = localStorage.getItem("FileResultDotTotal");
+    let tPoints = localStorage.getItem("FileResultDotTotal");
     let tPaths = localStorage.getItem("FileResultPaths");
-    if (tDots !== null & tPaths !== null) {
-        return {dots: JSON.parse(tDots), paths: JSON.parse(tPaths)};
+    if (tPoints !== null & tPaths !== null) {
+        return {points: JSON.parse(tPoints), paths: JSON.parse(tPaths)};
     } else {
         return null;
     }

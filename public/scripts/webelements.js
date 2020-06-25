@@ -51,27 +51,3 @@ function getCookie(name) {
     var value = re.exec(document.cookie);
     return (value != null) ? unescape(value[1]) : null;
 }
-
-/**
- * Saves entire form as cookies
- * @param {string} form The form we are storing from.
- * @memberOf WebElements
- * */
-/*
-function storeValuesFromForm(form) {
-    setCookie("dotColor", form.dotColor.value);
-    setCookie("playerName", form.playerName.value);
-    setCookie("gameResolution", form.gameResolution.value);
-    return true;
-}
-*/
-
-/**
- * Saves entire cookies when "enter" is pressed inside form
- * @memberOf WebElements
- * */
-/*document.customization.onkeydown = function(event) {
-    if (event.keyCode === 13) {
-        storeValuesFromForm(document.customization)
-    }
-};*/

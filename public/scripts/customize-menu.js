@@ -1,18 +1,14 @@
 $(function () {
     $.openSettingsMenu = function() {
         console.log("entering settings");
-        let dotColor = getCookie("dotColor");
+        let pointColor = getCookie("pointColor") ? getCookie("pointColor") : 'Indigo';
         let playerName = getCookie("playerName");
-        // let gameResolution = getCookie("gameResolution");
 
         if (playerName) {
             $('form[name="playerName"]').val(playerName);
             username = playerName;
         }
-        if (dotColor) {
-            $('form[name="dotColor"]').val(dotColor);
-        }
-        // if (gameResolution) $('form[name="dotColor"]').val(dotColor);
+        if (pointColor)  $('form[name="pointColor"]').val(pointColor);
     };
 
 
@@ -23,11 +19,8 @@ $(function () {
     $("#customization").submit(function (e) {
         console.log("submit");
         e.preventDefault();
-        setCookie("dotColor", $("input[name=dotColor]").val());
+        setCookie("pointColor", $("input[name=pointColor]").val());
         $.changeView('main_menu');
-
-        // LAURA TODO: Fortæl serveren at brugeren vil ændre navn, ændr navnet som hører til brugerens socket
-
         // let playerName = getCookie("playerName");
         let playerName =  $("input[name=playerName]").val();
         if (playerName) {

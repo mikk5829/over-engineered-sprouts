@@ -3,6 +3,11 @@ let username;
 let playerNum = null;
 const viewIDs = ['main_menu', 'game', 'settings', 'scoreboard'];
 
+socket.on('error', (error, abort = true) => {
+    console.log('ERROR:', error);
+    if (abort) location.reload();
+});
+
 socket.on('connect', function () {
     let savedUsername = getCookie("playerName");
     console.log("Name from cookie:", savedUsername);
@@ -10,12 +15,9 @@ socket.on('connect', function () {
     socket.emit('join', savedUsername, function (response) {
         username = response;
         setCookie("playerName", username);
+        $('#welcomeUser').text("Welcome " + username);
         console.log("Joined as", username);
     });
-
-    if (!$('#main_menu').is(':hidden')) {
-        if(getCookie("playername") !== undefined) $('#welcomeUser').text("Welcome " + getCookie("playerName"));
-    }
 
 });
 
@@ -25,6 +27,5 @@ $(function () {
             $('#' + viewName).addClass('hidden').hide();
         }
         $('#' + newView).removeClass('hidden').show();
-
     };
 });
