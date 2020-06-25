@@ -12,6 +12,12 @@ Mikkel Rosenfeldt Anderson - s184230
 
 Laura Sønderskov Hansen - s184234
 
+## Please note
+
+- When playing the game and drawing to fast, the mouse-eventhandler might not intercept mouse-movement
+
+- Use **Google Chrome** for optimal gaming experience
+
 ## Push stuff to production:
 
 Contact Mikkel if issues occur!
@@ -56,6 +62,5 @@ We are using **Mocha** as our testing framework, see the files `sum.js` and `sum
 
 ## Setting up db on local machine
 
-4. Add file ```database.json``` to ```routes/```
+1. Add file ```database.json``` to ```routes/```
 2. It just works!
-
