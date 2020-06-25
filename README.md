@@ -14,6 +14,8 @@ Laura Sønderskov Hansen - s184234
 
 ## Please note
 
+- [Link to game](http://starostka.tplinkdns.com:3000/)
+
 - When playing the game and drawing to fast, the mouse-eventhandler might not intercept mouse-movement
 
 - Use **Google Chrome** for optimal gaming experience
