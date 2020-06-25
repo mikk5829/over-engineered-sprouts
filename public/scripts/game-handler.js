@@ -2,8 +2,8 @@ import {SproutWorld} from "./modules/SproutWorld.js";
 import {SEL_POINT_COLOR, HOVER_POINT_COLOR, STROKE_COLOR, POINT_SIZE} from "./modules/SproutWorld.js";
 
 /**
- * TODO UPDATE DESCRIPTION
- * @namespace Game Handler
+ * Client socket handler
+ * @namespace Socket
  * @author Laura Hansen & Benjamin Starostka
  * */
 
@@ -26,7 +26,7 @@ function reset() {
 paper.install(window);
 /**
  * Make the paper scope global
- * @memberOf Game Handler
+ * @memberOf Socket
  */
 $(function () {
 
@@ -155,9 +155,9 @@ $(function () {
         });
 
         /**
-     * Adds a new chat message to the chatlog
-     * @memberOf Game Handler
-     */
+         * Adds a new chat message to the chatlog
+         * @memberOf Socket
+         */
         socket.on('updateChat', function (timestamp, sender, msg) {
             let time = new Date(timestamp).toTimeString().slice(0, 5);
             let sent = `(${time}) ${sender}:`;

@@ -1,6 +1,12 @@
 //const cookieParser = require("cookie-parser");
 // import {worldInLocalStorage} from "./modules/Utility.js";
 
+/**
+ * Logic for joining rooms and chat
+ * @namespace Socket
+ * @author Laura Hansen & Benjamin Starostka
+ */
+
 
 $(function () {
     $.disableOverlay();

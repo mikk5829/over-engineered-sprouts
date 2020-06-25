@@ -1,4 +1,8 @@
-/** dbTest.js is used for testing the simple database */
+/**
+ * dbTest.js is used for testing the simple database
+ * @namespace Testing
+ * @author Mikkel Anderson
+ * */
 var db = require('../server/db/simple-db')
 var expect = require('chai').expect;
 
