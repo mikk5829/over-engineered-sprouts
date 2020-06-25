@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Module dependencies.
+ * Start of the Node application.
  */
 const app = require('../app');
 const debug = require('debug')('over-engineered-sprout:server');

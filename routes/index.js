@@ -6,7 +6,7 @@ require('dotenv').config();
 /**
  * HTTP API for node.js and manipulating website
  * @namespace Routes
- * @author Mikkel Anderson
+ * @author Mikkel Anderson & Laura Hansen & Benjamin Starostka & Wictor Jensen
  */
 
 /**

@@ -3,6 +3,12 @@ let username;
 let playerNum = null;
 const viewIDs = ['main_menu', 'game', 'settings', 'scoreboard'];
 
+/**
+ * Client socket handler
+ * @namespace Socket
+ * @author Laura Hansen & Benjamin Starostka
+ */
+
 socket.on('connect', function () {
     let savedUsername = getCookie("playerName");
     console.log("Name from cookie:", savedUsername);
