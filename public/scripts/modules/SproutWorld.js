@@ -18,15 +18,15 @@ export class SproutWorld {
      * World constructor
      * @constructor
      * @memberof SproutWorld
-     * @param simulate
+     * @param simulation
      **/
 
-    constructor(simulate = false) {
+    constructor(simulation = false) {
 
         this.pointColor = getCookie('pointColor') !== null ? getCookie('pointColor') : 'Indigo';
         this.pathGroup = new paper.Group(); // The paths that have been drawn so far
         this.points = [];
-        this.simulate = simulate;
+        this.simulation = simulation;
 
         this.dragEnabled = false;
         this.dragSelection = false; // Whether or not a path is currently being drawn
@@ -73,15 +73,15 @@ export class SproutWorld {
         if (this.currentPath) this.currentPath.remove();
     }
 
-    submitSelection(simulate = false) {
-        if (!simulate && (this.currentPath.segments.length <= 2 || (!this.source || !this.target))) {
+    submitSelection(simulation = false) {
+        if (!simulation && (this.currentPath.segments.length <= 2 || (!this.source || !this.target))) {
             this.resetSelection();
             return false;
         }
 
         // Trim the path underneath the points
         let path = this.currentPath;
-        if (!simulate) {
+        if (!simulation) {
             let sourcePoint = path.getCrossings(this.source)[0];
             let i = this.source === this.target ? 1 : 0;
             let targetPoint = path.getCrossings(this.target)[i];
@@ -89,7 +89,7 @@ export class SproutWorld {
             path.curves[path.curves.length - 1].point2 = targetPoint.point;
         }
 
-        if (simulate) {
+        if (simulation) {
             let from = this.source.data.id;
             let to = this.target.data.id;
             socket.emit('submitSimPath', path.exportJSON(), this.source.data.id, this.target.data.id, function (pathIsLegal) {

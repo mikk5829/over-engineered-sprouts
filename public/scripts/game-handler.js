@@ -19,16 +19,15 @@ paper.install(window);
 $(function () {
 
         $.submitMove = function () {
-            console.log("remaining:", remainingMoves)
             // Submits the next move in the list
             if (remainingMoves.length === 0) {
                 $('#status-header').text('Simulation successful!');
                 return;
             }
             let move = remainingMoves.shift();
-            console.log("move:", move);
             let p1 = world.points[move.dot1 - 1];
             let p2 = world.points[move.dot2 - 1];
+            if (p1 === p2) alert("Warning - edge case when trying to simulate a loop");
 
             socket.emit('possiblePath', p1.data.id, p2.data.id, function (possible) {
                 if (possible) { // Server approves submission
@@ -93,7 +92,7 @@ $(function () {
         });
 
         socket.on('updateGame', function (fromId, toId, pathJson, pointData, status) {
-            if (!world.simulate) {
+            if (!world.simulation) {
                 paper.project.activeLayer.locked = status !== playerNum;
                 if (status === playerNum) $('#status-header').text(`Your turn!`);
                 else $('#status-header').text('Waiting for opponent to draw.');
@@ -113,7 +112,7 @@ $(function () {
             let pos = new paper.Point(pointData.center[1], pointData.center[2]);
             let p = world.addPoint(pointData.id, pos, 2);
             world.collisionGrid.t_insert_rectangle(p.bounds, p);
-            if (world.simulate) $.submitMove();
+            if (world.simulation) $.submitMove();
         });
 
         socket.on('gameOver', function (winner) {

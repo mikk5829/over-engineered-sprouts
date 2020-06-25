@@ -386,14 +386,14 @@ class GameRoom {
         return {path: originalPath.exportJSON(), pointData: pointData};
     }
 
-    isLegal(from, to, path, simulate = false) {
+    isLegal(from, to, path, simulation = false) {
         this.project.activate();
 
         if (!(from || to)) return false;
         else if (from === to && from.data.connections >= 2) return false;
         else if (from.data.connections >= 3 || to.data.connections >= 3) return false;
 
-        if (!simulate) {
+        if (!simulation) {
             // Check for intersections w. existing paths
             for (let line of this.pathGroup.getItems({type: 'path'})) {
                 if (path.getIntersections(line).length > 0) return false;
